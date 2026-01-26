@@ -1,0 +1,146 @@
+"use client";
+
+import React from "react";
+import { Column, ColumnDef, Table } from "@tanstack/react-table";
+import { Checkbox } from "@/components/ui/checkbox";
+import { Button } from "@/components/ui/button";
+import { ArrowUpDown } from "lucide-react";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+
+export function createColumn<T>(config: {
+  accessorKey?: keyof T & string;
+  accessorFn?: (originalRow: T) => any;
+  id?: string;
+  header: string;
+  mobileLabel?: string;
+  sortable?: boolean;
+  filterComponent?: (props: {
+    column: Column<T, unknown>;
+    table: Table<T>;
+  }) => React.ReactNode;
+  cell?: (props: any) => React.ReactNode;
+}): ColumnDef<T> {
+  const column: Partial<ColumnDef<T>> = {
+    header: ({ column }) =>
+      config.sortable ? (
+        <Button
+          variant="ghost"
+          className="p-0"
+          onClick={() =>
+            column.toggleSorting(column.getIsSorted() === "asc")
+          }
+        >
+          {config.header}
+          <ArrowUpDown className="ml-2 h-4 w-4" />
+        </Button>
+      ) : (
+        config.header
+      ),
+    cell: config.cell,
+    meta: {
+      mobileLabel: config.mobileLabel ?? config.header,
+      filterComponent: config.filterComponent,
+    },
+  };
+
+  if (config.accessorKey) (column as any).accessorKey = config.accessorKey;
+  if (config.accessorFn) (column as any).accessorFn = config.accessorFn;
+  if (config.id) (column as any).id = config.id;
+
+  return column as ColumnDef<T>;
+}
+
+export function createSelectColumn<T>(): ColumnDef<T> {
+  return {
+    id: "select",
+    header: ({ table }) => (
+      <Checkbox
+        checked={
+          table.getIsAllPageRowsSelected() ||
+          (table.getIsSomePageRowsSelected() && "indeterminate")
+        }
+        onCheckedChange={(v) => table.toggleAllPageRowsSelected(!!v)}
+      />
+    ),
+    cell: ({ row }) => (
+      <Checkbox
+        checked={row.getIsSelected()}
+        onCheckedChange={(v) => row.toggleSelected(!!v)}
+      />
+    ),
+    enableSorting: false,
+    meta: { mobileLabel: "Select" },
+  };
+}
+
+export function createActionsColumn<T>(actions: {
+  onClick: (row: T) => void;
+  icon?: React.ComponentType<{ className?: string }>;
+  className?: string;
+}[]): ColumnDef<T> {
+  return {
+    id: "actions",
+    cell: ({ row }) => (
+      <div className="flex gap-2">
+        {actions.map((a, i) => (
+          <Button
+            key={i}
+            size="sm"
+            variant="ghost"
+            className={a.className}
+            onClick={() => a.onClick(row.original)}
+          >
+            {a.icon && <a.icon className="h-4 w-4" />}
+          </Button>
+        ))}
+      </div>
+    ),
+    meta: { mobileLabel: "Actions" },
+  };
+}
+
+
+export function createSelectFilter<T>(
+  options: { value: string; label: string }[]
+): (props: { column: Column<T, unknown>; table: Table<T> }) => React.ReactNode {
+  return function SelectFilter({ column }) {
+    const value = column.getFilterValue() as string | undefined;
+
+    return (
+      <Select
+        value={value ?? "__all__"}
+        onValueChange={(v) =>
+          column.setFilterValue(v === "__all__" ? undefined : v)
+        }
+      >
+        <SelectTrigger>
+          <SelectValue placeholder="Tous" />
+        </SelectTrigger>
+        <SelectContent>
+          <SelectItem value="__all__">Tous</SelectItem>
+          {options.map((o) => (
+            <SelectItem key={o.value} value={o.value}>
+              {o.label}
+            </SelectItem>
+          ))}
+        </SelectContent>
+      </Select>
+    );
+  };
+}
+
+declare module "@tanstack/react-table" {
+  interface ColumnMeta<TData, TValue> {
+    mobileLabel?: string;
+    filterComponent?: (props: {
+      column: Column<TData, TValue>;
+      table: Table<TData>;
+    }) => React.ReactNode;
+  }
+}
