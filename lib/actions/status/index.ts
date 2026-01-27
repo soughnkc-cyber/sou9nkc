@@ -1,0 +1,124 @@
+// app/actions/status.ts
+"use server";
+
+import prisma from "@/lib/prisma";
+import { StatusFormData } from "@/lib/schema";
+import { Status as PrismaStatus } from "@/app/generated/prisma/client";
+import { Status } from "@/app/(dashboard)/list/status/columns";
+
+function mapStatus(s: PrismaStatus): Status {
+  return {
+    id: s.id,
+    name: s.name,
+    recallAfterH: s.recallAfterH ?? undefined,
+    createdAt: s.createdAt.toISOString(),
+  };
+}
+
+/* =========================
+   GET
+========================= */
+export async function getStatus(): Promise<Status[]> {
+  const status = await prisma.status.findMany({
+    orderBy: { createdAt: "desc" },
+  });
+
+  return status.map(mapStatus);
+}
+
+/* =========================
+   CREATE
+========================= */
+export async function createStatusAction(data: StatusFormData) {
+  try {
+    const status = await prisma.status.create({
+      data: {
+        name: data.name,
+        recallAfterH: data.recallAfterH,
+      },
+    });
+
+    return mapStatus(status);
+  } catch (err) {
+    console.error("Erreur createStatusAction:", err);
+    throw new Error("Impossible de créer le statut");
+  }
+}
+
+/* =========================
+   UPDATE
+========================= */
+export async function updateStatusAction(
+  statusId: string,
+  data: Partial<StatusFormData>
+) {
+  try {
+    const status = await prisma.status.update({
+      where: { id: statusId },
+      data: {
+        name: data.name,
+        recallAfterH: data.recallAfterH,
+      },
+    });
+
+    return mapStatus(status);
+  } catch (err) {
+    console.error("Erreur updateStatusAction:", err);
+    throw new Error("Impossible de mettre à jour le statut");
+  }
+}
+
+/* =========================
+   DELETE
+========================= */
+export async function deleteStatusAction(statusId: string) {
+  try {
+    const status = await prisma.status.delete({
+      where: { id: statusId },
+    });
+
+    return mapStatus(status);
+  } catch (err) {
+    console.error("Erreur deleteStatusAction:", err);
+    throw new Error("Impossible de supprimer le statut");
+  }
+}
+
+
+export const updateOrderStatus = async (
+  orderId: string,
+  statusId: string | null
+) => {
+  try {
+    const status = statusId
+      ? await prisma.status.findUnique({ where: { id: statusId } })
+      : null;
+
+    let data: any = { statusId };
+
+    // 🔹 Seulement si recallAfterH existe
+    if (status?.recallAfterH != null) {
+      const recallAt = new Date();
+      recallAt.setHours(recallAt.getHours() + status.recallAfterH);
+
+      data.recallAt = recallAt;
+    }
+
+    const order = await prisma.order.update({
+      where: { id: orderId },
+      data,
+      include: { status: true },
+    });
+
+   return {
+  ...order,
+  recallAt: order.recallAt ? order.recallAt.toISOString() : null,
+};
+
+  } catch (err) {
+    console.error(err);
+    throw new Error("Impossible de mettre à jour le statut");
+  }
+};
+
+
