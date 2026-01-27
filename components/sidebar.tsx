@@ -61,7 +61,7 @@ const navigationItems: NavItem[] = [
     name: "Commandes",
     href: "/list/orders",
     icon: ShoppingCart,
-    roles: ["ADMIN", "SUPERVISOR"],
+    roles: ["ADMIN", "SUPERVISOR", "AGENT", "AGENT_TEST"],
   },
   {
     name: "Reporting",
@@ -74,6 +74,12 @@ const navigationItems: NavItem[] = [
     href: "/list/status",
     icon: ShieldCheck,
     roles: ["ADMIN"],
+  },
+  {
+    name: "Produits",
+    href: "/list/products",
+    icon: ShoppingCart,
+    roles: ["ADMIN", "SUPERVISOR"],
   },
 ];
 
