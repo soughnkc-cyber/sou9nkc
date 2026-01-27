@@ -1,7 +1,7 @@
 "use client";
 
 import { ColumnDef } from "@tanstack/react-table";
-import { createColumn, createActionsColumn } from "@/components/columns";
+import { createColumn, createActionsColumn, createFacetedFilter } from "@/components/columns";
 import { Badge } from "@/components/ui/badge";
 import { Edit, Trash2, Eye } from "lucide-react";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -58,9 +58,6 @@ const StatusSelect = ({
   );
 };
 
-
-
-
 const formatDateTime = (date?: string | null) => {
   if (!date) return "-";
   const d = new Date(date);
@@ -70,7 +67,6 @@ const formatDateTime = (date?: string | null) => {
     d.toLocaleTimeString("fr-FR", { hour: "2-digit", minute: "2-digit" })
   );
 };
-
 
 const PriceBadge = ({ price }: { price: number }) => (
   <Badge variant="secondary" className="bg-green-100 text-green-800">
@@ -126,17 +122,22 @@ export const getColumns = (
     }),
 
     createColumn<Order>({
-  accessorKey: "status",
-  header: "Statut",
-  cell: ({ row }) => (
-    <StatusSelect
-      order={row.original}
-      statuses={statuses}
-      onChange={onStatusChange}
-    />
-  ),
-}),
-
+      accessorKey: "status",
+      header: "Statut",
+      sortable: true,
+      filterComponent: createFacetedFilter(
+        "Statut",
+        statuses.map((s) => ({ label: s.name, value: s.name }))
+      ),
+      accessorFn: (row) => row.status?.name,
+      cell: ({ row }) => (
+        <StatusSelect
+          order={row.original}
+          statuses={statuses}
+          onChange={onStatusChange}
+        />
+      ),
+    }),
 
     createColumn<Order>({
       accessorKey: "customerPhone",
@@ -152,18 +153,15 @@ export const getColumns = (
       cell: ({ row }) => formatDateTime(row.original.orderDate),
     }),
     createColumn<Order>({
-  accessorKey: "recallAt",
-  header: "Date de rappel",
-  cell: ({ row }) => (
-    <RecallCell
-      order={row.original}
-      onChange={onRecallChange}
-    />
-  ),
-}),
-
-
-
+      accessorKey: "recallAt",
+      header: "Date de rappel",
+      cell: ({ row }) => (
+        <RecallCell
+          order={row.original}
+          onChange={onRecallChange}
+        />
+      ),
+    }),
 
     ...(actions.length ? [createActionsColumn<Order>(actions)] : []),
   ];

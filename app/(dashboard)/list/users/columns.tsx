@@ -1,7 +1,7 @@
 "use client";
 
 import { ColumnDef } from "@tanstack/react-table";
-import { createColumn, createActionsColumn, createSelectFilter } from "@/components/columns";
+import { createColumn, createActionsColumn, createFacetedFilter } from "@/components/columns";
 import { Badge } from "@/components/ui/badge";
 import { Edit, Trash2, Eye, User as UserIcon } from "lucide-react";
 import { Role } from "@/app/generated/prisma/enums";
@@ -15,8 +15,8 @@ export interface User {
   lastLogin?: string;
   lastLogout?: string;
   status?: "ONLINE" | "OFFLINE";
+  email?: string; // Ajouté si présent dans les données
 }
-
 
 const ROLE_OPTIONS = [
   { value: "ADMIN", label: "Administrateur" },
@@ -26,20 +26,17 @@ const ROLE_OPTIONS = [
 ];
 
 const STATUS_OPTIONS = [
-  { value: "ACTIVE", label: "Actif" },
-  { value: "INACTIVE", label: "Inactif" },
+  { value: "ONLINE", label: "En ligne" },
+  { value: "OFFLINE", label: "Hors ligne" },
 ];
 
-
-export const RoleFilter = createSelectFilter<User>(ROLE_OPTIONS);
-export const StatusFilter = createSelectFilter<User>(STATUS_OPTIONS);
-
+export const RoleFilter = createFacetedFilter<User>("Rôle", ROLE_OPTIONS);
+export const StatusFilter = createFacetedFilter<User>("Statut", STATUS_OPTIONS);
 
 const formatDateTime = (date: string) => {
   const d = new Date(date);
   return d.toLocaleDateString("fr-FR") + " " + d.toLocaleTimeString("fr-FR", { hour: "2-digit", minute: "2-digit" });
 };
-
 
 const StatusBadge = ({ status }: { status?: "ONLINE" | "OFFLINE" }) => {
   const map = {
@@ -52,7 +49,6 @@ const StatusBadge = ({ status }: { status?: "ONLINE" | "OFFLINE" }) => {
   };
   return <Badge variant="secondary" className={map[status ?? "OFFLINE"]}>{label[status ?? "OFFLINE"]}</Badge>;
 };
-
 
 const RoleBadge = ({ role }: { role: Role }) => {
   const map = {
@@ -69,7 +65,6 @@ const RoleBadge = ({ role }: { role: Role }) => {
   };
   return <Badge variant="secondary" className={map[role]}>{label[role]}</Badge>;
 };
-
 
 export const getColumns = (
   onView?: (u: User) => void,
@@ -94,7 +89,7 @@ export const getColumns = (
           <div>
             <div className="font-medium">{row.original.name}</div>
             <div className="text-xs text-gray-500 truncate max-w-[200px]">
-              {row.original.email ?? "Non renseigné"}
+              {row.original.phone ?? "Pas de téléphone"}
             </div>
           </div>
         </div>
@@ -137,27 +132,8 @@ export const getColumns = (
       header: "Dernière déconnexion",
       cell: ({ row }) =>
         row.original.lastLogout ? formatDateTime(row.original.lastLogout) : "-",
-}),
+    }),
 
     ...(actions.length ? [createActionsColumn<User>(actions)] : []),
   ];
 };
-
-// export const mockUsers: User[] = [
-//   {
-//     id: "1",
-//     name: "Mohamed Ali",
-//     phone: "+212 6 12 34 56 78",
-//     role: "ADMIN",
-//     status: "active",
-//     createdAt: "2024-01-15",
-//     lastLogin: "2024-03-20",
-//   },
-//   {
-//     id: "2",
-//     name: "Fatima Zahra",
-//     role: "AGENT",
-//     status: "active",
-//     createdAt: "2024-02-10",
-//   },
-// ];

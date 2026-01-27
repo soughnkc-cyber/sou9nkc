@@ -45,8 +45,31 @@ export const getProducts = async () => {
     vendor: p.vendor,
     productType: p.productType,
     price: p.price,
+    assignedAgentIds: p.assignedAgentIds,
+    hiddenForAgentIds: p.hiddenForAgentIds,
     createdAt: p.createdAt.toISOString(),
     updatedAt: p.updatedAt.toISOString(),
   }));
+};
+
+export const updateProductAgents = async (
+  productId: string,
+  data: { assignedAgentIds?: string[]; hiddenForAgentIds?: string[] }
+) => {
+  try {
+    const product = await prisma.product.update({
+      where: { id: productId },
+      data,
+    });
+
+    return {
+      ...product,
+      createdAt: product.createdAt.toISOString(),
+      updatedAt: product.updatedAt.toISOString(),
+    };
+  } catch (error) {
+    console.error("Erreur updateProductAgents:", error);
+    throw new Error("Impossible de mettre à jour les agents du produit");
+  }
 };
 

@@ -59,21 +59,21 @@ export default function OrdersPage() {
     }
   }, [user]);
 
-  const insertOrders = useCallback(async () => {
-    try {
-      const res = await fetch("/api/orders");
-      const json = await res.json();
-      if (!res.ok) throw new Error(json.message);
+  // const insertOrders = useCallback(async () => {
+  //   try {
+  //     const res = await fetch("/api/orders");
+  //     const json = await res.json();
+  //     if (!res.ok) throw new Error(json.message);
 
-      // Insère dans la DB avec attribution round-robin
-      await insertNewOrders(json.orders);
-      toast.success("Commandes synchronisées avec succès");
-      fetchOrders();
-    } catch (error) {
-      console.error(error);
-      toast.error("Erreur lors de l'insertion des commandes");
-    }
-  }, [fetchOrders]);
+  //     // Insère dans la DB avec attribution round-robin
+  //     await insertNewOrders(json.orders);
+  //     toast.success("Commandes synchronisées avec succès");
+  //     fetchOrders();
+  //   } catch (error) {
+  //     console.error(error);
+  //     toast.error("Erreur lors de l'insertion des commandes");
+  //   }
+  // }, [fetchOrders]);
 
   const fetchStatuses = useCallback(async () => {
     try {
@@ -118,10 +118,9 @@ export default function OrdersPage() {
   useEffect(() => {
     if (user) {
       fetchOrders();
-      insertOrders();
       fetchStatuses();
     }
-  }, [user, fetchOrders, insertOrders, fetchStatuses]);
+  }, [user, fetchOrders, fetchStatuses]);
 
   // --------------------
   // Mémo

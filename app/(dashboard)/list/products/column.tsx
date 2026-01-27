@@ -1,9 +1,10 @@
 "use client";
 
 import { ColumnDef } from "@tanstack/react-table";
-import { createColumn, createActionsColumn } from "@/components/columns";
+import { createColumn, createActionsColumn, createFacetedFilter } from "@/components/columns";
 import { Badge } from "@/components/ui/badge";
 import { Edit, Trash2, Eye } from "lucide-react";
+import { AgentSelect, Option } from "./agent-select";
 
 /* -------- Types -------- */
 export interface Product {
@@ -13,6 +14,8 @@ export interface Product {
   productType?: string | null;
   status: string;
   price: number;
+  assignedAgentIds: string[];
+  hiddenForAgentIds: string[];
   createdAt: string;
 }
 
@@ -46,6 +49,8 @@ const StatusBadge = ({ status }: { status: string }) => (
 
 /* -------- Columns -------- */
 export const getColumns = (
+  agents: Option[],
+  onUpdateAgents: (productId: string, data: { assignedAgentIds?: string[]; hiddenForAgentIds?: string[] }) => void,
   onView?: (p: Product) => void,
   onEdit?: (p: Product) => void,
   onDelete?: (p: Product) => void
@@ -84,17 +89,29 @@ export const getColumns = (
     }),
 
     createColumn<Product>({
-      accessorKey: "vendor",
-      header: "Fournisseur",
-      sortable: true,
-      cell: ({ row }) => row.original.vendor ?? "-",
+      accessorKey: "assignedAgentIds",
+      header: "Assigné à",
+      cell: ({ row }) => (
+        <AgentSelect
+          options={agents}
+          selected={row.original.assignedAgentIds || []}
+          onChange={(selected) => onUpdateAgents(row.original.id, { assignedAgentIds: selected })}
+          placeholder="Agents assignés"
+        />
+      ),
     }),
 
     createColumn<Product>({
-      accessorKey: "productType",
-      header: "Type",
-      sortable: true,
-      cell: ({ row }) => row.original.productType ?? "-",
+      accessorKey: "hiddenForAgentIds",
+      header: "Caché pour",
+      cell: ({ row }) => (
+        <AgentSelect
+          options={agents}
+          selected={row.original.hiddenForAgentIds || []}
+          onChange={(selected) => onUpdateAgents(row.original.id, { hiddenForAgentIds: selected })}
+          placeholder="Agents restreints"
+        />
+      ),
     }),
 
     createColumn<Product>({
@@ -108,14 +125,12 @@ export const getColumns = (
       accessorKey: "status",
       header: "Statut",
       sortable: true,
+      filterComponent: createFacetedFilter("Statut", [
+        { label: "Actif", value: "active" },
+        { label: "Archivé", value: "archived" },
+        { label: "Brouillon", value: "draft" },
+      ]),
       cell: ({ row }) => <StatusBadge status={row.original.status} />,
-    }),
-
-    createColumn<Product>({
-      accessorKey: "createdAt",
-      header: "Créé le",
-      sortable: true,
-      cell: ({ row }) => formatDate(row.original.createdAt),
     }),
 
     ...(actions.length ? [createActionsColumn<Product>(actions)] : []),

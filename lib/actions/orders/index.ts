@@ -58,19 +58,23 @@ export const insertNewOrders = async (shopifyOrders: ShopifyOrder[]) => {
       : order.name;
     const customerPhone = order.customer?.phone ?? order.billing_address?.phone ?? null;
 
-    const productIds = order.line_items?.map(li => li.product_id.toString()) || [];
+    const productIds = order.line_items?.map(li => li.product_id?.toString()).filter(Boolean) as string[] || [];
     const products = await prisma.product.findMany({
       where: { shopifyId: { in: productIds } },
     });
-    if (products.length === 0) continue;
 
-    // Création de la commande sans agentId
+    // Fallback product note from Shopify line items if products are not in local DB
+    const productNote = products.length > 0
+      ? products.map(p => p.title).join(", ")
+      : order.line_items?.map(li => li.title).join(", ") || "Produit inconnu";
+
+    // Création de la commande systématique
     await prisma.order.create({
       data: {
         orderNumber: order.order_number,
         customerName,
         customerPhone,
-        productNote: products.map(p => p.title).join(", "),
+        productNote,
         orderDate: new Date(order.created_at),
         totalPrice: parseFloat(order.total_price),
         products: {
@@ -79,7 +83,11 @@ export const insertNewOrders = async (shopifyOrders: ShopifyOrder[]) => {
       },
     });
 
-    console.log(`Commande #${order.order_number} insérée sans agent`);
+    if (products.length === 0) {
+      console.warn(`Commande #${order.order_number} insérée avec des produits inconnus localement.`);
+    } else {
+      console.log(`Commande #${order.order_number} insérée avec succès.`);
+    }
   }
 
   // ----------------------------

@@ -14,8 +14,10 @@ import {
 import { toast } from "sonner";
 
 /* Actions Products */
-import { getProducts, insertNewProducts } from "@/lib/actions/products";
+import { getProducts, insertNewProducts, updateProductAgents } from "@/lib/actions/products";
+import { getUsers } from "@/lib/actions/users";
 import { getColumns, Product } from "./column";
+import { Option } from "./agent-select";
 
 /* Stats */
 const getProductStats = (products: Product[]) => ({
@@ -25,6 +27,7 @@ const getProductStats = (products: Product[]) => ({
 
 export default function ProductsPage() {
   const [products, setProducts] = useState<Product[]>([]);
+  const [agents, setAgents] = useState<Option[]>([]);
   const [isLoadingPage, setIsLoadingPage] = useState(false);
 
   /* Sync Shopify → DB */
@@ -46,15 +49,34 @@ export default function ProductsPage() {
   const fetchProducts = useCallback(async () => {
     setIsLoadingPage(true);
     try {
-      const data = await getProducts();
-      setProducts(data);
+      const [productsData, usersData] = await Promise.all([
+        getProducts(),
+        getUsers()
+      ]);
+      setProducts(productsData);
+      
+      const filteredAgents = usersData
+        .filter(u => u.role === "AGENT" || u.role === "AGENT_TEST")
+        .map(u => ({ id: u.id, name: u.name }));
+      setAgents(filteredAgents);
     } catch (error) {
       console.error(error);
-      toast.error("Erreur lors du chargement des produits");
+      toast.error("Erreur lors du chargement des données");
     } finally {
       setIsLoadingPage(false);
     }
   }, []);
+
+  const handleUpdateAgents = async (productId: string, data: { assignedAgentIds?: string[]; hiddenForAgentIds?: string[] }) => {
+    try {
+      await updateProductAgents(productId, data);
+      setProducts(prev => prev.map(p => p.id === productId ? { ...p, ...data } : p));
+      toast.success("Agents mis à jour");
+    } catch (error) {
+      console.error(error);
+      toast.error("Erreur lors de la mise à jour des agents");
+    }
+  };
 
   useEffect(() => {
     fetchProducts();
@@ -65,8 +87,8 @@ export default function ProductsPage() {
   const stats = useMemo(() => getProductStats(products), [products]);
 
   const columns = useMemo(
-    () => getColumns(),
-    []
+    () => getColumns(agents, handleUpdateAgents),
+    [agents]
   );
 
   return (
