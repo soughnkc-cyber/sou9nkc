@@ -31,11 +31,15 @@ export async function getReportStats(filters: ReportFilters) {
   }
 
   // 1. Global Metrics
-  const [counts, revenue] = await Promise.all([
+  const [counts, revenue, avgProcessing] = await Promise.all([
     prisma.order.count({ where }),
     prisma.order.aggregate({
       _sum: { totalPrice: true },
       where,
+    }),
+    prisma.order.aggregate({
+      _avg: { processingTimeMin: true },
+      where: { ...where, processingTimeMin: { not: null } },
     }),
   ]);
 
@@ -98,6 +102,7 @@ export async function getReportStats(filters: ReportFilters) {
   return {
     totalOrders: counts,
     totalRevenue: revenue._sum.totalPrice || 0,
+    averageProcessingTime: Math.round(avgProcessing._avg.processingTimeMin || 0),
     statusDistribution: statusStats.map(s => ({
       name: s.name,
       count: s._count.orders,

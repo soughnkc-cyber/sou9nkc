@@ -26,6 +26,10 @@ export const authOptions = {
           throw new Error("Aucun compte trouvé avec ce numéro");
         }
 
+        if (user.status !== "ACTIVE") {
+          throw new Error("Votre compte est bloqué. Veuillez contacter l'administrateur.");
+        }
+
         const isValid = await bcrypt.compare(
           credentials.password,
           user.password,

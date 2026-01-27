@@ -134,8 +134,8 @@ export default function OrdersPage() {
   );
 
   const columns = useMemo(
-    () => getColumns(statuses, handleStatusChange, handleRecallChange),
-    [statuses]
+    () => getColumns(user?.role, statuses, handleStatusChange, handleRecallChange),
+    [statuses, user?.role]
   );
 
   // --------------------

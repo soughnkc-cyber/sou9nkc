@@ -29,10 +29,13 @@ type ShopifyOrder = {
 
 export const insertNewOrders = async (shopifyOrders: ShopifyOrder[]) => {
   // ----------------------------
-  // 1️⃣ Récupérer tous les agents éligibles
+  // 1️⃣ Récupérer tous les agents éligibles et produits concernés
   // ----------------------------
   const agents = await prisma.user.findMany({
-    where: { role: { in: ["AGENT", "AGENT_TEST"] } },
+    where: { 
+      role: { in: ["AGENT", "AGENT_TEST"] },
+      status: "ACTIVE"
+    },
     orderBy: { id: "asc" },
   });
   if (agents.length === 0) return console.warn("Aucun agent trouvé pour l'attribution automatique");
@@ -44,8 +47,10 @@ export const insertNewOrders = async (shopifyOrders: ShopifyOrder[]) => {
   });
   const specializedAgentIds = new Set(productsWithAssignments.flatMap(p => p.assignedAgentIds));
 
+  const insertedOrderIds: string[] = [];
+
   // ----------------------------
-  // 2️⃣ Insérer toutes les commandes sans agentId
+  // 2️⃣ Insérer les commandes
   // ----------------------------
   for (const order of shopifyOrders) {
     const existing = await prisma.order.findUnique({
@@ -63,13 +68,11 @@ export const insertNewOrders = async (shopifyOrders: ShopifyOrder[]) => {
       where: { shopifyId: { in: productIds } },
     });
 
-    // Fallback product note from Shopify line items if products are not in local DB
     const productNote = products.length > 0
       ? products.map(p => p.title).join(", ")
       : order.line_items?.map(li => li.title).join(", ") || "Produit inconnu";
 
-    // Création de la commande systématique
-    await prisma.order.create({
+    const created = await prisma.order.create({
       data: {
         orderNumber: order.order_number,
         customerName,
@@ -82,36 +85,33 @@ export const insertNewOrders = async (shopifyOrders: ShopifyOrder[]) => {
         },
       },
     });
-
-    if (products.length === 0) {
-      console.warn(`Commande #${order.order_number} insérée avec des produits inconnus localement.`);
-    } else {
-      console.log(`Commande #${order.order_number} insérée avec succès.`);
-    }
+    insertedOrderIds.push(created.id);
   }
 
+  if (insertedOrderIds.length === 0) return;
+
   // ----------------------------
-  // 3️⃣ Attribution des agents après insertion
+  // 3️⃣ Attribution des agents (Uniquement pour les nouvelles commandes)
   // ----------------------------
-  const ordersWithoutAgent = await prisma.order.findMany({
-    where: { agentId: null },
+  const ordersToAssign = await prisma.order.findMany({
+    where: { id: { in: insertedOrderIds }, agentId: null },
     include: { products: true },
   });
 
-  for (const order of ordersWithoutAgent) {
-    // Calculer le nombre de commandes par agent pour le load balancing
-    const agentOrderCounts = await prisma.order.groupBy({
-      by: ['agentId'],
-      _count: { id: true },
-      where: { agentId: { not: null } }
-    });
+  // Fetch current load once
+  const agentOrderCounts = await prisma.order.groupBy({
+    by: ['agentId'],
+    _count: { id: true },
+    where: { agentId: { not: null } }
+  });
 
-    const getAgentScore = (agentId: string) => {
-      const found = agentOrderCounts.find(c => c.agentId === agentId);
-      return found ? found._count.id : 0;
-    };
+  // Local map to track assignment in this batch
+  const localCounts = new Map<string | null, number>();
+  agentOrderCounts.forEach(c => localCounts.set(c.agentId, c._count.id));
 
-    // Filtrer les agents compatibles
+  for (const order of ordersToAssign) {
+    const getAgentScore = (agentId: string) => localCounts.get(agentId) || 0;
+
     const compatibleAgents = agents.filter(agent => {
       const isSpecialized = specializedAgentIds.has(agent.id);
 
@@ -119,22 +119,13 @@ export const insertNewOrders = async (shopifyOrders: ShopifyOrder[]) => {
         const assigned = p.assignedAgentIds || [];
         const hidden = p.hiddenForAgentIds || [];
 
-        // Règle 2: Caché -> ne peut pas voir
         if (hidden.includes(agent.id)) return false;
-
-        if (isSpecialized) {
-          // Règle 1: Agent spécialisé -> ne peut voir QUE ses produits assignés
-          return assigned.includes(agent.id);
-        }
-
-        // Agent non spécialisé -> peut voir tout ce qui n'est pas "caché" pour lui
+        if (isSpecialized) return assigned.includes(agent.id);
         return true;
       });
     });
 
     if (compatibleAgents.length > 0) {
-      // Dispatching: Trier par nombre de commandes (le moins chargé en premier)
-      // et ajouter un peu de hasard pour les égalités
       const bestAgent = compatibleAgents.sort((a, b) => {
         const scoreA = getAgentScore(a.id);
         const scoreB = getAgentScore(b.id);
@@ -146,9 +137,11 @@ export const insertNewOrders = async (shopifyOrders: ShopifyOrder[]) => {
         where: { id: order.id },
         data: { agentId: bestAgent.id },
       });
-      console.log(`Commande #${order.orderNumber} assignée à l'agent ${bestAgent.id} (Score: ${getAgentScore(bestAgent.id)})`);
-    } else {
-      console.log(`Commande #${order.orderNumber} aucun agent compatible`);
+      
+      // Update local count for the next order in the loop
+      localCounts.set(bestAgent.id, getAgentScore(bestAgent.id) + 1);
+      
+      console.log(`Commande #${order.orderNumber} assignée à ${bestAgent.id}`);
     }
   }
 };
@@ -185,6 +178,7 @@ export const getOrders = async (user: UserLite) => {
     orderDate: o.orderDate.toISOString(),
     totalPrice: o.totalPrice,
     recallAt: o.recallAt?.toISOString() || null,
+    processingTimeMin: o.processingTimeMin,
     status: o.status ? { id: o.status.id, name: o.status.name } : null,
     agent: o.agent
       ? { id: o.agent.id, name: o.agent.name, phone: o.agent.phone }

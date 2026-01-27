@@ -31,11 +31,12 @@ export async function POST(req: NextRequest) {
 
     const orderData = JSON.parse(body);
 
-    // Shopify Order Webhook sends a single order object
-    // insertNewOrders expects an array
-    console.log(`Received Shopify webhook for order #${orderData.order_number}`);
+    console.log(`[Shopify Webhook] Received order #${orderData.order_number}. Acknowledging immediately.`);
     
-    await insertNewOrders([orderData]);
+    // Process in background
+    insertNewOrders([orderData])
+      .then(() => console.log(`[Shopify Webhook] Background processing completed for #${orderData.order_number}`))
+      .catch((err) => console.error(`[Shopify Webhook] Background processing failed for #${orderData.order_number}:`, err));
 
     return NextResponse.json({ success: true });
   } catch (error) {

@@ -13,7 +13,8 @@ import {
   FileBarChart2Icon,
   UsersIcon,
   TargetIcon,
-  DownloadIcon
+  DownloadIcon,
+  ClockIcon
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -64,6 +65,14 @@ export default function ReportingPage() {
   const handleExport = () => {
     // Simple mock export
     alert("Fonctionnalité d'exportation CSV en cours de développement.");
+  };
+
+  const formatDuration = (minutes: number) => {
+    if (!minutes) return "N/A";
+    if (minutes < 60) return `${minutes} min`;
+    const h = Math.floor(minutes / 60);
+    const m = minutes % 60;
+    return `${h}h ${m > 0 ? `${m}m` : ""}`;
   };
 
   return (
@@ -129,15 +138,15 @@ export default function ReportingPage() {
 
       {loading && !stats ? (
         <div className="flex flex-col gap-6 animate-pulse">
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-            {[1, 2, 3].map(i => <div key={i} className="h-32 bg-gray-100 rounded-xl"></div>)}
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+            {[1, 2, 3, 4].map(i => <div key={i} className="h-32 bg-gray-100 rounded-xl"></div>)}
           </div>
           <div className="h-96 bg-gray-100 rounded-xl"></div>
         </div>
       ) : stats && (
         <>
           {/* Summary Stats */}
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
             <StatsCard
               title="Ventes Totales"
               value={stats.totalRevenue.toLocaleString("fr-FR", { style: "currency", currency: "MRU" })}
@@ -156,6 +165,13 @@ export default function ReportingPage() {
               value={`${Math.round(stats.agentPerformance.reduce((acc: number, curr: any) => acc + curr.conversionRate, 0) / (stats.agentPerformance.length || 1))}%`}
               description="Taux global sur la période"
               icon={<TargetIcon className="h-5 w-5" />}
+            />
+            <StatsCard
+              title="Délai de Traitement"
+              value={formatDuration(stats.averageProcessingTime)}
+              description="Temps moyen avant 1er statut"
+              icon={<ClockIcon className="h-5 w-5" />}
+              className="border-l-4 border-l-blue-400"
             />
           </div>
 

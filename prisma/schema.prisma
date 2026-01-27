@@ -24,9 +24,15 @@ model User {
   updatedAt DateTime @updatedAt
   lastLoginAt    DateTime?
   lastLogoutAt   DateTime?
-
+  status        UserStatus @default(ACTIVE)
+  
   orders       Order[]
 
+}
+
+enum UserStatus {
+  ACTIVE
+  INACTIVE
 }
 
 enum Role {
@@ -57,7 +63,9 @@ model Order {
   status        Status?  @relation(fields: [statusId], references: [id])
   agentId       String?
   agent         User?    @relation(fields: [agentId], references: [id])
-  recallAt   DateTime?
+  recallAt      DateTime?
+  firstProcessedAt DateTime?
+  processingTimeMin Int?
   createdAt     DateTime @default(now())
   updatedAt     DateTime @updatedAt
 

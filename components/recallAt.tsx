@@ -4,13 +4,16 @@ import { Calendar } from "lucide-react";
 import { useState } from "react";
 import { Input } from "@/components/ui/input";
 import { Order } from "@/app/(dashboard)/list/orders/columns";
+import { cn } from "@/lib/utils";
 
 export const RecallCell = ({
   order,
   onChange,
+  readOnly,
 }: {
   order: Order;
   onChange: (orderId: string, date: string | null) => void;
+  readOnly?: boolean;
 }) => {
   const [open, setOpen] = useState(false);
 
@@ -25,6 +28,7 @@ export const RecallCell = ({
         }
         onBlur={() => setOpen(false)}
         className="h-8"
+        disabled={readOnly}
       />
     );
   }
@@ -33,8 +37,11 @@ export const RecallCell = ({
   return (
     <button
       type="button"
-      onClick={() => setOpen(true)}
-      className="flex items-center justify-center h-8 w-8 rounded hover:bg-muted"
+      onClick={() => !readOnly && setOpen(true)}
+      className={cn(
+        "flex items-center justify-center h-8 w-8 rounded transition-colors",
+        !readOnly ? "hover:bg-muted cursor-pointer" : "opacity-50 cursor-not-allowed"
+      )}
     >
       <Calendar className="h-4 w-4 text-muted-foreground" />
     </button>
