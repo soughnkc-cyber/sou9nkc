@@ -12,14 +12,14 @@ import { UserFormData } from "@/lib/schema";
 import { UserFormModal } from "@/components/forms/user-form-modal";
 import { DeleteUserModal } from "@/components/delete-modal";
 import { toast } from "sonner";
-import { getUsers, createUserAction, updateUserAction, deleteUserAction } from "@/lib/actions/users";
+import { getUsers, createUserAction, updateUserAction, deleteUserAction, toggleUserStatus } from "@/lib/actions/users";
 
 const percent = (value: number, total: number) => (total === 0 ? 0 : Math.round((value / total) * 100));
 
 const getUserStats = (users: User[]) => ({
   total: users.length,
-  active: users.filter((u) => u.status === "ONLINE").length,
-  inactive: users.filter((u) => u.status === "OFFLINE").length,
+  active: users.filter((u) => u.isActive).length,
+  inactive: users.filter((u) => !u.isActive).length,
   byRole: {
     ADMIN: users.filter((u) => u.role === "ADMIN").length,
     AGENT: users.filter((u) => u.role === "AGENT").length,
@@ -128,8 +128,19 @@ export default function UsersPage() {
     }
   }, [selectedUser, deleteModal]);
 
+  const handleToggleStatus = useCallback(async (user: User) => {
+    try {
+      const updated = await toggleUserStatus(user.id);
+      setUsers(prev => prev.map(u => u.id === user.id ? { ...u, isActive: updated.status === "ACTIVE" } : u));
+      toast.success(`Le compte de ${user.name} a été ${updated.status === "ACTIVE" ? "activé" : "désactivé"}`);
+    } catch (error: any) {
+      toast.error(error.message);
+    }
+  }, []);
+
   const stats = useMemo(() => getUserStats(users), [users]);
-  const columns = useMemo(() => getColumns(undefined, handleEditUser, handleDeleteUser), [
+  const columns = useMemo(() => getColumns(handleToggleStatus, undefined, handleEditUser, handleDeleteUser), [
+    handleToggleStatus,
     handleEditUser,
     handleDeleteUser,
   ]);

@@ -24,7 +24,15 @@ model User {
   updatedAt DateTime @updatedAt
   lastLoginAt    DateTime?
   lastLogoutAt   DateTime?
+  status        UserStatus @default(ACTIVE)
+  
+  orders       Order[]
 
+}
+
+enum UserStatus {
+  ACTIVE
+  INACTIVE
 }
 
 enum Role {
@@ -40,12 +48,12 @@ model Status {
   recallAfterH  Int?    
   createdAt     DateTime @default(now())
 
-   orders       Order[]
+  orders       Order[]
 }
 
 model Order {
   id            String   @id @default(cuid())
-  orderNumber   Int      @unique
+  orderNumber   Int     @unique
   customerName  String?
   customerPhone String?
   productNote   String?
@@ -53,8 +61,32 @@ model Order {
   totalPrice    Float
   statusId      String?
   status        Status?  @relation(fields: [statusId], references: [id])
-  recallAt   DateTime?
+  agentId       String?
+  agent         User?    @relation(fields: [agentId], references: [id])
+  recallAt      DateTime?
+  firstProcessedAt DateTime?
+  processingTimeMin Int?
   createdAt     DateTime @default(now())
   updatedAt     DateTime @updatedAt
+
+  products      Product[] 
 }
+
+
+model Product {
+  id          String   @id @default(cuid())
+  shopifyId   String   @unique
+  title       String
+  status      String
+  vendor      String?
+  productType String?
+  price       Float
+  assignedAgentIds   String[]  @default([]) // agents qui peuvent voir ce produit
+  hiddenForAgentIds  String[]  @default([])
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  orders             Order[]
+}
+
 

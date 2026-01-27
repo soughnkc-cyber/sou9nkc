@@ -20,6 +20,7 @@ export function createColumn<T>(config: {
   header: string;
   mobileLabel?: string;
   sortable?: boolean;
+  filterFn?: any;
   filterComponent?: (props: {
     column: Column<T, unknown>;
     table: Table<T>;
@@ -43,6 +44,14 @@ export function createColumn<T>(config: {
         config.header
       ),
     cell: config.cell,
+    enableColumnFilter: !!config.filterComponent,
+    filterFn: config.filterFn || ((row: any, id: string, filterValue: any) => {
+      if (Array.isArray(filterValue)) {
+        const val = row.getValue(id);
+        return filterValue.includes(val);
+      }
+      return true;
+    }),
     meta: {
       mobileLabel: config.mobileLabel ?? config.header,
       filterComponent: config.filterComponent,
@@ -143,4 +152,20 @@ declare module "@tanstack/react-table" {
       table: Table<TData>;
     }) => React.ReactNode;
   }
+}
+
+export function createFacetedFilter<T>(
+  title: string,
+  options: { label: string; value: string; icon?: React.ComponentType<{ className?: string }> }[]
+): (props: { column: Column<T, unknown>; table: Table<T> }) => React.ReactNode {
+  const { DataTableFacetedFilter } = require("./datatable-faceted-filter");
+  return function FacetedFilter({ column }) {
+    return (
+      <DataTableFacetedFilter
+        column={column}
+        title={title}
+        options={options}
+      />
+    );
+  };
 }

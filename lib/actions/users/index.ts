@@ -18,8 +18,10 @@ function mapUser(u: PrismaUser) {
     createdAt: u.createdAt.toISOString(),
     lastLoginAt: u.lastLoginAt?.toISOString() ?? undefined,
     lastLogoutAt: u.lastLogoutAt?.toISOString() ?? undefined,
+    isActive: u.status === "ACTIVE",
   };
 }
+
 export async function getUsers(): Promise<User[]> {
   const users = await prisma.user.findMany({
     orderBy: { createdAt: "desc" },
@@ -42,8 +44,28 @@ export async function getUsers(): Promise<User[]> {
       lastLogin: u.lastLoginAt?.toISOString(),
       lastLogout: u.lastLogoutAt?.toISOString(),
       status: online ? "ONLINE" : "OFFLINE",
+      isActive: u.status === "ACTIVE",
     };
   });
+}
+
+export async function toggleUserStatus(userId: string) {
+  try {
+    const user = await prisma.user.findUnique({ where: { id: userId } });
+    if (!user) throw new Error("Utilisateur non trouvé");
+
+    const newStatus = user.status === "ACTIVE" ? "INACTIVE" : "ACTIVE";
+
+    const updated = await prisma.user.update({
+      where: { id: userId },
+      data: { status: newStatus },
+    });
+
+    return { id: updated.id, status: updated.status };
+  } catch (err) {
+    console.error("Erreur toggleUserStatus:", err);
+    throw new Error("Impossible de changer le statut de l'utilisateur");
+  }
 }
 
 

@@ -94,7 +94,21 @@ export const updateOrderStatus = async (
       ? await prisma.status.findUnique({ where: { id: statusId } })
       : null;
 
+    const currentOrder = await prisma.order.findUnique({
+      where: { id: orderId },
+      select: { orderDate: true, firstProcessedAt: true }
+    });
+
     let data: any = { statusId };
+
+    if (currentOrder && !currentOrder.firstProcessedAt && statusId) {
+      const now = new Date();
+      const diffMs = now.getTime() - currentOrder.orderDate.getTime();
+      const diffMin = Math.round(diffMs / (1000 * 60));
+      
+      data.firstProcessedAt = now;
+      data.processingTimeMin = diffMin;
+    }
 
     // 🔹 Seulement si recallAfterH existe
     if (status?.recallAfterH != null) {
