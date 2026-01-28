@@ -20,7 +20,7 @@ const DashboardLayout = ({ children }: { children: React.ReactNode }) => {
           )}
         >
           <MenuBar />
-          <div className="p-6 flex-1">
+          <div className="p-6 flex-1 h-full">
               {children}
           </div>
         </main>
