@@ -224,3 +224,31 @@ export const updateOrderRecallAt = async (
     recallAt: order.recallAt ? order.recallAt.toISOString() : null,
   };
 };
+
+export const updateOrderAgent = async (orderId: string, agentId: string) => {
+// await checkPermission("canEditOrders"); // Permission removed as requested
+  const session = await getServerSession(authOptions);
+  if (!session) throw new Error("Unauthorized");
+
+  try {
+     const order = await prisma.order.update({
+      where: { id: orderId },
+      data: { agentId },
+      include: { agent: true, status: true }
+    });
+
+    revalidatePath("/");
+    
+    return {
+        ...order,
+        orderDate: order.orderDate.toISOString(),
+        recallAt: order.recallAt ? order.recallAt.toISOString() : null,
+        status: order.status ? { id: order.status.id, name: order.status.name } : null,
+        agent: order.agent ? { id: order.agent.id, name: order.agent.name, phone: order.agent.phone } : null
+    };
+
+  } catch (err) {
+    console.error("Erreur updateOrderAgent:", err);
+    throw new Error("Impossible de modifier l'agent");
+  }
+};

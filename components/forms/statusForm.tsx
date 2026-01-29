@@ -37,6 +37,7 @@ export function StatusForm({
     defaultValues: {
       name: status?.name || "",
       recallAfterH: status?.recallAfterH ?? undefined,
+      color: status?.color || "#6366f1",
     },
   });
 
@@ -94,6 +95,38 @@ export function StatusForm({
                 </FormControl>
                 <FormDescription>
                   Laisser vide si aucun rappel automatique
+                </FormDescription>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+
+          {/* Couleur */}
+          <FormField
+            control={form.control}
+            name="color"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Couleur</FormLabel>
+                <FormControl>
+                  <div className="flex items-center gap-3">
+                    <Input
+                      type="color"
+                      className="w-12 h-10 p-1 cursor-pointer"
+                      {...field}
+                      disabled={isLoading}
+                    />
+                    <Input
+                      placeholder="#000000"
+                      className="flex-1"
+                      {...field}
+                      disabled={isLoading}
+                      onChange={(e) => field.onChange(e.target.value)}
+                    />
+                  </div>
+                </FormControl>
+                <FormDescription>
+                  Couleur affichée pour ce statut
                 </FormDescription>
                 <FormMessage />
               </FormItem>

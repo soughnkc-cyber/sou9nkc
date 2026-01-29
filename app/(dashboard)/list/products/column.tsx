@@ -92,6 +92,11 @@ export const getColumns = (
     createColumn<Product>({
       accessorKey: "assignedAgentIds",
       header: "Assigné à",
+      filterFn: "arrIncludesSome",
+      filterComponent: createFacetedFilter(
+        "Agents assignés",
+        agents.map((a) => ({ label: a.name, value: a.id }))
+      ),
       cell: ({ row }) => (
         <AgentSelect
           options={agents}
@@ -106,6 +111,11 @@ export const getColumns = (
     createColumn<Product>({
       accessorKey: "hiddenForAgentIds",
       header: "Caché pour",
+      filterFn: "arrIncludesSome",
+      filterComponent: createFacetedFilter(
+        "Agents restreints",
+        agents.map((a) => ({ label: a.name, value: a.id }))
+      ),
       cell: ({ row }) => (
         <AgentSelect
           options={agents}

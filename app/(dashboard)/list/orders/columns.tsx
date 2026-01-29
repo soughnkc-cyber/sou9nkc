@@ -1,5 +1,3 @@
-"use client";
-
 import { ColumnDef } from "@tanstack/react-table";
 import { createColumn, createActionsColumn, createFacetedFilter } from "@/components/columns";
 import { Badge } from "@/components/ui/badge";
@@ -43,29 +41,68 @@ const StatusSelect = ({
   readOnly?: boolean;
 }) => {
   return (
-    <Select
-      value={order.status?.id ?? "none"}
-      onValueChange={(value) =>
-        onChange(order.id, value === "none" ? null : value)
-      }
-      disabled={readOnly}
-    >
-      <SelectTrigger className={cn("h-4 w-[120px]", readOnly && "opacity-50 cursor-not-allowed")}>
-        <SelectValue placeholder="Sans statut" />
-      </SelectTrigger>
+    <div onClick={(e) => e.stopPropagation()}>
+      <Select
+        value={order.status?.id}
+        onValueChange={(value) => onChange(order.id, value)}
+        disabled={readOnly}
+      >
+        <SelectTrigger className={cn("h-7 w-[130px] text-xs", readOnly && "opacity-50 cursor-not-allowed")}>
+          <SelectValue placeholder="Sélectionner" />
+        </SelectTrigger>
 
-      <SelectContent>
-        <SelectItem value="none">Sans statut</SelectItem>
-
-        {statuses.map((s) => (
-          <SelectItem key={s.id} value={s.id}>
-            {s.name}
-          </SelectItem>
-        ))}
-      </SelectContent>
-    </Select>
+        <SelectContent>
+          {statuses.map((s) => (
+            <SelectItem key={s.id} value={s.id}>
+              {s.name}
+            </SelectItem>
+          ))}
+        </SelectContent>
+      </Select>
+    </div>
   );
 };
+
+const AgentSelect = ({
+    order,
+    agents,
+    onChange,
+    readOnly,
+  }: {
+    order: Order;
+    agents: { id: string; name: string }[];
+    onChange: (orderId: string, agentId: string) => void;
+    readOnly?: boolean;
+  }) => {
+    return (
+      <div onClick={(e) => e.stopPropagation()}>
+        <Select
+          value={order.agent?.id ?? "unassigned"}
+          onValueChange={(value) => {
+              if (value !== "unassigned") onChange(order.id, value)
+          }}
+          disabled={readOnly}
+        >
+          <SelectTrigger className={cn("h-7 min-w-[130px] text-xs border-dashed", 
+              !order.agent && "text-muted-foreground",
+              readOnly && "opacity-50 cursor-not-allowed")}>
+            <div className="flex items-center gap-2">
+              <UserIcon className="h-3 w-3" />
+              <span className="truncate max-w-[100px]">{order.agent?.name || "Non affecté"}</span>
+            </div>
+          </SelectTrigger>
+    
+          <SelectContent>
+            {agents.map((a) => (
+              <SelectItem key={a.id} value={a.id}>
+                {a.name}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+      </div>
+    );
+  };
 
 const formatDateTime = (date?: string | null) => {
   if (!date) return "-";
@@ -96,13 +133,29 @@ export const getColumns = (
   role: string | undefined,
   canEditOrders: boolean,
   statuses: { id: string; name: string }[],
+  agents: { id: string; name: string }[],
+  productOptions: string[],
   onStatusChange: (orderId: string, statusId: string | null) => void,
+  onAssignAgent: (order: Order) => void,
   onRecallChange: (orderId: string, date: string | null) => void,
   onView?: (o: Order) => void,
   onEdit?: (o: Order) => void,
   onDelete?: (o: Order) => void
 ): ColumnDef<Order>[] => {
+  const isAdminOrSupervisor = role === "ADMIN" || role === "SUPERVISOR";
+
   const actions = [];
+  
+  // Action assigner agent (Admin/Super)
+  if (isAdminOrSupervisor) {
+      actions.push({ 
+          icon: UserIcon, 
+          onClick: onAssignAgent, 
+          className: "text-orange-600 hover:text-orange-800",
+          label: "Assigner" 
+      });
+  }
+
   if (onView)
     actions.push({ icon: Eye, onClick: onView, className: "text-blue-600 hover:text-blue-800" });
   if (onEdit)
@@ -110,67 +163,63 @@ export const getColumns = (
   if (onDelete)
     actions.push({ icon: Trash2, onClick: onDelete, className: "text-red-600 hover:text-red-800" });
 
+
   return [
     
     createColumn<Order>({
       accessorKey: "orderNumber",
-      header: "Numéro de commande",
+      header: "N°",
       sortable: true,
-      cell: ({ row }) => `#${row.original.orderNumber}`,
+      cell: ({ row }) => <span className="font-mono text-xs">#{row.original.orderNumber}</span>,
     }),
 
     createColumn<Order>({
       accessorKey: "productNote",
       header: "Produit(s)",
       sortable: false,
-      cell: ({ row }) => row.original.productNote ?? "-",
+      filterComponent: createFacetedFilter(
+        "Produit",
+        productOptions.map((p) => ({ label: p, value: p }))
+      ),
+      accessorFn: (row) => row.productNote, // For filtering
+      cell: ({ row }) => <span className="text-xs font-medium">{row.original.productNote ?? "-"}</span>,
     }),
 
     createColumn<Order>({
       accessorKey: "totalPrice",
-      header: "Prix total",
+      header: "Prix",
       sortable: true,
       cell: ({ row }) => <PriceBadge price={row.original.totalPrice} />,
     }),
 
-    createColumn<Order>({
-      accessorKey: "customerName",
-      header: "Nom du client",
-      sortable: true,
-      cell: ({ row }) => <span className="font-medium">{row.original.customerName}</span>,
-    }),
-    
-    createColumn<Order>({
-      accessorKey: "processingTimeMin",
-      header: "Délai",
-      sortable: true,
-      cell: ({ row }) => (
-        <Badge variant="outline" className="text-[10px] font-bold text-blue-600 bg-blue-50 border-blue-100">
-          {formatDuration(row.original.processingTimeMin)}
-        </Badge>
-      ),
-    }),
-
-    ...(role === "ADMIN" || role === "SUPERVISOR"
-      ? [
-          createColumn<Order>({
-            accessorKey: "agent",
-            header: "Agent Affecté",
-            sortable: true,
-            accessorFn: (row) => row.agent?.name,
-            cell: ({ row }) => (
-              <div className="flex items-center gap-2">
-                <div className="h-6 w-6 rounded-full bg-orange-100 flex items-center justify-center text-orange-600">
+    isAdminOrSupervisor
+      ? createColumn<Order>({
+          accessorKey: "agent",
+          header: "Agent",
+          sortable: true,
+          accessorFn: (row) => row.agent?.name || "Non affecté", // For sorting/filtering text
+          filterComponent: createFacetedFilter(
+             "Agent",
+             agents.map(a => ({ label: a.name, value: a.name }))
+          ),
+          cell: ({ row }) => (
+             <div className="flex items-center gap-2">
+                <div className={cn("h-6 w-6 rounded-full flex items-center justify-center", 
+                    row.original.agent ? "bg-blue-100 text-blue-600" : "bg-gray-100 text-gray-400")}>
                   <UserIcon className="h-3 w-3" />
                 </div>
-                <span className="text-xs font-semibold text-gray-700">
+                <span className={cn("text-xs font-medium", !row.original.agent && "text-gray-400 italic")}>
                   {row.original.agent?.name || "Non affecté"}
                 </span>
               </div>
-            ),
-          }),
-        ]
-      : []),
+          ),
+        })
+      : createColumn<Order>({
+          accessorKey: "customerName",
+          header: "Client", // Show client instead of agent for agents themselves
+          sortable: true,
+          cell: ({ row }) => <span className="font-medium text-xs">{row.original.customerName}</span>,
+      }),
 
     createColumn<Order>({
       accessorKey: "status",
@@ -206,9 +255,11 @@ export const getColumns = (
       sortable: true,
       cell: ({ row }) => formatDateTime(row.original.orderDate),
     }),
+    
     createColumn<Order>({
       accessorKey: "recallAt",
-      header: "Date de rappel",
+      header: "Rappel",
+      sortable: true,
       cell: ({ row }) => {
         return (
           <RecallCell
@@ -218,6 +269,17 @@ export const getColumns = (
           />
         );
       },
+    }),
+
+    createColumn<Order>({
+      accessorKey: "processingTimeMin",
+      header: "Délai",
+      sortable: true,
+      cell: ({ row }) => (
+        <Badge variant="outline" className="text-[10px] whitespace-nowrap text-blue-600 bg-blue-50 border-blue-100">
+          {formatDuration(row.original.processingTimeMin)}
+        </Badge>
+      ),
     }),
 
 

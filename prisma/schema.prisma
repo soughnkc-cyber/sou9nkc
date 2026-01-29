@@ -65,6 +65,8 @@ model Status {
   id            String   @id @default(cuid())
   name          String   @unique
   recallAfterH  Int?    
+  color         String   @default("#6366f1") // Indigo default
+  isArchived    Boolean  @default(false)
   createdAt     DateTime @default(now())
 
   orders       Order[]

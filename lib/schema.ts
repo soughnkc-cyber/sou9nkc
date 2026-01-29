@@ -58,6 +58,7 @@ export const statusFormSchema = z.object({
     .int()
     .min(1)
     .optional(),
+  color: z.string(),
 });
 
 

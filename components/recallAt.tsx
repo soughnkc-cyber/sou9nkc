@@ -4,7 +4,7 @@ import { Calendar } from "lucide-react";
 import { useState } from "react";
 import { Input } from "@/components/ui/input";
 import { Order } from "@/app/(dashboard)/list/orders/columns";
-import { cn } from "@/lib/utils";
+import { cn, formatSmartDate } from "@/lib/utils";
 
 export const RecallCell = ({
   order,
@@ -17,33 +17,46 @@ export const RecallCell = ({
 }) => {
   const [open, setOpen] = useState(false);
 
-  // 🔹 Si date existe → input direct
-  if (order.recallAt || open) {
+  // 🔹 Si open ou (pas de date et pas readOnly) -> input
+  // Mais si date existe, on affiche le texte formatted, et au clic on ouvre
+  if (open) {
     return (
       <Input
         type="datetime-local"
         value={order.recallAt?.slice(0, 16) ?? ""}
+        autoFocus
         onChange={(e) =>
           onChange(order.id, e.target.value || null)
         }
         onBlur={() => setOpen(false)}
-        className="h-8"
+        className="h-8 w-[180px]"
         disabled={readOnly}
       />
     );
   }
 
-  // 🔹 Sinon → icône calendrier cliquable
   return (
-    <button
-      type="button"
+    <div
       onClick={() => !readOnly && setOpen(true)}
       className={cn(
-        "flex items-center justify-center h-8 w-8 rounded transition-colors",
-        !readOnly ? "hover:bg-muted cursor-pointer" : "opacity-50 cursor-not-allowed"
+        "flex items-center h-8 px-2 rounded transition-colors text-sm",
+        !readOnly ? "hover:bg-muted cursor-pointer" : "opacity-50 cursor-not-allowed",
+        !order.recallAt && "text-muted-foreground italic"
       )}
     >
-      <Calendar className="h-4 w-4 text-muted-foreground" />
-    </button>
+      {order.recallAt ? (
+        <span className={cn(
+           // Color logic could go here (e.g. red if past and not validated)
+           "whitespace-nowrap"
+        )}>
+          {formatSmartDate(order.recallAt)}
+        </span>
+      ) : (
+        <span className="flex items-center gap-2">
+           <Calendar className="h-4 w-4" /> 
+           <span className="text-xs">Ajouter</span>
+        </span>
+      )}
+    </div>
   );
 };

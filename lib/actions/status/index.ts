@@ -21,6 +21,7 @@ function mapStatus(s: PrismaStatus): Status {
   return {
     id: s.id,
     name: s.name,
+    color: s.color,
     recallAfterH: s.recallAfterH ?? undefined,
     createdAt: s.createdAt.toISOString(),
   };
@@ -33,7 +34,7 @@ export async function getStatus(): Promise<Status[]> {
   await checkPermission("canViewStatuses");
   
   const status = await prisma.status.findMany({
-
+    where: { isArchived: false },
     orderBy: { createdAt: "desc" },
   });
 
@@ -51,6 +52,7 @@ export async function createStatusAction(data: StatusFormData) {
       data: {
         name: data.name,
         recallAfterH: data.recallAfterH,
+        color: data.color || "#6366f1",
       },
     });
 
@@ -77,6 +79,7 @@ export async function updateStatusAction(
       data: {
         name: data.name,
         recallAfterH: data.recallAfterH,
+        color: data.color,
       },
     });
 
@@ -90,23 +93,41 @@ export async function updateStatusAction(
 
 
 /* =========================
-   DELETE
+   DELETE (SOFT)
 ========================= */
 export async function deleteStatusAction(statusId: string) {
   await checkPermission("canEditStatuses");
   
   try {
-    const status = await prisma.status.delete({
-
+    // Soft delete: marks as archived
+    const status = await prisma.status.update({
       where: { id: statusId },
+      data: { isArchived: true },
     });
 
-    revalidatePath("/");
     return mapStatus(status);
 
   } catch (err) {
     console.error("Erreur deleteStatusAction:", err);
     throw new Error("Impossible de supprimer le statut");
+  }
+}
+
+export async function deleteStatusesAction(statusIds: string[]) {
+  await checkPermission("canEditStatuses");
+  
+  try {
+    // Soft delete many
+    const result = await prisma.status.updateMany({
+      where: {
+        id: { in: statusIds },
+      },
+      data: { isArchived: true },
+    });
+    return result;
+  } catch (err) {
+    console.error("Erreur deleteStatusesAction:", err);
+    throw new Error("Impossible de supprimer les statuts");
   }
 }
 
@@ -153,7 +174,6 @@ export const updateOrderStatus = async (
       include: { status: true },
     });
 
-    revalidatePath("/");
     return {
       ...order,
       recallAt: order.recallAt ? order.recallAt.toISOString() : null,

@@ -40,6 +40,8 @@ import {
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
+import { DataTableViewOptions } from "@/components/datatable-view-options";
+
 interface DataTableProps<TData, TValue> {
   columns: ColumnDef<TData, TValue>[];
   data: TData[];
@@ -49,6 +51,7 @@ interface DataTableProps<TData, TValue> {
   showSearch?: boolean;
   showFilters?: boolean;
   showPagination?: boolean;
+  showViewOptions?: boolean;
   className?: string;
   onSelectionChange?: (selectedRows: TData[]) => void;
   extraSearchActions?: React.ReactNode;
@@ -64,6 +67,7 @@ export function DataTable<TData, TValue>({
   showSearch = true,
   showFilters = true,
   showPagination = true,
+  showViewOptions = true,
   className,
   onSelectionChange,
   extraSearchActions,
@@ -75,6 +79,9 @@ export function DataTable<TData, TValue>({
   const [isFilterOpen, setIsFilterOpen] = useState(false);
 
 
+  /* Visibility state */
+  const [columnVisibility, setColumnVisibility] = useState({});
+
   const table = useReactTable({
     data,
     columns,
@@ -83,10 +90,12 @@ export function DataTable<TData, TValue>({
       columnFilters,
       globalFilter,
       rowSelection,
+      columnVisibility,
     },
     onSortingChange: setSorting,
     onColumnFiltersChange: setColumnFilters,
     onGlobalFilterChange: setGlobalFilter,
+    onColumnVisibilityChange: setColumnVisibility,
     onRowSelectionChange: (updater) => {
       const newVal = typeof updater === "function" ? updater(rowSelection) : updater;
       setRowSelection(newVal);
@@ -150,6 +159,8 @@ export function DataTable<TData, TValue>({
               {isFilterOpen && <X className="h-4 w-4 ml-2" />}
             </Button>
           )}
+
+          {showViewOptions && <DataTableViewOptions table={table} />}
         </div>
 
 

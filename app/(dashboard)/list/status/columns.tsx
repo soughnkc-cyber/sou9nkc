@@ -1,13 +1,14 @@
 "use client";
 
 import { ColumnDef } from "@tanstack/react-table";
-import { createColumn, createActionsColumn } from "@/components/columns";
+import { createColumn, createActionsColumn, createSelectColumn } from "@/components/columns";
 import { Badge } from "@/components/ui/badge";
 import { Edit, Trash2, Eye, Clock } from "lucide-react";
 
 export interface Status {
   id: string;
   name: string;
+  color: string;
   recallAfterH?: number | null;
   createdAt: string;
 }
@@ -54,13 +55,17 @@ export const getColumns = (
     actions.push({ icon: Trash2, onClick: onDelete, className: "text-red-600 hover:text-red-800" });
 
   return [
+    createSelectColumn<Status>(),
     createColumn<Status>({
       accessorKey: "name",
       header: "Nom du statut",
       sortable: true,
       cell: ({ row }) => (
         <div className="flex items-center gap-3">
-          <div className="h-8 w-8 rounded-full bg-indigo-600 flex items-center justify-center">
+          <div 
+            className="h-8 w-8 rounded-full flex items-center justify-center border border-gray-200"
+            style={{ backgroundColor: row.original.color || "#6366f1" }}
+          >
             <Clock className="h-4 w-4 text-white" />
           </div>
           <span className="font-medium">{row.original.name}</span>
