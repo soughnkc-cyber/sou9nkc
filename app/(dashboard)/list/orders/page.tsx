@@ -20,6 +20,9 @@ import {
 /* Actions */
 import { getOrders, insertNewOrders, updateOrderRecallAt } from "@/lib/actions/orders";
 import { getStatus, updateOrderStatus } from "@/lib/actions/status";
+import { getMe } from "@/lib/actions/users";
+import PermissionDenied from "@/components/permission-denied";
+
 
 export default function OrdersPage() {
   const session = useSession();
@@ -30,6 +33,8 @@ export default function OrdersPage() {
   const [orders, setOrders] = useState<Order[]>([]);
   const [statuses, setStatuses] = useState<{ id: string; name: string }[]>([]);
   const [isLoadingPage, setIsLoadingPage] = useState(false);
+  const [hasPermission, setHasPermission] = useState<boolean | null>(null);
+
 
   // --------------------
   // Redirection si non connecté
@@ -39,6 +44,17 @@ export default function OrdersPage() {
       redirect("/auth/signin");
     }
   }, [session.status]);
+
+  useEffect(() => {
+    getMe().then(user => {
+      if (user?.canViewOrders) {
+        setHasPermission(true);
+      } else {
+        setHasPermission(false);
+      }
+    });
+  }, []);
+
 
   const user = session.data?.user;
 
@@ -116,11 +132,12 @@ export default function OrdersPage() {
   // useEffect
   // --------------------
   useEffect(() => {
-    if (user) {
+    if (hasPermission) {
       fetchOrders();
       fetchStatuses();
     }
-  }, [user, fetchOrders, fetchStatuses]);
+  }, [hasPermission, fetchOrders, fetchStatuses]);
+
 
   // --------------------
   // Mémo
@@ -133,17 +150,32 @@ export default function OrdersPage() {
     [orders]
   );
 
-  const columns = useMemo(
-    () => getColumns(user?.role, statuses, handleStatusChange, handleRecallChange),
-    [statuses, user?.role]
-  );
+  const columns = useMemo(() => {
+    // Rule: ADMIN and SUPERVISOR are ALWAYS read-only for orders
+    const isManagement = user?.role === "ADMIN" || user?.role === "SUPERVISOR";
+    const canEdit = isManagement ? false : !!(user as any)?.canEditOrders;
+    
+    return getColumns(user?.role, canEdit, statuses, handleStatusChange, handleRecallChange);
+  }, [statuses, user?.role, (user as any)?.canEditOrders, handleStatusChange, handleRecallChange]);
+
+
+
 
   // --------------------
   // Rendu
   // --------------------
-  if (session.status === "loading") {
-    return <div>Chargement...</div>;
+  if (session.status === "loading" || hasPermission === null) {
+    return (
+      <div className="flex items-center justify-center min-h-[60vh]">
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+      </div>
+    );
   }
+
+  if (hasPermission === false) {
+    return <PermissionDenied />;
+  }
+
 
   return (
     <div className="p-6 space-y-6">

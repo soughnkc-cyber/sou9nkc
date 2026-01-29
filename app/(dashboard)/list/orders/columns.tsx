@@ -94,6 +94,7 @@ const PriceBadge = ({ price }: { price: number }) => (
 /* -------- Columns -------- */
 export const getColumns = (
   role: string | undefined,
+  canEditOrders: boolean,
   statuses: { id: string; name: string }[],
   onStatusChange: (orderId: string, statusId: string | null) => void,
   onRecallChange: (orderId: string, date: string | null) => void,
@@ -181,13 +182,12 @@ export const getColumns = (
       ),
       accessorFn: (row) => row.status?.name,
       cell: ({ row }) => {
-        const isAdminOrSupervisor = role === "ADMIN" || role === "SUPERVISOR";
         return (
           <StatusSelect
             order={row.original}
             statuses={statuses}
             onChange={onStatusChange}
-            readOnly={isAdminOrSupervisor}
+            readOnly={!canEditOrders}
           />
         );
       },
@@ -210,16 +210,16 @@ export const getColumns = (
       accessorKey: "recallAt",
       header: "Date de rappel",
       cell: ({ row }) => {
-        const isAdminOrSupervisor = role === "ADMIN" || role === "SUPERVISOR";
         return (
           <RecallCell
             order={row.original}
             onChange={onRecallChange}
-            readOnly={isAdminOrSupervisor}
+            readOnly={!canEditOrders}
           />
         );
       },
     }),
+
 
     ...(actions.length ? [createActionsColumn<Order>(actions)] : []),
   ];

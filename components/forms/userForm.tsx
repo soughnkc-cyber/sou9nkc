@@ -22,11 +22,17 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Button } from "@/components/ui/button";
-import { Eye, EyeOff } from "lucide-react";
+import { Eye, EyeOff, ShieldCheck } from "lucide-react";
+
 import { useState } from "react";
 import { cn } from "@/lib/utils";
 import { UserFormData, userFormSchema } from "@/lib/schema";
 import { User } from "@/app/(dashboard)/list/users/columns";
+import { useSession } from "next-auth/react";
+import { Checkbox } from "@/components/ui/checkbox";
+import { Separator } from "@/components/ui/separator";
+
+
 
 interface UserFormProps {
   user?: User | null;
@@ -35,18 +41,67 @@ interface UserFormProps {
   isEditMode?: boolean;
 }
 
+function PermissionCheckbox({ control, name, label, disabled }: { control: any; name: string; label: string; disabled?: boolean }) {
+  return (
+    <FormField
+      control={control}
+      name={name}
+      render={({ field }) => (
+        <FormItem className={cn("flex flex-row items-start space-x-3 space-y-0 p-2", disabled && "opacity-50")}>
+          <FormControl>
+            <Checkbox
+              checked={field.value}
+              onCheckedChange={field.onChange}
+              disabled={disabled}
+            />
+          </FormControl>
+          <div className="space-y-1 leading-none">
+            <FormLabel className="text-sm font-medium cursor-pointer">
+              {label}
+            </FormLabel>
+          </div>
+        </FormItem>
+      )}
+    />
+  );
+}
+
+
 export function UserForm({ user, onSubmit, isLoading = false, isEditMode = false }: UserFormProps) {
+
   const [showPassword, setShowPassword] = useState(false);
 
-  const form = useForm<UserFormData>({
+  const form = useForm<any>({
     resolver: zodResolver(userFormSchema),
     defaultValues: {
       name: user?.name || "",
       phone: user?.phone || "",
       password: "",
       role: user?.role || "AGENT_TEST",
+      iconColor: user?.iconColor || "#2563eb",
+      roleColor: user?.roleColor || "#f3f4f6",
+      paymentRemainingDays: user?.paymentRemainingDays ?? 0,
+      paymentDefaultDays: user?.paymentDefaultDays ?? 0,
+      // Permissions
+      canViewOrders: user?.canViewOrders || false,
+      canEditOrders: user?.canEditOrders || false,
+      canViewUsers: user?.canViewUsers || false,
+      canEditUsers: user?.canEditUsers || false,
+      canViewProducts: user?.canViewProducts || false,
+      canEditProducts: user?.canEditProducts || false,
+      canViewStatuses: user?.canViewStatuses || false,
+      canEditStatuses: user?.canEditStatuses || false,
+      canViewReporting: user?.canViewReporting || false,
+      canViewDashboard: user?.canViewDashboard || false,
     },
   });
+
+
+
+
+  const { data: session } = useSession();
+  const isAdmin = session?.user?.role === "ADMIN";
+
 
   const handleSubmit = async (data: UserFormData) => {
     if (isEditMode && data.password === "") {
@@ -182,7 +237,175 @@ export function UserForm({ user, onSubmit, isLoading = false, isEditMode = false
               </FormItem>
             )}
           />
+
+          {/* Couleurs */}
+          <FormField
+            control={form.control}
+            name="iconColor"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Couleur de l'icône</FormLabel>
+                <FormControl>
+                  <div className="flex gap-2 items-center">
+                    <Input 
+                      type="color" 
+                      {...field}
+                      className="w-12 h-10 p-1 cursor-pointer"
+                      disabled={isLoading}
+                    />
+                    <Input 
+                      {...field}
+                      placeholder="#2563eb"
+                      disabled={isLoading}
+                    />
+                  </div>
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+
+          <FormField
+            control={form.control}
+            name="roleColor"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Couleur du rôle (Badge)</FormLabel>
+                <FormControl>
+                  <div className="flex gap-2 items-center">
+                    <Input 
+                      type="color" 
+                      {...field}
+                      className="w-12 h-10 p-1 cursor-pointer"
+                      disabled={isLoading}
+                    />
+                    <Input 
+                      {...field}
+                      placeholder="#f3f4f6"
+                      disabled={isLoading}
+                    />
+                  </div>
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+
+          {/* Champs admin seulement: Paiement */}
+          {isAdmin && (
+
+            <>
+              <FormField
+                control={form.control}
+                name="paymentDefaultDays"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Nombre de jours par défaut (Paiement)</FormLabel>
+                    <FormControl>
+                      <Input 
+                        type="number"
+                        {...field}
+                        disabled={isLoading}
+                      />
+                    </FormControl>
+                    <FormDescription>
+                      Le cycle total (ex: 30 jours)
+                    </FormDescription>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              <FormField
+                control={form.control}
+                name="paymentRemainingDays"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Jours restants avant paiement</FormLabel>
+                    <FormControl>
+                      <Input 
+                        type="number"
+                        {...field}
+                        disabled={isLoading}
+                      />
+                    </FormControl>
+                    <FormDescription>
+                      Ce nombre se décrémentera (0 = jour de paie)
+                    </FormDescription>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+            </>
+          )}
         </div>
+
+
+        {/* Permissions Section (Admin only) */}
+        {isAdmin && (
+          <div className="space-y-4 pt-4 border-t">
+            <div className="flex items-center gap-2 text-blue-600">
+              <ShieldCheck className="h-5 w-5" />
+              <h3 className="text-lg font-semibold">Permissions pour le rôle {form.watch("role")}</h3>
+            </div>
+            
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-y-4 gap-x-8 p-4 bg-gray-50 rounded-lg border">
+              {/* Ces permissions sont visibles pour TOUS les rôles */}
+              <PermissionCheckbox control={form.control} name="canViewDashboard" label="Voir le Dashboard" />
+              <PermissionCheckbox 
+                control={form.control} 
+                name="canViewOrders" 
+                label="Voir Commandes" 
+              />
+              <PermissionCheckbox 
+                control={form.control} 
+                name="canEditOrders" 
+                label="Modifier Commandes" 
+                disabled={form.watch("role") === "ADMIN" || form.watch("role") === "SUPERVISOR"}
+              />
+
+              {/* Utilisateurs: ADMIN uniquement */}
+              {form.watch("role") === "ADMIN" && (
+                <>
+                  <div className="col-span-full h-px bg-gray-200 my-1" />
+                  <PermissionCheckbox control={form.control} name="canViewUsers" label="Voir Utilisateurs" />
+                  <PermissionCheckbox control={form.control} name="canEditUsers" label="Modifier Utilisateurs" />
+                </>
+              )}
+
+              {/* Produits: ADMIN & SUPERVISOR uniquement */}
+              {(form.watch("role") === "ADMIN" || form.watch("role") === "SUPERVISOR") && (
+                <>
+                  <div className="col-span-full h-px bg-gray-200 my-1" />
+                  <PermissionCheckbox control={form.control} name="canViewProducts" label="Voir Produits" />
+                  <PermissionCheckbox control={form.control} name="canEditProducts" label="Modifier Produits" />
+                </>
+              )}
+
+              {/* Status: ADMIN uniquement */}
+              {form.watch("role") === "ADMIN" && (
+                <>
+                  <div className="col-span-full h-px bg-gray-200 my-1" />
+                  <PermissionCheckbox control={form.control} name="canViewStatuses" label="Voir Status" />
+                  <PermissionCheckbox control={form.control} name="canEditStatuses" label="Modifier Status" />
+                </>
+              )}
+
+              {/* Reporting: ADMIN & SUPERVISOR uniquement */}
+              {(form.watch("role") === "ADMIN" || form.watch("role") === "SUPERVISOR") && (
+                <>
+                  <div className="col-span-full h-px bg-gray-200 my-1" />
+                  <PermissionCheckbox control={form.control} name="canViewReporting" label="Voir le Reporting" />
+                </>
+              )}
+            </div>
+            <p className="text-xs text-gray-400 italic">
+              * Note: Certaines permissions sont automatiquement masquées car elles ne s'appliquent pas au rôle sélectionné.
+            </p>
+          </div>
+        )}
+
+
 
         {/* Boutons d'action */}
         <div className="flex justify-end gap-3 pt-4 border-t">

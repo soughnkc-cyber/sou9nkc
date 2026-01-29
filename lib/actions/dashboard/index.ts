@@ -2,8 +2,11 @@
 
 import prisma from "@/lib/prisma";
 import { startOfMonth, endOfMonth, subMonths, startOfDay, endOfDay } from "date-fns";
+import { checkPermission } from "../auth-helper";
 
 export async function getAdminStats() {
+  await checkPermission("canViewDashboard");
+
   const now = new Date();
   const currentMonthStart = startOfMonth(now);
   const currentMonthEnd = endOfMonth(now);
@@ -101,6 +104,8 @@ export async function getAdminStats() {
 }
 
 export async function getAgentStats(agentId: string) {
+  await checkPermission("canViewDashboard");
+
   const now = new Date();
   const currentMonthStart = startOfMonth(now);
   const currentMonthEnd = endOfMonth(now);

@@ -13,7 +13,27 @@ export const userFormSchema = z.object({
   role: z.enum(["ADMIN", "AGENT", "SUPERVISOR", "AGENT_TEST"], {
     message: "Veuillez sélectionner un rôle",
   }),
+  iconColor: z.string(),
+  roleColor: z.string(),
+  paymentRemainingDays: z.coerce.number().int().min(0),
+  paymentDefaultDays: z.coerce.number().int().min(0),
+
+  // Permissions
+  canViewOrders: z.boolean().optional(),
+  canEditOrders: z.boolean().optional(),
+  canViewUsers: z.boolean().optional(),
+  canEditUsers: z.boolean().optional(),
+  canViewProducts: z.boolean().optional(),
+  canEditProducts: z.boolean().optional(),
+  canViewStatuses: z.boolean().optional(),
+  canEditStatuses: z.boolean().optional(),
+  canViewReporting: z.boolean().optional(),
+  canViewDashboard: z.boolean().optional(),
 });
+
+
+
+
 
 export type UserFormData = z.infer<typeof userFormSchema>;
 

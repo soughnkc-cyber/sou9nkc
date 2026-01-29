@@ -20,6 +20,9 @@ import {
 /* Modals */
 import { StatusFormModal } from "@/components/forms/status-form-modal";
 import { DeleteStatusModal } from "@/components/delete-modal";
+import { getMe } from "@/lib/actions/users";
+import PermissionDenied from "@/components/permission-denied";
+
 
 
 const getStatusStats = (statuses: Status[]) => ({
@@ -32,6 +35,8 @@ export default function StatusPage() {
   const [statuses, setStatuses] = useState<Status[]>([]);
   const [selectedStatus, setSelectedStatus] = useState<Status | null>(null);
   const [isLoadingPage, setIsLoadingPage] = useState(false);
+  const [hasPermission, setHasPermission] = useState<boolean | null>(null);
+
 
   /* Modals */
   const addModal = useModal();
@@ -53,8 +58,16 @@ export default function StatusPage() {
   }, []);
 
   useEffect(() => {
-    fetchStatuses();
+    getMe().then(user => {
+      if (user?.canViewStatuses) {
+        setHasPermission(true);
+        fetchStatuses();
+      } else {
+        setHasPermission(false);
+      }
+    });
   }, [fetchStatuses]);
+
 
   /* Handlers */
   const handleAdd = () => {
@@ -128,8 +141,16 @@ export default function StatusPage() {
     []
   );
 
+  if (hasPermission === false) return <PermissionDenied />;
+  if (hasPermission === null) return (
+    <div className="flex items-center justify-center min-h-[60vh]">
+      <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+    </div>
+  );
+
   return (
     <div className="p-6 space-y-6">
+
       {/* Header */}
       <div className="flex flex-col lg:flex-row justify-between gap-4">
         <div>

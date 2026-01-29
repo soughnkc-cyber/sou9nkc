@@ -51,6 +51,7 @@ const StatusBadge = ({ status }: { status: string }) => (
 export const getColumns = (
   agents: Option[],
   onUpdateAgents: (productId: string, data: { assignedAgentIds?: string[]; hiddenForAgentIds?: string[] }) => void,
+  canEditProducts: boolean,
   onView?: (p: Product) => void,
   onEdit?: (p: Product) => void,
   onDelete?: (p: Product) => void
@@ -97,6 +98,7 @@ export const getColumns = (
           selected={row.original.assignedAgentIds || []}
           onChange={(selected) => onUpdateAgents(row.original.id, { assignedAgentIds: selected })}
           placeholder="Agents assignés"
+          disabled={!canEditProducts}
         />
       ),
     }),
@@ -110,6 +112,7 @@ export const getColumns = (
           selected={row.original.hiddenForAgentIds || []}
           onChange={(selected) => onUpdateAgents(row.original.id, { hiddenForAgentIds: selected })}
           placeholder="Agents restreints"
+          disabled={!canEditProducts}
         />
       ),
     }),
