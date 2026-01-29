@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useCallback, useMemo } from "react";
 import { useSession } from "next-auth/react";
-import { redirect } from "next/navigation";
+import { redirect, useSearchParams } from "next/navigation";
 import { toast } from "sonner";
 
 import { DataTable } from "@/components/datatable";
@@ -38,6 +38,10 @@ export default function OrdersPage() {
   const [agents, setAgents] = useState<{ id: string; name: string }[]>([]);
   const [isLoadingPage, setIsLoadingPage] = useState(false);
   const [hasPermission, setHasPermission] = useState<boolean | null>(null);
+  
+  // Read URL query params for filtering
+  const searchParams = useSearchParams();
+  const filterType = searchParams.get("filter"); // "processed", "toprocess", or "torecall"
 
 
   // --------------------
@@ -165,24 +169,41 @@ export default function OrdersPage() {
   // --------------------
   // Mémo
   // --------------------
+  
+  // Apply filter based on URL query param
+  const filteredOrders = useMemo(() => {
+    if (!filterType) return orders;
+    
+    switch (filterType) {
+      case "processed":
+        // Orders with status
+        return orders.filter(order => order.status !== null && order.status !== undefined);
+      
+      case "toprocess":
+        // Orders without status
+        return orders.filter(order => !order.status);
+      
+      case "torecall":
+        // Orders with recallAt defined
+        return orders.filter(order => order.recallAt !== null && order.recallAt !== undefined);
+      
+      default:
+        return orders;
+    }
+  }, [orders, filterType]);
+
   const stats = useMemo(
     () => ({
-      total: orders.length,
-      totalRevenue: orders.reduce((sum, o) => sum + o.totalPrice, 0),
+      total: filteredOrders.length,
+      totalRevenue: filteredOrders.reduce((sum, o) => sum + o.totalPrice, 0),
     }),
-    [orders]
+    [filteredOrders]
   );
-  
+
   const productOptions = useMemo(() => {
-     // Extract unique product notes (or split them if comma separated?)
-     // The user asked for "Products" filter. `productNote` often contains "Produit A, Produit B".
-     // Simple approach: just unique values of the full string for now, or split.
-     // Let's split by comma to give more granular filters if meaningful.
-     // But `productNote` is just a string in `Order` type on client (based on `columns.tsx`).
-     // Let's keep it simple: Unique full strings first.
-     const notes = new Set(orders.map(o => o.productNote).filter(Boolean) as string[]);
+     const notes = new Set(filteredOrders.map(o => o.productNote).filter(Boolean) as string[]);
      return Array.from(notes);
-  }, [orders]);
+  }, [filteredOrders]);
 
   // --------------------
   // Modal d'assignation
@@ -294,7 +315,7 @@ export default function OrdersPage() {
         <CardContent>
           <DataTable<Order, unknown>
             columns={columns}
-            data={orders}
+            data={filteredOrders}
             searchPlaceholder="Rechercher une commande..."
             pageSizeOptions={[5, 10, 20]}
             defaultPageSize={10}

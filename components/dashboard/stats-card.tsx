@@ -3,6 +3,7 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { cn } from "@/lib/utils";
 import { ArrowDownIcon, ArrowUpIcon } from "lucide-react";
+import Link from "next/link";
 
 interface StatsCardProps {
   title: string;
@@ -14,6 +15,7 @@ interface StatsCardProps {
   };
   icon?: React.ReactNode;
   className?: string;
+  href?: string; // Add href for navigation
 }
 
 export function StatsCard({
@@ -23,9 +25,10 @@ export function StatsCard({
   trend,
   icon,
   className,
+  href,
 }: StatsCardProps) {
-  return (
-    <Card className={cn("overflow-hidden group", className)}>
+  const cardContent = (
+    <>
       <CardHeader className="flex flex-row items-center justify-between pb-2">
         <CardTitle className="text-sm font-medium text-muted-foreground">
           {title}
@@ -57,6 +60,22 @@ export function StatsCard({
           </p>
         )}
       </CardContent>
+    </>
+  );
+
+  if (href) {
+    return (
+      <Link href={href} className="block h-full">
+        <Card className={cn("overflow-hidden group cursor-pointer transition-all hover:shadow-lg hover:scale-[1.02] h-full", className)}>
+          {cardContent}
+        </Card>
+      </Link>
+    );
+  }
+
+  return (
+    <Card className={cn("overflow-hidden group h-full", className)}>
+      {cardContent}
     </Card>
   );
 }
