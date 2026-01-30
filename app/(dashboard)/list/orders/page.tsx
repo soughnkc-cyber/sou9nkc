@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useCallback, useMemo } from "react";
 import { useSession } from "next-auth/react";
-import { redirect } from "next/navigation";
+import { redirect, useSearchParams } from "next/navigation";
 import { toast } from "sonner";
 
 import { DataTable } from "@/components/datatable";
@@ -18,8 +18,14 @@ import {
 } from "@/components/ui/card";
 
 /* Actions */
-import { getOrders, insertNewOrders, updateOrderRecallAt } from "@/lib/actions/orders";
+import { getOrders, insertNewOrders, updateOrderRecallAt, updateOrderAgent } from "@/lib/actions/orders";
 import { getStatus, updateOrderStatus } from "@/lib/actions/status";
+import { getMe, getAgents } from "@/lib/actions/users";
+import PermissionDenied from "@/components/permission-denied";
+
+
+import { AgentAssignmentModal } from "@/components/forms/agent-assignment-modal";
+import { AgentAssignmentData } from "@/components/forms/agent-assignment-form";
 
 export default function OrdersPage() {
   const session = useSession();
@@ -29,7 +35,14 @@ export default function OrdersPage() {
   // --------------------
   const [orders, setOrders] = useState<Order[]>([]);
   const [statuses, setStatuses] = useState<{ id: string; name: string }[]>([]);
+  const [agents, setAgents] = useState<{ id: string; name: string }[]>([]);
   const [isLoadingPage, setIsLoadingPage] = useState(false);
+  const [hasPermission, setHasPermission] = useState<boolean | null>(null);
+  
+  // Read URL query params for filtering
+  const searchParams = useSearchParams();
+  const filterType = searchParams.get("filter"); // "processed", "toprocess", or "torecall"
+
 
   // --------------------
   // Redirection si non connecté
@@ -39,6 +52,17 @@ export default function OrdersPage() {
       redirect("/auth/signin");
     }
   }, [session.status]);
+
+  useEffect(() => {
+    getMe().then(user => {
+      if (user?.canViewOrders) {
+        setHasPermission(true);
+      } else {
+        setHasPermission(false);
+      }
+    });
+  }, []);
+
 
   const user = session.data?.user;
 
@@ -64,7 +88,7 @@ export default function OrdersPage() {
   //     const res = await fetch("/api/orders");
   //     const json = await res.json();
   //     if (!res.ok) throw new Error(json.message);
-
+  //
   //     // Insère dans la DB avec attribution round-robin
   //     await insertNewOrders(json.orders);
   //     toast.success("Commandes synchronisées avec succès");
@@ -75,13 +99,17 @@ export default function OrdersPage() {
   //   }
   // }, [fetchOrders]);
 
-  const fetchStatuses = useCallback(async () => {
+  const fetchStatusesAndAgents = useCallback(async () => {
     try {
-      const data = await getStatus();
-      setStatuses(data);
+      const [statusData, agentData] = await Promise.all([
+        getStatus(),
+        getAgents()
+      ]);
+      setStatuses(statusData);
+      setAgents(agentData);
     } catch (error) {
       console.error(error);
-      toast.error("Erreur lors du chargement des statuts");
+      toast.error("Erreur lors du chargement des données auxiliaires");
     }
   }, []);
 
@@ -96,6 +124,21 @@ export default function OrdersPage() {
       toast.success("Statut mis à jour");
     } catch {
       toast.error("Erreur lors du changement de statut");
+    }
+  };
+
+  const handleAgentChange = async (orderId: string, agentId: string) => {
+    try {
+      const updated = await updateOrderAgent(orderId, agentId);
+      setOrders(prev =>
+        prev.map(o => 
+            o.id === orderId ? { ...o, agent: updated.agent } : o
+        )
+      );
+      toast.success("Agent réassigné");
+    } catch (e) {
+      console.error(e);
+      toast.error("Erreur lors de la réassignation");
     }
   };
 
@@ -116,34 +159,115 @@ export default function OrdersPage() {
   // useEffect
   // --------------------
   useEffect(() => {
-    if (user) {
+    if (hasPermission) {
       fetchOrders();
-      fetchStatuses();
+      fetchStatusesAndAgents();
     }
-  }, [user, fetchOrders, fetchStatuses]);
+  }, [hasPermission, fetchOrders, fetchStatusesAndAgents]);
+
 
   // --------------------
   // Mémo
   // --------------------
+  
+  // Apply filter based on URL query param
+  const filteredOrders = useMemo(() => {
+    if (!filterType) return orders;
+    
+    switch (filterType) {
+      case "processed":
+        // Orders with status
+        return orders.filter(order => order.status !== null && order.status !== undefined);
+      
+      case "toprocess":
+        // Orders without status
+        return orders.filter(order => !order.status);
+      
+      case "torecall":
+        // Orders with recallAt defined
+        return orders.filter(order => order.recallAt !== null && order.recallAt !== undefined);
+      
+      default:
+        return orders;
+    }
+  }, [orders, filterType]);
+
   const stats = useMemo(
     () => ({
-      total: orders.length,
-      totalRevenue: orders.reduce((sum, o) => sum + o.totalPrice, 0),
+      total: filteredOrders.length,
+      totalRevenue: filteredOrders.reduce((sum, o) => sum + o.totalPrice, 0),
     }),
-    [orders]
+    [filteredOrders]
   );
 
-  const columns = useMemo(
-    () => getColumns(user?.role, statuses, handleStatusChange, handleRecallChange),
-    [statuses, user?.role]
-  );
+  const productOptions = useMemo(() => {
+     const notes = new Set(filteredOrders.map(o => o.productNote).filter(Boolean) as string[]);
+     return Array.from(notes);
+  }, [filteredOrders]);
+
+  // --------------------
+  // Modal d'assignation
+  // --------------------
+  const [assignModal, setAssignModal] = useState<{ isOpen: boolean; order: Order | null }>({
+    isOpen: false,
+    order: null,
+  });
+  const [isAssigning, setIsAssigning] = useState(false);
+
+  const openAssignModal = (order: Order) => {
+    setAssignModal({ isOpen: true, order });
+  };
+
+  const closeAssignModal = () => {
+    setAssignModal({ isOpen: false, order: null });
+  };
+
+  const handleAssignmentSubmit = async (data: AgentAssignmentData) => {
+    if (!assignModal.order) return;
+    setIsAssigning(true);
+    try {
+      await handleAgentChange(assignModal.order.id, data.agentId);
+      closeAssignModal();
+    } finally {
+      setIsAssigning(false);
+    }
+  };
+
+  const columns = useMemo(() => {
+    // Rule: ADMIN and SUPERVISOR are ALWAYS read-only for orders
+    const isManagement = user?.role === "ADMIN" || user?.role === "SUPERVISOR";
+    const canEdit = isManagement ? false : !!(user as any)?.canEditOrders;
+    
+    return getColumns(
+        user?.role, 
+        canEdit, 
+        statuses, 
+        agents, 
+        productOptions, 
+        handleStatusChange, 
+        openAssignModal, // Fix: Pass the function that opens the modal
+        handleRecallChange
+    );
+  }, [statuses, agents, productOptions, user?.role, (user as any)?.canEditOrders, handleStatusChange, /* openAssignModal is stable or declared outside? No, let's include it in deps if needed */ handleRecallChange]);
+
+
+
 
   // --------------------
   // Rendu
   // --------------------
-  if (session.status === "loading") {
-    return <div>Chargement...</div>;
+  if (session.status === "loading" || hasPermission === null) {
+    return (
+      <div className="flex items-center justify-center min-h-[60vh]">
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+      </div>
+    );
   }
+
+  if (hasPermission === false) {
+    return <PermissionDenied />;
+  }
+
 
   return (
     <div className="p-6 space-y-6">
@@ -191,7 +315,7 @@ export default function OrdersPage() {
         <CardContent>
           <DataTable<Order, unknown>
             columns={columns}
-            data={orders}
+            data={filteredOrders}
             searchPlaceholder="Rechercher une commande..."
             pageSizeOptions={[5, 10, 20]}
             defaultPageSize={10}
@@ -200,6 +324,17 @@ export default function OrdersPage() {
           />
         </CardContent>
       </Card>
+
+
+      <AgentAssignmentModal
+        isOpen={assignModal.isOpen}
+        onClose={closeAssignModal}
+        onSubmit={handleAssignmentSubmit}
+        agents={agents}
+        currentAgentId={assignModal.order?.agent?.id}
+        isLoading={isAssigning}
+        orderNumber={assignModal.order?.orderNumber}
+      />
     </div>
   );
 }

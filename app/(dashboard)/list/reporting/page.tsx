@@ -20,11 +20,16 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { format, startOfMonth, endOfMonth } from "date-fns";
 import { fr } from "date-fns/locale";
+import { getMe } from "@/lib/actions/users";
+import PermissionDenied from "@/components/permission-denied";
+
 
 export default function ReportingPage() {
   const [loading, setLoading] = useState(true);
   const [stats, setStats] = useState<any>(null);
   const [options, setOptions] = useState<{ agents: any[], statuses: any[] }>({ agents: [], statuses: [] });
+  const [hasPermission, setHasPermission] = useState<boolean | null>(null);
+
   
   const [filters, setFilters] = useState<ReportFilters & { dateRange: { from: Date | undefined; to: Date | undefined } }>({
     dateRange: { from: startOfMonth(new Date()), to: endOfMonth(new Date()) },
@@ -55,12 +60,18 @@ export default function ReportingPage() {
   }, [filters]);
 
   useEffect(() => {
-    fetchOptions();
-  }, [fetchOptions]);
+    getMe().then(user => {
+      if (user?.canViewReporting) {
+        setHasPermission(true);
+        fetchOptions();
+        fetchData();
+      } else {
+        setHasPermission(false);
+        setLoading(false);
+      }
+    });
+  }, [fetchOptions, fetchData]);
 
-  useEffect(() => {
-    fetchData();
-  }, [fetchData]);
 
   const handleExport = () => {
     // Simple mock export
@@ -75,8 +86,27 @@ export default function ReportingPage() {
     return `${h}h ${m > 0 ? `${m}m` : ""}`;
   };
 
+  if (hasPermission === false) return <PermissionDenied />;
+  if (hasPermission === null || (loading && !stats)) {
+    return (
+      <div className="flex flex-col gap-8 pb-10">
+        <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
+          <div className="space-y-2">
+            <div className="h-8 w-64 bg-gray-100 rounded animate-pulse"></div>
+            <div className="h-4 w-96 bg-gray-50 rounded animate-pulse"></div>
+          </div>
+        </div>
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+          {[1, 2, 3, 4].map(i => <div key={i} className="h-32 bg-gray-100 rounded-xl animate-pulse"></div>)}
+        </div>
+        <div className="h-96 bg-gray-100 rounded-xl animate-pulse"></div>
+      </div>
+    );
+  }
+
   return (
     <div className="flex flex-col gap-8 pb-10">
+
       {/* Header & Controls */}
       <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
         <div>

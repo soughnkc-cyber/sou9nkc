@@ -51,6 +51,7 @@ const StatusBadge = ({ status }: { status: string }) => (
 export const getColumns = (
   agents: Option[],
   onUpdateAgents: (productId: string, data: { assignedAgentIds?: string[]; hiddenForAgentIds?: string[] }) => void,
+  canEditProducts: boolean,
   onView?: (p: Product) => void,
   onEdit?: (p: Product) => void,
   onDelete?: (p: Product) => void
@@ -91,12 +92,18 @@ export const getColumns = (
     createColumn<Product>({
       accessorKey: "assignedAgentIds",
       header: "Assigné à",
+      filterFn: "arrIncludesSome",
+      filterComponent: createFacetedFilter(
+        "Agents assignés",
+        agents.map((a) => ({ label: a.name, value: a.id }))
+      ),
       cell: ({ row }) => (
         <AgentSelect
           options={agents}
           selected={row.original.assignedAgentIds || []}
           onChange={(selected) => onUpdateAgents(row.original.id, { assignedAgentIds: selected })}
           placeholder="Agents assignés"
+          disabled={!canEditProducts}
         />
       ),
     }),
@@ -104,12 +111,18 @@ export const getColumns = (
     createColumn<Product>({
       accessorKey: "hiddenForAgentIds",
       header: "Caché pour",
+      filterFn: "arrIncludesSome",
+      filterComponent: createFacetedFilter(
+        "Agents restreints",
+        agents.map((a) => ({ label: a.name, value: a.id }))
+      ),
       cell: ({ row }) => (
         <AgentSelect
           options={agents}
           selected={row.original.hiddenForAgentIds || []}
           onChange={(selected) => onUpdateAgents(row.original.id, { hiddenForAgentIds: selected })}
           placeholder="Agents restreints"
+          disabled={!canEditProducts}
         />
       ),
     }),

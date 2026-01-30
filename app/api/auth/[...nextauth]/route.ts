@@ -44,6 +44,17 @@ export const authOptions = {
           phone: user.phone,
           name: user.name,
           role: user.role,
+          // Permissions
+          canViewOrders: user.canViewOrders,
+          canEditOrders: user.canEditOrders,
+          canViewUsers: user.canViewUsers,
+          canEditUsers: user.canEditUsers,
+          canViewProducts: user.canViewProducts,
+          canEditProducts: user.canEditProducts,
+          canViewStatuses: user.canViewStatuses,
+          canEditStatuses: user.canEditStatuses,
+          canViewReporting: user.canViewReporting,
+          canViewDashboard: user.canViewDashboard,
         };
       },
     }),
@@ -59,6 +70,17 @@ export const authOptions = {
         token.role = user.role;
         token.phone = user.phone;
         token.name = user.name;
+        // Permissions
+        token.canViewOrders = user.canViewOrders;
+        token.canEditOrders = user.canEditOrders;
+        token.canViewUsers = user.canViewUsers;
+        token.canEditUsers = user.canEditUsers;
+        token.canViewProducts = user.canViewProducts;
+        token.canEditProducts = user.canEditProducts;
+        token.canViewStatuses = user.canViewStatuses;
+        token.canEditStatuses = user.canEditStatuses;
+        token.canViewReporting = user.canViewReporting;
+        token.canViewDashboard = user.canViewDashboard;
       }
       return token;
     },
@@ -68,6 +90,17 @@ export const authOptions = {
         session.user.role = token.role as string;
         session.user.phone = token.phone as string;
         session.user.name = token.name as string;
+        // Permissions
+        session.user.canViewOrders = token.canViewOrders;
+        session.user.canEditOrders = token.canEditOrders;
+        session.user.canViewUsers = token.canViewUsers;
+        session.user.canEditUsers = token.canEditUsers;
+        session.user.canViewProducts = token.canViewProducts;
+        session.user.canEditProducts = token.canEditProducts;
+        session.user.canViewStatuses = token.canViewStatuses;
+        session.user.canEditStatuses = token.canEditStatuses;
+        session.user.canViewReporting = token.canViewReporting;
+        session.user.canViewDashboard = token.canViewDashboard;
       }
       return session;
     },
@@ -86,7 +119,10 @@ export const authOptions = {
     // utilisateur connecté
     await prisma.user.update({
       where: { id: user.id },
-      data: { lastLoginAt: new Date() },
+      data: { 
+        lastLoginAt: new Date(),
+        lastLogoutAt: null, // remise à zéro
+      },
     });
   },
 

@@ -16,11 +16,16 @@ import {
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { useSession } from "next-auth/react";
+import { getMe } from "@/lib/actions/users";
+import PermissionDenied from "@/components/permission-denied";
+
 
 export default function AgentDashboardPage() {
   const { data: session } = useSession();
   const [stats, setStats] = useState<any>(null);
   const [loading, setLoading] = useState(true);
+  const [hasPermission, setHasPermission] = useState<boolean | null>(null);
+
 
   const fetchStats = async () => {
     if (!session?.user?.id) return;
@@ -36,12 +41,20 @@ export default function AgentDashboardPage() {
   };
 
   useEffect(() => {
-    if (session?.user?.id) {
-      fetchStats();
-    }
+    getMe().then(user => {
+      if (user?.canViewDashboard) {
+        setHasPermission(true);
+        if (session?.user?.id) fetchStats();
+      } else if (user) {
+        setHasPermission(false);
+        setLoading(false);
+      }
+    });
   }, [session?.user?.id]);
 
-  if (loading && !stats) {
+
+  if (hasPermission === false) return <PermissionDenied />;
+  if (hasPermission === null || (loading && !stats)) {
     return (
       <div className="flex flex-col gap-6 animate-pulse">
         <div className="h-10 w-48 bg-gray-200 rounded-md mb-2"></div>
@@ -57,6 +70,7 @@ export default function AgentDashboardPage() {
       </div>
     );
   }
+
 
   if (!session?.user?.id) {
     return <div className="p-8 text-center text-gray-500">Chargement de la session...</div>;

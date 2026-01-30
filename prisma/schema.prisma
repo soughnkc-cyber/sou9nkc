@@ -24,11 +24,30 @@ model User {
   updatedAt DateTime @updatedAt
   lastLoginAt    DateTime?
   lastLogoutAt   DateTime?
+  lastSeenAt     DateTime? @default(now())
   status        UserStatus @default(ACTIVE)
   
+  iconColor     String     @default("#2563eb")
+  roleColor     String     @default("#f3f4f6")
+  paymentRemainingDays Int  @default(0)
+  paymentDefaultDays   Int  @default(0)
+
+  // Permissions granulaires
+  canViewOrders     Boolean @default(false)
+  canEditOrders     Boolean @default(false)
+  canViewUsers      Boolean @default(false)
+  canEditUsers      Boolean @default(false)
+  canViewProducts   Boolean @default(false)
+  canEditProducts   Boolean @default(false)
+  canViewStatuses   Boolean @default(false)
+  canEditStatuses   Boolean @default(false)
+  canViewReporting  Boolean @default(false)
+  canViewDashboard  Boolean @default(false)
+
   orders       Order[]
 
 }
+
 
 enum UserStatus {
   ACTIVE
@@ -46,6 +65,8 @@ model Status {
   id            String   @id @default(cuid())
   name          String   @unique
   recallAfterH  Int?    
+  color         String   @default("#6366f1") // Indigo default
+  isArchived    Boolean  @default(false)
   createdAt     DateTime @default(now())
 
   orders       Order[]

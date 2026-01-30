@@ -26,10 +26,12 @@ export function createColumn<T>(config: {
     table: Table<T>;
   }) => React.ReactNode;
   cell?: (props: any) => React.ReactNode;
+  hideSortIcon?: boolean;
 }): ColumnDef<T> {
+
   const column: Partial<ColumnDef<T>> = {
     header: ({ column }) =>
-      config.sortable ? (
+      config.sortable && !config.hideSortIcon ? (
         <Button
           variant="ghost"
           className="p-0"
@@ -43,6 +45,7 @@ export function createColumn<T>(config: {
       ) : (
         config.header
       ),
+
     cell: config.cell,
     enableColumnFilter: !!config.filterComponent,
     filterFn: config.filterFn || ((row: any, id: string, filterValue: any) => {

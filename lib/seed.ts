@@ -16,11 +16,22 @@ async function main() {
   const hashedPassword = await bcrypt.hash("12345678", 10);
   await prisma.user.create({
     data: {
-      name: "Admin",
-      phone: "22222222",
+      name: "Admin Lebatt",
+      phone: "28282828",
       password: hashedPassword,
       role: "ADMIN",
+      canViewOrders: true,
+      canEditOrders: true,
+      canViewUsers: true,
+      canEditUsers: true,
+      canViewProducts: true,
+      canEditProducts: true,
+      canViewStatuses: true,
+      canEditStatuses: true,
+      canViewReporting: true,
+      canViewDashboard: true,
     },
+
   });
 }
 

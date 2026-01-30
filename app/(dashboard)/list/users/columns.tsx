@@ -1,7 +1,7 @@
 "use client";
 
 import { ColumnDef } from "@tanstack/react-table";
-import { createColumn, createActionsColumn, createFacetedFilter } from "@/components/columns";
+import { createColumn, createActionsColumn, createFacetedFilter, createSelectColumn } from "@/components/columns";
 import { Badge } from "@/components/ui/badge";
 import { Edit, Trash2, Eye, User as UserIcon, ShieldAlertIcon } from "lucide-react";
 import { Role } from "@/app/generated/prisma/enums";
@@ -15,10 +15,28 @@ export interface User {
   createdAt: string;
   lastLogin?: string;
   lastLogout?: string;
+  lastSeenAt?: string;
   status?: "ONLINE" | "OFFLINE";
   isActive: boolean;
   email?: string;
+  iconColor: string;
+  roleColor: string;
+  paymentRemainingDays: number;
+  paymentDefaultDays: number;
+  // Permissions
+  canViewOrders: boolean;
+  canEditOrders: boolean;
+  canViewUsers: boolean;
+  canEditUsers: boolean;
+  canViewProducts: boolean;
+  canEditProducts: boolean;
+  canViewStatuses: boolean;
+  canEditStatuses: boolean;
+  canViewReporting: boolean;
+  canViewDashboard: boolean;
 }
+
+
 
 const ROLE_OPTIONS = [
   { value: "ADMIN", label: "Administrateur" },
@@ -40,10 +58,28 @@ const formatDateTime = (date: string) => {
   return d.toLocaleDateString("fr-FR") + " " + d.toLocaleTimeString("fr-FR", { hour: "2-digit", minute: "2-digit" });
 };
 
+const formatRelativeTime = (date: string | null | undefined) => {
+  if (!date) return "-";
+  const d = new Date(date);
+  const now = new Date();
+  const diffMs = now.getTime() - d.getTime();
+  const diffMin = Math.floor(diffMs / (1000 * 60));
+  const diffHours = Math.floor(diffMin / 60);
+
+  if (diffMin < 60) {
+    return `${diffMin} min`;
+  } else if (diffHours < 24) {
+    return `${diffHours} h ${diffMin % 60} min`;
+  } else {
+    return d.toLocaleDateString("fr-FR");
+  }
+};
+
+
 const SessionBadge = ({ status }: { status?: "ONLINE" | "OFFLINE" }) => {
   const map = {
     ONLINE: "bg-green-100 text-green-600 border-green-200",
-    OFFLINE: "bg-gray-100 text-gray-400 border-gray-200",
+    OFFLINE: "bg-red-100 text-red-600 border-red-200",
   };
   const label = {
     ONLINE: "Connecté",
@@ -62,7 +98,7 @@ const AccountStatusToggle = ({
   return (
     <div 
       className={cn(
-        "relative inline-flex h-5 w-9 flex-shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none",
+        "relative inline-flex h-5 w-9 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none",
         user.isActive ? "bg-green-500" : "bg-gray-200"
       )}
       onClick={() => onToggle(user.id)}
@@ -75,44 +111,53 @@ const AccountStatusToggle = ({
         )}
       />
     </div>
+
   );
 };
 
-const RoleBadge = ({ role }: { role: Role }) => {
-  const map = {
-    ADMIN: "bg-purple-100 text-purple-800",
-    AGENT: "bg-blue-100 text-blue-800",
-    SUPERVISOR: "bg-orange-100 text-orange-800",
-    AGENT_TEST: "bg-gray-100 text-gray-800",
-  };
+const RoleBadge = ({ role, color }: { role: Role; color: string }) => {
   const label = {
     ADMIN: "Admin",
     AGENT: "Agent",
     SUPERVISOR: "Superviseur",
     AGENT_TEST: "Agent Test",
   };
-  return <Badge variant="secondary" className={map[role]}>{label[role]}</Badge>;
+  return (
+    <Badge 
+      variant="secondary" 
+      style={{ backgroundColor: color }}
+      className="text-gray-800"
+    >
+      {label[role]}
+    </Badge>
+  );
 };
+
 
 export const getColumns = (
   onToggleStatus: (u: User) => void,
   onView?: (u: User) => void,
-  onEdit?: (u: User) => void,
-  onDelete?: (u: User) => void
+  onEdit?: (u: User) => void
 ): ColumnDef<User>[] => {
+
   const actions = [];
   if (onView) actions.push({ icon: Eye, onClick: onView, className: "text-blue-600 hover:text-blue-800" });
   if (onEdit) actions.push({ icon: Edit, onClick: onEdit, className: "text-blue-600 hover:text-blue-800" });
-  if (onDelete) actions.push({ icon: Trash2, onClick: onDelete, className: "text-red-600 hover:text-red-800" });
 
   return [
+    createSelectColumn<User>(),
     createColumn<User>({
       accessorKey: "name",
       header: "Nom",
       sortable: true,
+      hideSortIcon: true,
       cell: ({ row }) => (
+
         <div className="flex gap-3 items-center">
-          <div className="h-8 w-8 rounded-full bg-blue-600 flex items-center justify-center">
+          <div 
+            className="h-8 w-8 rounded-full flex items-center justify-center"
+            style={{ backgroundColor: row.original.iconColor || "#2563eb" }}
+          >
             <UserIcon className="h-4 w-4 text-white" />
           </div>
           <div>
@@ -124,29 +169,29 @@ export const getColumns = (
         </div>
       ),
     }),
-    createColumn<User>({
-      accessorKey: "phone",
-      header: "Téléphone",
-      cell: ({ row }) =>
-        row.original.phone ? <span className="font-mono">{row.original.phone}</span> : "Non renseigné",
-    }),
+
     createColumn<User>({
       accessorKey: "role",
       header: "Rôle",
       sortable: true,
+      hideSortIcon: true,
       filterComponent: RoleFilter,
-      cell: ({ row }) => <RoleBadge role={row.original.role} />,
+      cell: ({ row }) => <RoleBadge role={row.original.role} color={row.original.roleColor} />,
     }),
+
+
     createColumn<User>({
       accessorKey: "isActive",
       header: "Compte",
       sortable: true,
+      hideSortIcon: true,
       cell: ({ row }) => (
+
         <div className="flex items-center gap-2">
             <AccountStatusToggle user={row.original} onToggle={() => onToggleStatus(row.original)} />
-            <span className={cn("text-[10px] font-bold uppercase", row.original.isActive ? "text-green-600" : "text-gray-400")}>
+            {/* <span className={cn("text-[10px] font-bold uppercase", row.original.isActive ? "text-green-600" : "text-gray-400")}>
                 {row.original.isActive ? "Actif" : "Bloqué"}
-            </span>
+            </span> */}
         </div>
       ),
     }),
@@ -154,27 +199,45 @@ export const getColumns = (
       accessorKey: "status",
       header: "Session",
       sortable: true,
+      hideSortIcon: true,
       filterComponent: StatusFilter,
       cell: ({ row }) => <SessionBadge status={row.original.status} />,
     }),
-    createColumn<User>({
-      accessorKey: "createdAt",
-      header: "Créé le",
-      sortable: true,
-      cell: ({ row }) => formatDateTime(row.original.createdAt),
-    }),
+
+    // createColumn<User>({
+    //   accessorKey: "createdAt",
+    //   header: "Créé le",
+    //   sortable: true,
+    //   cell: ({ row }) => formatDateTime(row.original.createdAt),
+    // }),
     createColumn<User>({
       accessorKey: "lastLogin",
-      header: "Dernière connexion",
+      header: "Connexion",
       cell: ({ row }) =>
-        row.original.lastLogin ? formatDateTime(row.original.lastLogin) : "Jamais",
+        row.original.lastLogin ? formatRelativeTime(row.original.lastLogin) : "Jamais",
     }),
     createColumn<User>({
       accessorKey: "lastLogout",
-      header: "Dernière déconnexion",
+      header: "Déconnexion",
       cell: ({ row }) =>
-        row.original.lastLogout ? formatDateTime(row.original.lastLogout) : "-",
+        row.original.lastLogout ? formatRelativeTime(row.original.lastLogout) : "-",
     }),
+    createColumn<User>({
+      accessorKey: "paymentRemainingDays",
+      header: "Paiement",
+      cell: ({ row }) => (
+        <div className="flex flex-col">
+          <span className={cn(
+            "font-bold text-xs",
+            row.original.paymentRemainingDays <= 2 ? "text-red-600" : "text-gray-700"
+          )}>
+            {row.original.paymentRemainingDays} jours
+          </span>
+          <span className="text-[10px] text-gray-400">sur {row.original.paymentDefaultDays}</span>
+        </div>
+      ),
+    }),
+
 
     ...(actions.length ? [createActionsColumn<User>(actions)] : []),
   ];
