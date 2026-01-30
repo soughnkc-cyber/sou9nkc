@@ -33,12 +33,12 @@ export function StatsCard({
         <CardTitle className="text-sm font-semibold text-muted-foreground uppercase tracking-wider">
           {title}
         </CardTitle>
-        <div className="h-10 w-10 rounded-xl bg-linear-to-br from-blue-50 to-indigo-50 border border-blue-100 flex items-center justify-center text-blue-600 transition-all duration-300 group-hover:scale-110 group-hover:shadow-md group-hover:from-blue-600 group-hover:to-indigo-600 group-hover:text-white group-hover:border-transparent">
+        <div className="h-10 w-10 rounded-xl bg-linear-to-br from-orange-50 to-orange-100 border border-orange-200 flex items-center justify-center text-orange-600 transition-all duration-300 group-hover:scale-110 group-hover:shadow-md group-hover:from-orange-600 group-hover:to-orange-700 group-hover:text-white group-hover:border-transparent">
           {icon}
         </div>
       </CardHeader>
       <CardContent>
-        <div className="text-3xl font-black tracking-tight text-slate-900 group-hover:text-blue-900 transition-colors">{value}</div>
+        <div className="text-3xl font-black tracking-tight text-slate-900 group-hover:text-orange-900 transition-colors">{value}</div>
         {(description || trend) && (
           <div className="mt-2 flex items-center gap-2">
             {trend && (
@@ -68,7 +68,7 @@ export function StatsCard({
   );
 
   const cardClasses = cn(
-    "relative overflow-hidden group border-slate-100 shadow-xs h-full transition-all duration-300 hover:shadow-xl hover:shadow-blue-500/10 hover:border-blue-100",
+    "relative overflow-hidden group border-slate-100 shadow-xs h-full transition-all duration-300 hover:shadow-xl hover:shadow-orange-500/10 hover:border-orange-100",
     href && "cursor-pointer hover:scale-[1.01] active:scale-[0.99]",
     className
   );
@@ -78,7 +78,7 @@ export function StatsCard({
       <Link href={href} className="block h-full">
         <Card className={cardClasses}>
           {cardContent}
-          <div className="absolute bottom-0 left-0 h-1 w-0 bg-blue-600 transition-all duration-500 group-hover:w-full" />
+          <div className="absolute bottom-0 left-0 h-1 w-0 bg-orange-600 transition-all duration-500 group-hover:w-full" />
         </Card>
       </Link>
     );

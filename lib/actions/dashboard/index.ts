@@ -451,6 +451,15 @@ export async function getAdminStats(
     agentName: order.agent?.name || "Non assigné",
   }));
 
+  const recentOrders = await prisma.order.findMany({
+    orderBy: { orderDate: 'desc' },
+    take: 10,
+    include: {
+      status: { select: { name: true } },
+      agent: { select: { name: true } }
+    }
+  });
+
   return {
     totalOrders,
     processedOrders,
@@ -460,6 +469,15 @@ export async function getAdminStats(
     agentCount,
     agentPerformance,
     avgProcessingTime,
+    recentOrders: recentOrders.map(o => ({
+      id: o.id,
+      orderNumber: o.orderNumber,
+      customerName: o.customerName || "Inconnu",
+      totalPrice: o.totalPrice,
+      createdAt: o.createdAt,
+      status: o.status,
+      agent: o.agent
+    })),
     dateRange: {
       start: dateRange.start.toISOString(),
       end: dateRange.end.toISOString(),
@@ -539,9 +557,8 @@ export async function getAgentStats(agentId: string) {
       orderNumber: o.orderNumber,
       customerName: o.customerName || "Inconnu",
       totalPrice: o.totalPrice,
-      statusName: o.status?.name || "Sans statut",
-      statusColor: o.status?.color || "#6b7280",
-      orderDate: o.orderDate.toISOString()
+      createdAt: o.createdAt,
+      status: o.status
     })),
     statusDistribution: Array.from(statusMap.values())
   };

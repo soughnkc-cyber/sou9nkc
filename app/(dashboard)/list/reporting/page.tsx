@@ -15,27 +15,32 @@ import {
   UsersIcon,
   TargetIcon,
   DownloadIcon,
-  ClockIcon
+  ClockIcon,
+  Search
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
 import { format, startOfMonth, endOfMonth } from "date-fns";
 import { fr } from "date-fns/locale";
 import { getMe } from "@/lib/actions/users";
 import PermissionDenied from "@/components/permission-denied";
+import { RevenueAreaChart, OrdersBarChart, TopProductsChart, StatusPieChart } from "./components/charts";
 
 
 export default function ReportingPage() {
   const [loading, setLoading] = useState(true);
   const [stats, setStats] = useState<any>(null);
-  const [options, setOptions] = useState<{ agents: any[], statuses: any[] }>({ agents: [], statuses: [] });
+  const [options, setOptions] = useState<{ agents: any[], statuses: any[], products: any[] }>({ agents: [], statuses: [], products: [] });
   const [hasPermission, setHasPermission] = useState<boolean | null>(null);
 
   
   const [filters, setFilters] = useState<ReportFilters & { dateRange: { from: Date | undefined; to: Date | undefined } }>({
     dateRange: { from: startOfMonth(new Date()), to: endOfMonth(new Date()) },
     agentIds: [],
-    statusIds: []
+    statusIds: [],
+    productIds: [],
+    searchQuery: ""
   });
 
   const fetchOptions = useCallback(async () => {
@@ -50,7 +55,9 @@ export default function ReportingPage() {
         startDate: filters.dateRange.from,
         endDate: filters.dateRange.to,
         agentIds: filters.agentIds,
-        statusIds: filters.statusIds
+        statusIds: filters.statusIds,
+        productIds: filters.productIds,
+        searchQuery: filters.searchQuery
       });
       setStats(data);
     } catch (error) {
@@ -122,7 +129,7 @@ export default function ReportingPage() {
             variant="outline" 
             size="sm" 
             onClick={handleExport} 
-            className="h-10 rounded-xl px-3 sm:px-4 font-bold border-gray-200 hover:bg-gray-50 shrink-0"
+            className="h-10 rounded-xl px-3 sm:px-4 font-bold border-gray-200 hover:bg-orange-50 hover:text-orange-600 hover:border-orange-200 transition-all shrink-0 text-gray-700"
           >
             <DownloadIcon className="mr-2 h-4 w-4" />
             <span className="hidden sm:inline">Exporter CSV</span>
@@ -133,7 +140,7 @@ export default function ReportingPage() {
             size="sm" 
             onClick={fetchData} 
             disabled={loading}
-            className="h-10 rounded-xl px-3 sm:px-4 font-bold border-gray-200 text-orange-600 hover:bg-orange-50 shrink-0"
+            className="h-10 rounded-xl px-3 sm:px-4 font-bold border-gray-200 text-orange-600 bg-orange-50/50 hover:bg-orange-600 hover:text-white hover:border-orange-600 transition-all shrink-0"
           >
             <RefreshCwIcon className={cn("sm:mr-2 h-4 w-4", loading && "animate-spin")} />
             <span className="hidden sm:inline">Actualiser</span>
@@ -143,32 +150,60 @@ export default function ReportingPage() {
 
       {/* Filters Bar */}
       <Card className="bg-white border-gray-100 shadow-xs rounded-2xl overflow-hidden">
-        <CardContent className="p-4 grid grid-cols-1 md:grid-cols-3 gap-4">
-          <div className="space-y-1.5">
-            <label className="text-[9px] font-black text-gray-400 uppercase tracking-widest">Période</label>
-            <DateRangePicker 
-                range={filters.dateRange} 
-                onChange={(range) => setFilters(f => ({ ...f, dateRange: range }))}
-                className="w-full"
-            />
+        <CardContent className="p-4 space-y-4">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+            <div className="space-y-1.5">
+              <label className="text-[9px] font-black text-gray-400 uppercase tracking-widest">Rechercher</label>
+              <div className="relative">
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
+                <Input 
+                  placeholder="Client, numéro..." 
+                  className="pl-9 h-10 rounded-xl border-gray-200 bg-gray-50/30 focus-visible:ring-orange-500 focus-visible:ring-offset-0 focus-visible:border-orange-500 transition-all placeholder:text-gray-400 font-medium"
+                  value={filters.searchQuery}
+                  onChange={(e) => setFilters(f => ({ ...f, searchQuery: e.target.value }))}
+                />
+              </div>
+            </div>
+            <div className="space-y-1.5">
+              <label className="text-[9px] font-black text-gray-400 uppercase tracking-widest">Période</label>
+              <DateRangePicker 
+                  range={filters.dateRange} 
+                  onChange={(range) => setFilters(f => ({ ...f, dateRange: range }))}
+                  className="w-full"
+              />
+            </div>
+            <div className="space-y-1.5">
+              <label className="text-[9px] font-black text-gray-400 uppercase tracking-widest">Produits</label>
+              <MultiSelect 
+                  options={(options.products || []).map(p => ({ label: p.name, value: p.id }))}
+                  selected={filters.productIds || []}
+                  onChange={(ids) => setFilters(f => ({ ...f, productIds: ids }))}
+                  placeholder="Tous les produits"
+              />
+            </div>
+            <div className="space-y-1.5">
+              <label className="text-[9px] font-black text-gray-400 uppercase tracking-widest">Agents</label>
+              <MultiSelect 
+                  options={options.agents.map(a => ({ label: a.name || a.id, value: a.id }))}
+                  selected={filters.agentIds || []}
+                  onChange={(ids) => setFilters(f => ({ ...f, agentIds: ids }))}
+                  placeholder="Tous les agents"
+              />
+            </div>
           </div>
-          <div className="space-y-1.5">
-            <label className="text-[9px] font-black text-gray-400 uppercase tracking-widest">Agents</label>
-            <MultiSelect 
-                options={options.agents.map(a => ({ label: a.name || a.id, value: a.id }))}
-                selected={filters.agentIds || []}
-                onChange={(ids) => setFilters(f => ({ ...f, agentIds: ids }))}
-                placeholder="Tous les agents"
-            />
-          </div>
-          <div className="space-y-1.5">
-            <label className="text-[9px] font-black text-gray-400 uppercase tracking-widest">Statuts</label>
-            <MultiSelect 
-                options={options.statuses.map(s => ({ label: s.name, value: s.id }))}
-                selected={filters.statusIds || []}
-                onChange={(ids) => setFilters(f => ({ ...f, statusIds: ids }))}
-                placeholder="Tous les statuts"
-            />
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4 border-t border-gray-100 pt-4">
+            <div className="space-y-1.5 md:col-span-1">
+              <label className="text-[9px] font-black text-gray-400 uppercase tracking-widest">Statuts</label>
+              <MultiSelect 
+                  options={options.statuses.map(s => ({ label: s.name, value: s.id }))}
+                  selected={filters.statusIds || []}
+                  onChange={(ids) => setFilters(f => ({ ...f, statusIds: ids }))}
+                  placeholder="Tous les statuts"
+              />
+            </div>
+            <div className="flex items-end md:col-span-2">
+                <p className="text-[10px] text-gray-400 font-medium italic">Les graphiques se mettent à jour automatiquement selon vos sélections.</p>
+            </div>
           </div>
         </CardContent>
       </Card>
@@ -211,12 +246,20 @@ export default function ReportingPage() {
             />
           </div>
 
+          {/* Charts Grid */}
+          <div className="grid grid-cols-1 lg:grid-cols-7 gap-6">
+            <RevenueAreaChart data={stats.dailyStats} />
+            <OrdersBarChart data={stats.dailyStats} />
+            <TopProductsChart data={stats.productPerformance} />
+            <StatusPieChart data={stats.statusDistribution} />
+          </div>
+
           <div className="grid grid-cols-1 lg:grid-cols-7 gap-6">
             {/* Agent Performance Table */}
-            <Card className="col-span-full lg:col-span-5 border border-gray-100 shadow-xs bg-white rounded-2xl overflow-hidden">
+            <Card className="col-span-full border border-gray-100 shadow-xs bg-white rounded-2xl overflow-hidden transition-all duration-300 hover:shadow-md">
               <CardHeader className="bg-gray-50/50 border-b border-gray-100">
-                <CardTitle className="text-lg font-bold flex items-center text-gray-900">
-                  <UsersIcon className="mr-2 h-5 w-5 text-orange-600" />
+                <CardTitle className="text-[10px] font-black text-gray-400 uppercase tracking-widest flex items-center">
+                  <UsersIcon className="mr-2 h-4 w-4 text-orange-600" />
                   Performance des Agents
                 </CardTitle>
               </CardHeader>
@@ -263,10 +306,6 @@ export default function ReportingPage() {
                 </div>
               </CardContent>
             </Card>
-
-            <div className="col-span-full lg:col-span-2">
-                <StatusDistribution stats={stats.statusDistribution} />
-            </div>
           </div>
         </>
       )}

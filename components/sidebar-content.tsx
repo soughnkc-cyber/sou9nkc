@@ -138,7 +138,7 @@ export function SidebarContent({
       </div>
 
       {/* Global Search in Sidebar */}
-      <div className={cn("px-4 pb-4", isCollapsed && !mobile && "hidden")}>
+      {/* <div className={cn("px-4 pb-4", isCollapsed && !mobile && "hidden")}>
         <div className="relative group">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400 group-hover:text-black transition-colors" />
           <Input 
@@ -149,7 +149,7 @@ export function SidebarContent({
               <kbd className="h-5 px-1 rounded border bg-white flex items-center justify-center text-[10px] font-sans text-gray-400"><Command className="h-2 w-2 mr-0.5" />K</kbd>
           </div>
         </div>
-      </div>
+      </div> */}
 
       {/* Navigation Sections */}
       <div className="flex-1 overflow-auto px-4 py-2 space-y-6 scrollbar-hide">
@@ -212,7 +212,7 @@ export function SidebarContent({
 
       {/* System Settings & Footer */}
       <div className="mt-auto px-4 py-4 space-y-1">
-        {[
+        {/* {[
           { name: "Support", icon: HelpCircle, href: "#" },
           { name: "Paramètres", icon: Settings, href: "#" },
         ].map((link) => (
@@ -230,7 +230,7 @@ export function SidebarContent({
               {showLabels && <span className="text-sm font-medium">{link.name}</span>}
             </Link>
           </Button>
-        ))}
+        ))} */}
 
         <Button
           variant="ghost"
