@@ -51,6 +51,25 @@ export const updateUserSchema = userFormSchema.extend({
 
 export type UpdateUserData = z.infer<typeof updateUserSchema>;
 
+
+export enum Etat {
+  STATUS_01 = "STATUS_01",
+  STATUS_02 = "STATUS_02",
+  STATUS_03 = "STATUS_03",
+  STATUS_04 = "STATUS_04",
+  STATUS_05 = "STATUS_05",
+  STATUS_06 = "STATUS_06",
+  STATUS_07 = "STATUS_07",
+  STATUS_08 = "STATUS_08",
+  STATUS_09 = "STATUS_09",
+  STATUS_10 = "STATUS_10",
+  STATUS_11 = "STATUS_11",
+  STATUS_12 = "STATUS_12",
+  STATUS_13 = "STATUS_13",
+  STATUS_14 = "STATUS_14",
+  STATUS_15 = "STATUS_15",
+}
+
 export const statusFormSchema = z.object({
   name: z.string().min(1, "Nom obligatoire"),
   recallAfterH: z
@@ -59,6 +78,8 @@ export const statusFormSchema = z.object({
     .min(1)
     .optional(),
   color: z.string(),
+  etat: z.nativeEnum(Etat),
+  isActive: z.boolean(),
 });
 
 

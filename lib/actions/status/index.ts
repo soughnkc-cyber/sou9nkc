@@ -21,7 +21,9 @@ function mapStatus(s: PrismaStatus): Status {
   return {
     id: s.id,
     name: s.name,
+    etat: s.etat,
     color: s.color,
+    isActive: s.isActive,
     recallAfterH: s.recallAfterH ?? undefined,
     createdAt: s.createdAt.toISOString(),
   };
@@ -51,6 +53,8 @@ export async function createStatusAction(data: StatusFormData) {
     const status = await prisma.status.create({
       data: {
         name: data.name,
+        etat: data.etat,
+        isActive: data.isActive,
         recallAfterH: data.recallAfterH,
         color: data.color || "#6366f1",
       },
@@ -78,6 +82,8 @@ export async function updateStatusAction(
       where: { id: statusId },
       data: {
         name: data.name,
+        // etat: data.etat, // Prevent etat modification
+        isActive: data.isActive,
         recallAfterH: data.recallAfterH,
         color: data.color,
       },
@@ -146,7 +152,7 @@ export const updateOrderStatus = async (
 
     const currentOrder = await prisma.order.findUnique({
       where: { id: orderId },
-      select: { orderDate: true, firstProcessedAt: true }
+      select: { orderDate: true, firstProcessedAt: true, recallAttempts: true }
     });
 
     let data: any = { statusId };
@@ -162,10 +168,18 @@ export const updateOrderStatus = async (
 
     // 🔹 Seulement si recallAfterH existe
     if (status?.recallAfterH != null) {
+      if ((currentOrder?.recallAttempts || 0) >= 3) {
+        throw new Error("Nombre maximum de rappels (3) atteint pour cette commande");
+      }
+      
       const recallAt = new Date();
       recallAt.setHours(recallAt.getHours() + status.recallAfterH);
 
       data.recallAt = recallAt;
+      data.recallAttempts = { increment: 1 };
+    } else {
+      // Si le statut n'a pas de configuration de rappel, on vide la date de rappel
+      data.recallAt = null;
     }
 
     const order = await prisma.order.update({
@@ -178,6 +192,7 @@ export const updateOrderStatus = async (
       ...order,
       recallAt: order.recallAt ? order.recallAt.toISOString() : null,
       status: order.status ? { id: order.status.id, name: order.status.name, color: order.status.color } : null,
+      recallAttempts: order.recallAttempts,
     };
 
 

@@ -101,13 +101,15 @@ export function SidebarContent({
   mobile = false,
   userRole,
   permissions,
-  handleSignOut
+  handleSignOut,
+  onNavigate
 }: { 
   isCollapsed: boolean; 
   mobile?: boolean;
   userRole: Role;
   permissions: any;
   handleSignOut: () => void;
+  onNavigate?: () => void;
 }) {
   const pathname = usePathname();
   const showLabels = mobile ? true : !isCollapsed;
@@ -185,7 +187,7 @@ export function SidebarContent({
                       )}
                       title={isCollapsed && !mobile ? item.name : undefined}
                     >
-                      <Link href={item.href}>
+                      <Link href={item.href} onClick={() => mobile && onNavigate?.()}>
                         {isActive && (
                             <div className="absolute left-0 top-1/2 -translate-y-1/2 w-1 h-5 bg-[#1F30AD] rounded-r-full" />
                         )}

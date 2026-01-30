@@ -1,12 +1,12 @@
 "use client";
 
 import React, { useEffect, useState } from "react";
-import { getAdminStats, DateFilterType } from "@/lib/actions/dashboard";
+import { getAdminStats } from "@/lib/actions/dashboard";
 import { StatsCard } from "@/components/dashboard/stats-card";
 import { StatusDistributionPie } from "@/components/dashboard/status-distribution-pie";
 import { AgentPerformanceChart } from "@/components/dashboard/agent-performance-chart";
 import { TopAgentsLeaderboard } from "@/components/dashboard/avg-processing-time-card";
-import { DateFilter } from "@/components/dashboard/date-filter";
+import { DatePickerWithRange } from "@/components/date-range-picker";
 import { RevenueCards } from "@/components/dashboard/revenue-cards";
 import { OrdersTrendChart } from "@/components/dashboard/orders-trend-chart";
 import { OrdersByWeekdayChart } from "@/components/dashboard/orders-by-weekday-chart";
@@ -25,20 +25,29 @@ import {
 import { Button } from "@/components/ui/button";
 import { getMe } from "@/lib/actions/users";
 import PermissionDenied from "@/components/permission-denied";
+import { DateRange } from "react-day-picker";
 
 
 export default function AdminDashboardPage() {
   const [stats, setStats] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [hasPermission, setHasPermission] = useState<boolean | null>(null);
-  const [dateFilter, setDateFilter] = useState<DateFilterType>("month");
-  const [customRange, setCustomRange] = useState<{ start: string; end: string } | undefined>();
+  const [dateRange, setDateRange] = useState<DateRange | undefined>();
 
 
   const fetchStats = async () => {
     setLoading(true);
     try {
-      const data = await getAdminStats(dateFilter, customRange);
+      // Convert DateRange to custom range format
+      const customRange = dateRange?.from && dateRange?.to ? {
+        start: dateRange.from.toISOString(),
+        end: dateRange.to.toISOString()
+      } : undefined;
+      
+      // Use 'month' as default filter when no date range is selected
+      const filterType = customRange ? "custom" : "month";
+      
+      const data = await getAdminStats(filterType, customRange);
       setStats(data);
     } catch (error) {
       console.error("Failed to fetch admin stats:", error);
@@ -62,12 +71,9 @@ export default function AdminDashboardPage() {
     if (hasPermission) {
       fetchStats();
     }
-  }, [hasPermission, dateFilter, customRange]);
+  }, [hasPermission, dateRange]);
 
-  const handleDateFilterChange = (type: DateFilterType, range?: { start: string; end: string }) => {
-    setDateFilter(type);
-    setCustomRange(range);
-  };
+
 
 
   if (hasPermission === false) return <PermissionDenied />;
@@ -94,13 +100,13 @@ export default function AdminDashboardPage() {
           <p className="text-slate-500 font-medium">Analyse et performance de la plateforme</p>
         </div>
         <div className="flex gap-3">
-          <DateFilter value={dateFilter} onChange={handleDateFilterChange} />
+          <DatePickerWithRange date={dateRange} setDate={setDateRange} className="w-[260px]" />
           <Button 
             variant="outline" 
             size="sm" 
             onClick={fetchStats} 
             disabled={loading}
-            className="bg-white border-slate-200 text-slate-700 hover:bg-blue-50 hover:text-[#1F30AD] hover:border-blue-200 shadow-sm"
+            className="bg-white border-slate-200 text-slate-700 hover:bg-blue-50 hover:text-[#1F30AD] hover:border-blue-200 shadow-sm h-10 rounded-xl font-bold"
           >
             <RefreshCwIcon className={`mr-2 h-4 w-4 ${loading && "animate-spin"}`} />
             Actualiser

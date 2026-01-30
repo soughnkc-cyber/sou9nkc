@@ -20,6 +20,7 @@ export function createColumn<T>(config: {
   header: string;
   isPrimary?: boolean;
   mobileLabel?: string;
+  hideMobileLabel?: boolean;
   sortable?: boolean;
   filterFn?: any;
   filterComponent?: (props: {
@@ -60,6 +61,7 @@ export function createColumn<T>(config: {
       title: config.header,
       isPrimary: config.isPrimary,
       mobileLabel: config.mobileLabel ?? config.header,
+      hideMobileLabel: config.hideMobileLabel,
       filterComponent: config.filterComponent,
     },
   };
@@ -155,6 +157,7 @@ declare module "@tanstack/react-table" {
     title?: string;
     isPrimary?: boolean;
     mobileLabel?: string;
+    hideMobileLabel?: boolean;
     filterComponent?: (props: {
       column: Column<TData, TValue>;
       table: Table<TData>;

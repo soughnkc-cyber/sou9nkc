@@ -56,6 +56,8 @@ interface DataTableProps<TData, TValue> {
   className?: string;
   onSelectionChange?: (selectedRows: TData[]) => void;
   extraSearchActions?: React.ReactNode;
+  getRowClassName?: (row: TData) => string;
+  mobileRowAction?: (row: TData) => React.ReactNode;
 }
 
 
@@ -63,7 +65,7 @@ export function DataTable<TData, TValue>({
   columns,
   data,
   searchPlaceholder = "Rechercher...",
-  pageSizeOptions = [5, 10, 20, 50, 100],
+  pageSizeOptions = [10, 20, 50],
   defaultPageSize = 10,
   showSearch = true,
   showFilters = true,
@@ -72,6 +74,8 @@ export function DataTable<TData, TValue>({
   className,
   onSelectionChange,
   extraSearchActions,
+  getRowClassName,
+  mobileRowAction,
 }: DataTableProps<TData, TValue>) {
   const [sorting, setSorting] = useState<SortingState>([]);
   const [columnFilters, setColumnFilters] = React.useState<ColumnFiltersState>([]);
@@ -307,7 +311,8 @@ export function DataTable<TData, TValue>({
                 key={row.id} 
                 className={cn(
                   "border border-gray-100 rounded-2xl bg-white shadow-xs overflow-hidden transition-all duration-300",
-                  isRowExpanded ? "ring-1 ring-blue-200 shadow-md" : ""
+                  isRowExpanded ? "ring-1 ring-blue-200 shadow-md" : "",
+                  getRowClassName ? getRowClassName(row.original) : ""
                 )}
               >
                 {/* Mobile Card Header (Always visible) */}
@@ -318,9 +323,11 @@ export function DataTable<TData, TValue>({
                   <div className="flex items-center gap-4 flex-1">
                     {primaryCells.map((cell) => (
                       <div key={cell.id} className="flex flex-col">
-                        <span className="text-[9px] font-black text-gray-400 uppercase tracking-widest mb-0.5">
-                          {cell.column.columnDef.meta?.title || cell.column.id}
-                        </span>
+                        {!cell.column.columnDef.meta?.hideMobileLabel && (
+                          <span className="text-[9px] font-black text-gray-400 uppercase tracking-widest mb-0.5">
+                            {cell.column.columnDef.meta?.title || cell.column.id}
+                          </span>
+                        )}
                         <div className="text-sm font-bold text-gray-900">
                           {flexRender(cell.column.columnDef.cell, cell.getContext())}
                         </div>
@@ -329,16 +336,20 @@ export function DataTable<TData, TValue>({
                   </div>
                   
                   <div className="flex items-center gap-2">
-                    <Button 
-                      variant="ghost" 
-                      size="icon" 
-                      className={cn(
-                        "h-8 w-8 rounded-full border border-gray-200 transition-all",
-                        isRowExpanded ? "bg-[#1F30AD] border-[#1F30AD] text-white rotate-180" : "text-gray-400"
-                      )}
-                    >
-                      <ChevronDown className="h-4 w-4" />
-                    </Button>
+                    {mobileRowAction && mobileRowAction(row.original) ? (
+                       mobileRowAction(row.original)
+                    ) : (
+                      <Button 
+                        variant="ghost" 
+                        size="icon" 
+                        className={cn(
+                          "h-8 w-8 rounded-full border border-gray-200 transition-all",
+                          isRowExpanded ? "bg-[#1F30AD] border-[#1F30AD] text-white rotate-180" : "text-gray-400"
+                        )}
+                      >
+                        <ChevronDown className="h-4 w-4" />
+                      </Button>
+                    )}
                   </div>
                 </div>
 
@@ -349,9 +360,11 @@ export function DataTable<TData, TValue>({
                     <div className="grid grid-cols-2 gap-4">
                       {secondaryCells.map((cell) => (
                         <div key={cell.id} className="flex flex-col space-y-1">
-                          <span className="text-[10px] font-bold text-gray-400 uppercase tracking-tighter">
-                            {cell.column.columnDef.meta?.title || cell.column.id}
-                          </span>
+                          {!cell.column.columnDef.meta?.hideMobileLabel && (
+                            <span className="text-[10px] font-bold text-gray-400 uppercase tracking-tighter">
+                              {cell.column.columnDef.meta?.title || cell.column.id}
+                            </span>
+                          )}
                           <div className="text-[13px] font-medium text-gray-700">
                             {flexRender(
                               cell.column.columnDef.cell,

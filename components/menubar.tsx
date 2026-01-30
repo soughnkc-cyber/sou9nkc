@@ -23,12 +23,13 @@ export default function MenuBar() {
   const { data: session } = useSession();
   const pathname = usePathname();
   const [dbUser, setDbUser] = useState<any>(null);
+  const [isSheetOpen, setIsSheetOpen] = useState(false);
 
   useEffect(() => {
     if (session?.user) {
       getMe().then(user => setDbUser(user));
     }
-  }, [session]);
+  }, [session?.user]);
 
   const userRole = (dbUser?.role || (session?.user as any)?.role);
   const permissions = dbUser || (session?.user as any) || {};
@@ -51,19 +52,20 @@ export default function MenuBar() {
       {/* Mobile Menu & Page Title */}
       <div className="flex items-center gap-2 sm:gap-4">
         <div className="lg:hidden">
-            <Sheet>
+            <Sheet open={isSheetOpen} onOpenChange={setIsSheetOpen}>
                 <SheetTrigger asChild>
                     <Button variant="ghost" size="icon" className="h-10 w-10 text-gray-500 rounded-xl">
                         <Menu className="h-6 w-6" />
                     </Button>
                 </SheetTrigger>
-                <SheetContent side="left" className="p-0 w-72">
+                <SheetContent side="left" className="p-0 w-72" showCloseButton={false}>
                     <SidebarContent 
                         isCollapsed={false} 
                         mobile={true} 
                         userRole={userRole} 
                         permissions={permissions} 
                         handleSignOut={() => signOut({ callbackUrl: "/auth/signin" })} 
+                        onNavigate={() => setIsSheetOpen(false)}
                     />
                 </SheetContent>
             </Sheet>

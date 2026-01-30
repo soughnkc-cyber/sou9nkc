@@ -1,14 +1,17 @@
 "use client";
 
 import { ColumnDef } from "@tanstack/react-table";
-import { createColumn, createActionsColumn, createSelectColumn } from "@/components/columns";
+import { createColumn, createSelectColumn } from "@/components/columns";
 import { Badge } from "@/components/ui/badge";
-import { Edit, Trash2, Eye, Clock } from "lucide-react";
+import { Clock } from "lucide-react";
+import { cn } from "@/lib/utils";
 
 export interface Status {
   id: string;
   name: string;
+  etat: string;
   color: string;
+  isActive: boolean;
   recallAfterH?: number | null;
   createdAt: string;
 }
@@ -41,19 +44,7 @@ const RecallBadge = ({ hours }: { hours?: number | null }) => {
 
 /* -------- Columns -------- */
 
-export const getColumns = (
-  onView?: (s: Status) => void,
-  onEdit?: (s: Status) => void,
-  onDelete?: (s: Status) => void
-): ColumnDef<Status>[] => {
-  const actions = [];
-  if (onView)
-    actions.push({ icon: Eye, onClick: onView, className: "text-blue-600 hover:text-blue-800" });
-  if (onEdit)
-    actions.push({ icon: Edit, onClick: onEdit, className: "text-blue-600 hover:text-blue-800" });
-  if (onDelete)
-    actions.push({ icon: Trash2, onClick: onDelete, className: "text-red-600 hover:text-red-800" });
-
+export const getColumns = (): ColumnDef<Status>[] => {
   return [
     createSelectColumn<Status>(),
     createColumn<Status>({
@@ -62,12 +53,17 @@ export const getColumns = (
       isPrimary: true,
       sortable: false,
       cell: ({ row }) => (
-        <span 
-          className="px-3 py-1 rounded-full text-xs font-bold text-white shadow-sm border border-black/5"
-          style={{ backgroundColor: row.original.color || "#6366f1" }}
-        >
-          {row.original.name}
-        </span>
+        <div className="flex items-center gap-2">
+           <span 
+            className="px-3 py-1 rounded-full text-xs font-bold text-white shadow-sm border border-black/5"
+            style={{ backgroundColor: row.original.color || "#6366f1" }}
+          >
+            {row.original.name}
+          </span>
+          {!row.original.isActive && (
+            <Badge variant="outline" className="text-gray-400 border-gray-200 text-[10px]">Inactif</Badge>
+          )}
+        </div>
       ),
     }),
 
@@ -86,6 +82,16 @@ export const getColumns = (
       header: "Créé le",
       sortable: false,
       cell: ({ row }) => formatDateTime(row.original.createdAt),
+    }),
+    createColumn<Status>({
+     accessorKey: "isActive",
+     header: "Actif",
+     sortable: false,
+     cell: ({ row }) => (
+       <Badge variant="outline" className={cn("text-gray-400 border-gray-200 text-[10px]", row.original.isActive ? "bg-green-100 text-green-800" : "bg-red-100 text-red-800")}>
+         {row.original.isActive ? "Actif" : "Inactif"}
+       </Badge>
+     ),
     }),
   ];
 };

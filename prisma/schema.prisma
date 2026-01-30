@@ -64,12 +64,32 @@ enum Role {
 model Status {
   id            String   @id @default(cuid())
   name          String   @unique
+  etat          Etat     @default(STATUS_01)
+  isActive      Boolean  @default(true)
   recallAfterH  Int?    
   color         String   @default("#6366f1") // Indigo default
   isArchived    Boolean  @default(false)
   createdAt     DateTime @default(now())
 
   orders       Order[]
+}
+
+enum Etat {
+  STATUS_01
+  STATUS_02
+  STATUS_03
+  STATUS_04
+  STATUS_05
+  STATUS_06
+  STATUS_07
+  STATUS_08
+  STATUS_09
+  STATUS_10
+  STATUS_11
+  STATUS_12
+  STATUS_13
+  STATUS_14
+  STATUS_15
 }
 
 model Order {
@@ -87,6 +107,7 @@ model Order {
   recallAt      DateTime?
   firstProcessedAt DateTime?
   processingTimeMin Int?
+  recallAttempts Int @default(0)
   createdAt     DateTime @default(now())
   updatedAt     DateTime @updatedAt
 

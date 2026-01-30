@@ -33,11 +33,12 @@ export function DatePickerWithRange({
             id="date"
             variant={"outline"}
             className={cn(
-              "w-[260px] justify-start text-left font-bold h-10 rounded-xl border-gray-200 hover:bg-gray-50 transition-colors px-4",
+              "w-full justify-start text-left font-bold h-10 rounded-xl border-gray-200 hover:bg-gray-50 transition-colors px-4 overflow-hidden",
               !date && "text-muted-foreground"
             )}
           >
-            <CalendarIcon className="mr-2 h-4 w-4 text-[#1F30AD]" />
+            <CalendarIcon className="mr-2 h-4 w-4 text-[#1F30AD] shrink-0" />
+            <span className="truncate">
             {date?.from ? (
               date.to ? (
                 <>
@@ -50,7 +51,8 @@ export function DatePickerWithRange({
             ) : (
               <span>Filtrer par date</span>
             )}
-            <ChevronDown className="ml-auto h-4 w-4 opacity-50" />
+            </span>
+            <ChevronDown className="ml-auto h-4 w-4 opacity-50 shrink-0" />
           </Button>
         </PopoverTrigger>
         <PopoverContent className="w-auto p-0 rounded-2xl border-gray-100 shadow-xl" align="end">

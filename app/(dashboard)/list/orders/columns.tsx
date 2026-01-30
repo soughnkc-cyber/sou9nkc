@@ -1,10 +1,12 @@
 import { ColumnDef } from "@tanstack/react-table";
 import { createColumn, createActionsColumn, createFacetedFilter } from "@/components/columns";
 import { Badge } from "@/components/ui/badge";
-import { Edit, Trash2, Eye, User as UserIcon } from "lucide-react";
+import { Edit, Trash2, Eye, User as UserIcon, Clock } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { RecallCell } from "@/components/recallAt";
+import { differenceInDays, isSameDay, isPast, parseISO } from "date-fns";
+import { Checkbox } from "@/components/ui/checkbox";
 
 export interface Order {
   id: string;
@@ -21,8 +23,11 @@ export interface Order {
     name: string;
     color?: string;
     recallAfterH?: number | null;
+    isActive?: boolean;
+    etat?: string; // e.g. STATUS_15
   } | null;
   processingTimeMin?: number | null;
+  recallAttempts?: number; // Added field
   agent?: {
     id: string;
     name: string | null;
@@ -38,7 +43,7 @@ const StatusSelect = ({
   readOnly,
 }: {
   order: Order;
-  statuses: { id: string; name: string; color?: string }[];
+  statuses: { id: string; name: string; color?: string; isActive?: boolean; etat?: string }[];
   onChange: (orderId: string, statusId: string | null) => void;
   readOnly?: boolean;
 }) => {
@@ -48,25 +53,37 @@ const StatusSelect = ({
     <div onClick={(e) => e.stopPropagation()}>
       <Select
         value={order.status?.id}
-        onValueChange={(value) => onChange(order.id, value)}
+        onValueChange={(value) => {
+          if (value !== order.status?.id) {
+            onChange(order.id, value);
+          }
+        }}
         disabled={readOnly}
       >
-        <SelectTrigger className={cn("h-7 w-[140px] text-xs", readOnly && "opacity-50 cursor-not-allowed")}>
-          <div className="flex items-center gap-2 truncate">
-             {order.status?.id && selectedStatus?.color && (
-                <div 
-                   className="w-2 h-2 rounded-full shrink-0" 
-                   style={{ backgroundColor: selectedStatus.color }}
-                />
-             )}
+        <SelectTrigger 
+          className={cn(
+            "h-7 w-[140px] text-xs font-medium transition-colors border-0 shadow-sm",
+            selectedStatus?.color ? "text-white" : "border border-input bg-background",
+            readOnly && "opacity-50 cursor-not-allowed"
+          )}
+          style={{ 
+            backgroundColor: selectedStatus?.color || undefined
+          }}
+        >
+          <div className="flex items-center gap-2 truncate w-full">
              <SelectValue placeholder="Sélectionner" />
           </div>
         </SelectTrigger>
 
         <SelectContent>
-          {statuses.map((s) => (
+          {statuses
+            .filter(s => s.isActive || s.id === order.status?.id)
+            .map((s) => (
             <SelectItem key={s.id} value={s.id}>
-               <span>{s.name}</span>
+               <div className="flex items-center gap-2">
+                 <span>{s.name}</span>
+                 {!s.isActive && <span className="text-[10px] text-red-400">(Inactif)</span>}
+               </div>
             </SelectItem>
           ))}
         </SelectContent>
@@ -150,16 +167,13 @@ const PriceBadge = ({ price }: { price: number }) => (
   </Badge>
 );
 
-/* -------- Columns -------- */
-import { differenceInDays, isSameDay, isPast, parseISO } from "date-fns";
-import { Checkbox } from "@/components/ui/checkbox";
-
 export const getColumns = (
   role: string | undefined,
   canEditOrders: boolean,
-  statuses: { id: string; name: string; color?: string }[],
+  statuses: { id: string; name: string; color?: string; isActive?: boolean; etat?: string }[],
   agents: { id: string; name: string; iconColor?: string }[],
   productOptions: string[],
+  priceOptions: number[],
   onStatusChange: (orderId: string, statusId: string | null) => void,
   onAgentChange: (orderId: string, agentId: string) => void,
   onRecallChange: (orderId: string, date: string | null) => void,
@@ -206,6 +220,7 @@ export const getColumns = (
       header: "N°",
       isPrimary: true,
       sortable: false,
+      hideMobileLabel: true,
       cell: ({ row }) => <span className="font-mono text-xs">#{row.original.orderNumber}</span>,
     }),
 
@@ -213,6 +228,8 @@ export const getColumns = (
       accessorKey: "productNote",
       header: "Produit(s)",
       sortable: false,
+      isPrimary: true, // Make primary for mobile header
+      hideMobileLabel: true,
       filterComponent: createFacetedFilter(
         "Produit",
         productOptions.map((p) => ({ label: p, value: p }))
@@ -225,14 +242,21 @@ export const getColumns = (
       accessorKey: "orderDate",
       header: "Date Commande",
       sortable: false,
+      hideMobileLabel: true,
       cell: ({ row }) => <span className="text-xs text-gray-500 whitespace-nowrap">{formatDateTime(row.original.orderDate)}</span>,
     }),
 
     createColumn<Order>({
       accessorKey: "totalPrice",
       header: "Prix",
-      isPrimary: true,
+      isPrimary: false, // Move to body
       sortable: false,
+      hideMobileLabel: true,
+      filterComponent: createFacetedFilter(
+        "Prix",
+        priceOptions.map((p) => ({ label: `${p}`, value: p.toString() }))
+      ),
+      accessorFn: (row) => row.totalPrice.toString(),
       cell: ({ row }) => <PriceBadge price={row.original.totalPrice} />,
     }),
 
@@ -241,6 +265,7 @@ export const getColumns = (
           accessorKey: "agent",
           header: "Agent",
           sortable: true,
+          hideMobileLabel: true,
           accessorFn: (row) => row.agent?.name || "Non affecté", // For sorting/filtering text
           filterComponent: createFacetedFilter(
              "Agent",
@@ -266,6 +291,7 @@ export const getColumns = (
       accessorKey: "status",
       header: "Statut",
       sortable: false,
+      hideMobileLabel: true,
       filterComponent: createFacetedFilter(
         "Statut",
         statuses.map((s) => ({ label: s.name, value: s.name }))
@@ -289,11 +315,15 @@ export const getColumns = (
       sortable: false,
       cell: ({ row }) => row.original.customerPhone ?? "-",
     }),
+
+   
     
     createColumn<Order>({
       accessorKey: "recallAt",
       header: "État du rappel",
       sortable: false,
+      isPrimary: true, // Show in mobile header
+      hideMobileLabel: true,
       cell: ({ row }) => {
         const recallAt = row.original.recallAt;
         if (!recallAt) return <span className="text-gray-400 italic text-xs">-</span>;
@@ -301,19 +331,11 @@ export const getColumns = (
         const date = new Date(recallAt);
         const now = new Date();
 
-        if (isSameDay(date, now)) {
-          return <span className="text-red-600 font-bold text-xs">À téléphoner</span>;
+        if (isPast(date) || isSameDay(date, now)) {
+          return <Badge variant="destructive" className="text-[10px] px-1 py-0 h-5">À rappeler</Badge>;
         }
 
-        if (isPast(date)) {
-          return <span className="text-gray-600 text-xs">Temps passé</span>;
-        }
-
-        if (differenceInDays(date, now) >= 1) {
-          return <span className="text-blue-600 text-xs">Bientôt</span>;
-        }
-
-        return <span className="text-gray-600 text-xs">-</span>;
+        return <span className="text-gray-400 italic text-xs">-</span>;
       },
     }),
 
@@ -342,6 +364,17 @@ export const getColumns = (
           {formatDuration(row.original.processingTimeMin)}
         </Badge>
       ),
+    }),
+
+     createColumn<Order>({
+       accessorKey: "recallAttempts",
+       header: "Cpt",
+       sortable: true,
+       cell: ({ row }) => (
+         <Badge variant="outline" className="font-mono text-[10px] h-5 w-5 flex items-center justify-center p-0 border-gray-300 text-gray-600">
+            {row.original.recallAttempts || 0}
+         </Badge>
+       )
     }),
   ];
   

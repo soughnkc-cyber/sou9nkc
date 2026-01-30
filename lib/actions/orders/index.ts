@@ -199,6 +199,7 @@ export const getOrders = async (user: UserLite) => {
     totalPrice: o.totalPrice,
     recallAt: o.recallAt?.toISOString() || null,
     processingTimeMin: o.processingTimeMin,
+    recallAttempts: o.recallAttempts,
     status: o.status ? { id: o.status.id, name: o.status.name, color: o.status.color } : null,
     agent: o.agent
       ? { id: o.agent.id, name: o.agent.name, phone: o.agent.phone, iconColor: o.agent.iconColor }

@@ -16,8 +16,17 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { Status } from "@/app/(dashboard)/list/status/columns";
-import { StatusFormData, statusFormSchema } from "@/lib/schema";
+import { StatusFormData, statusFormSchema, Etat } from "@/lib/schema";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 
+
+import { Switch } from "@/components/ui/switch";
 
 interface StatusFormProps {
   status?: Status | null;
@@ -38,6 +47,8 @@ export function StatusForm({
       name: status?.name || "",
       recallAfterH: status?.recallAfterH ?? undefined,
       color: status?.color || "#6366f1",
+      etat: (status?.etat as Etat) || Etat.STATUS_01,
+      isActive: status?.isActive ?? true,
     },
   });
 
@@ -64,6 +75,39 @@ export function StatusForm({
                 </FormControl>
                 <FormDescription>
                   Nom visible dans l’application
+                </FormDescription>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+
+          {/* Etat */}
+          <FormField
+            control={form.control}
+            name="etat"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Etat Système *</FormLabel>
+                <Select
+                  disabled={isLoading || isEditMode}
+                  onValueChange={field.onChange}
+                  defaultValue={field.value}
+                >
+                  <FormControl>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Sélectionner un état systeme" />
+                    </SelectTrigger>
+                  </FormControl>
+                  <SelectContent>
+                    {Object.values(Etat).map((etat) => (
+                      <SelectItem key={etat} value={etat}>
+                        {etat}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                <FormDescription>
+                  L'état technique pour les statistiques (01-15)
                 </FormDescription>
                 <FormMessage />
               </FormItem>
@@ -132,7 +176,32 @@ export function StatusForm({
               </FormItem>
             )}
           />
+
+          {/* Active */}
+          <FormField
+            control={form.control}
+            name="isActive"
+            render={({ field }) => (
+              <FormItem className="flex flex-row items-center justify-between rounded-lg border p-3 shadow-xs">
+                <div className="space-y-0.5">
+                  <FormLabel>Statut Actif</FormLabel>
+                  <FormDescription>
+                    Désactiver pour masquer ce statut
+                  </FormDescription>
+                </div>
+                <FormControl>
+                  <Switch
+                    checked={field.value}
+                    onCheckedChange={field.onChange}
+                    disabled={isLoading}
+                  />
+                </FormControl>
+              </FormItem>
+            )}
+          />
+
         </div>
+
 
         {/* Actions */}
         <div className="flex justify-end gap-3 pt-4 border-t">

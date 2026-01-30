@@ -71,14 +71,14 @@ export default function SupervisorDashboardPage() {
 
   return (
     <div className="flex flex-col gap-8">
-      <div className="flex items-center justify-between">
-        <div>
+      <div className="flex items-center justify-end">
+        {/* <div>
           <div className="flex items-center gap-2 mb-1">
             <h1 className="text-3xl font-black text-blue-900 tracking-tight">Espace Superviseur</h1>
             <ShieldCheckIcon className="h-6 w-6 text-[#1F30AD]" />
           </div>
           <p className="text-muted-foreground font-medium">Vue d'ensemble de l'activité agents</p>
-        </div>
+        </div> */}
         <Button 
           variant="outline" 
           size="sm" 
@@ -91,22 +91,22 @@ export default function SupervisorDashboardPage() {
         </Button>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-        <StatsCard
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-2 gap-6">
+        {/* <StatsCard
           title="Commandes/Mois"
           value={stats.currentMonthOrders}
           trend={{ value: stats.ordersTrend, isPositive: stats.ordersTrend >= 0 }}
           description="vs mois dernier"
           icon={<ShoppingBagIcon className="h-5 w-5" />}
-        />
-        <StatsCard
+        /> */}
+        {/* <StatsCard
           title="Chiffre d'Affaire"
           value={stats.revenue.toLocaleString("fr-FR", { style: "currency", currency: "MRU" })}
           trend={{ value: stats.revenueTrend, isPositive: stats.revenueTrend >= 0 }}
           description="vs mois dernier"
           icon={<WalletIcon className="h-5 w-5" />}
           className="border-l-4 border-l-[#1F30AD]"
-        />
+        /> */}
         <StatsCard
           title="Total Commandes"
           value={stats.totalOrders}

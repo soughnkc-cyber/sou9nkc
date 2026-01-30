@@ -4,7 +4,7 @@ import { useState, useEffect, useCallback, useMemo, Suspense } from "react";
 import { useSession } from "next-auth/react";
 import { redirect, useSearchParams } from "next/navigation";
 import { toast } from "sonner";
-import { isSameDay, differenceInHours } from "date-fns";
+import { isSameDay, differenceInHours, isPast } from "date-fns";
 import { cn } from "@/lib/utils";
 
 import { DataTable } from "@/components/datatable";
@@ -39,7 +39,7 @@ function OrdersPageContent() {
   // Hooks
   // --------------------
   const [orders, setOrders] = useState<Order[]>([]);
-  const [statuses, setStatuses] = useState<{ id: string; name: string; color?: string }[]>([]);
+  const [statuses, setStatuses] = useState<{ id: string; name: string; color?: string; isActive?: boolean; etat: string }[]>([]);
   const [agents, setAgents] = useState<{ id: string; name: string; iconColor?: string }[]>([]);
   const [isLoadingPage, setIsLoadingPage] = useState(false);
   const [hasPermission, setHasPermission] = useState<boolean | null>(null);
@@ -108,7 +108,7 @@ function OrdersPageContent() {
         getStatus(),
         getAgents()
       ]);
-      setStatuses(statusData);
+      setStatuses(statusData as any); 
       setAgents(agentData);
     } catch (error) {
       console.error(error);
@@ -121,7 +121,12 @@ function OrdersPageContent() {
       const updated = await updateOrderStatus(orderId, statusId);
       setOrders(prev =>
         prev.map(o =>
-          o.id === orderId ? { ...o, status: updated.status, recallAt: updated.recallAt } : o
+          o.id === orderId ? { 
+            ...o, 
+            status: updated.status, 
+            recallAt: updated.recallAt,
+            recallAttempts: updated.recallAttempts 
+          } : o
         )
       );
       toast.success("Statut mis à jour");
@@ -232,7 +237,8 @@ function OrdersPageContent() {
       o.recallAt && isSameDay(new Date(o.recallAt), new Date())
     ).length;
     
-    const processedOrders = orders.filter(o => o.status).length;
+    // Taux de traitement basé sur STATUS_15
+    const processedOrders = orders.filter(o => o.status?.etat === 'STATUS_15' || (o.status as any)?.etat === 'STATUS_15').length;
     const treatmentRate = total > 0 ? (processedOrders / total) * 100 : 0;
     
     const ordersWithDuration = orders.filter(o => o.processingTimeMin != null && o.processingTimeMin > 0);
@@ -310,6 +316,11 @@ function OrdersPageContent() {
      return Array.from(notes);
   }, [filteredOrders]);
 
+  const priceOptions = useMemo(() => {
+     const prices = new Set(filteredOrders.map(o => o.totalPrice));
+     return Array.from(prices).sort((a, b) => a - b);
+  }, [filteredOrders]);
+
   // --------------------
   // Modal d'assignation
   // --------------------
@@ -340,8 +351,6 @@ function OrdersPageContent() {
 
   const columns = useMemo(() => {
     // BUG FIX: The user wants ADMIN and SUPERVISOR to be able to edit too
-    // previous logic: const isManagement = user?.role === "ADMIN" || user?.role === "SUPERVISOR"; const canEdit = isManagement ? false : ...
-    // Let's change it:
     const canEdit = !!(user as any)?.canEditOrders || user?.role === "ADMIN" || user?.role === "SUPERVISOR";
     
     return getColumns(
@@ -349,12 +358,13 @@ function OrdersPageContent() {
         canEdit, 
         statuses, 
         agents, 
-        productOptions, 
+        productOptions,
+        priceOptions, // Add price options
         handleStatusChange, 
         handleAgentChange, 
         handleRecallChange
     );
-  }, [statuses, agents, productOptions, user?.role, (user as any)?.canEditOrders, handleStatusChange, handleAgentChange, handleRecallChange]);
+  }, [statuses, agents, productOptions, priceOptions, user?.role, (user as any)?.canEditOrders, handleStatusChange, handleAgentChange, handleRecallChange]);
 
   const toggleFilter = (filter: string) => {
     setCurrentFilter(prev => prev === filter ? null : filter);
@@ -380,14 +390,14 @@ function OrdersPageContent() {
   return (
     <div className="space-y-6 sm:space-y-8 max-w-[1600px] mx-auto">
       {/* Header */}
-      <div className="flex flex-col md:flex-row justify-between items-center md:items-center gap-4 sm:gap-6">
-        <div className="text-center md:text-left">
+      <div className="flex flex-col md:flex-row justify-end items-center md:items-center gap-4 sm:gap-6">
+        {/* <div className="text-center md:text-left">
           <h1 className="text-2xl sm:text-3xl font-black text-gray-900 tracking-tight leading-tight">Commandes</h1>
           <p className="text-xs sm:text-sm text-gray-500 font-medium mt-1">Gérez vos flux de commandes synchronisées</p>
-        </div>
+        </div> */}
 
-        <div className="flex items-center justify-center w-full md:w-auto gap-2 sm:gap-3">
-            <DatePickerWithRange date={dateRange} setDate={setDateRange} />
+        <div className="hidden sm:flex items-center justify-center w-full md:w-auto gap-2 sm:gap-3">
+            <DatePickerWithRange date={dateRange} setDate={setDateRange} className="w-[260px]" />
             <Button 
                 variant="outline" 
                 size="sm" 
@@ -402,9 +412,57 @@ function OrdersPageContent() {
       </div>
 
       {/* Stats Cards */}
+      {/* Sticky Header Mobile - Persistent container for Recall Card and Filters */}
+      <div className="sm:hidden sticky top-[64px] z-40 pb-2 bg-gray-50/95 backdrop-blur-sm -mx-4 px-4 pt-2 border-b border-gray-100/50 mb-2">
+         <div className="grid grid-cols-2 gap-3">
+            {/* Recall Card (Mobile Link) */}
+             {(currentFilter === "torecall" || filterType === "torecall" || currentFilter === "new_arrivals") ? (
+              <StatCard
+                title="Nouveaux Arrivés"
+                value={stats.newOrdersCount}
+                icon={RefreshCw}
+                active={currentFilter === "new_arrivals"}
+                onClick={() => toggleFilter(currentFilter === "new_arrivals" ? "torecall" : "new_arrivals")}
+                color="bg-purple-50"
+                trend="Live"
+                trendUp={true}
+              />
+            ) : (
+              <StatCard
+                title="À Rappeler"
+                value={stats.recallToday}
+                icon={PhoneIncoming}
+                active={currentFilter === "torecall" || filterType === "torecall"}
+                onClick={() => toggleFilter("torecall")}
+                color="bg-blue-50"
+                trend="3.2%"
+                trendUp={false}
+              />
+            )}
+
+            {/* Mobile Filters */}
+            <div className="flex flex-col gap-2 p-2 justify-center items-center bg-white rounded-2xl border border-gray-100 shadow-xs h-full">
+                <DatePickerWithRange date={dateRange} setDate={setDateRange} className="w-full" />
+                <Button 
+                    variant="outline" 
+                    size="sm" 
+                    className="w-full h-8 rounded-xl font-bold border-gray-200 hover:bg-blue-50 text-[#1F30AD] text-xs" 
+                    onClick={fetchOrders} 
+                    disabled={isLoadingPage}
+                >
+                  <RefreshCw className={cn("h-3.5 w-3.5 mr-2", isLoadingPage && "animate-spin")} />
+                  Actualiser
+                </Button>
+            </div>
+         </div>
+      </div>
+
+      {/* Stats Cards Desktop Grid */}
       <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3 sm:gap-6">
         
 
+        {/* Recall Card (Desktop Only) */}
+        <div className="hidden sm:block">
         {(currentFilter === "torecall" || filterType === "torecall" || currentFilter === "new_arrivals") ? (
           <StatCard
             title="Nouveaux Arrivés"
@@ -417,7 +475,7 @@ function OrdersPageContent() {
             trendUp={true}
           />
         ) : (
-          <StatCard
+           <StatCard
             title="À Rappeler (Aujourd'hui)"
             value={stats.recallToday}
             icon={PhoneIncoming}
@@ -428,6 +486,9 @@ function OrdersPageContent() {
             trendUp={false}
           />
         )}
+        </div>
+        
+
 
         <StatCard
           title="Total Commandes"
@@ -452,7 +513,7 @@ function OrdersPageContent() {
         />
 
         <StatCard
-          title="Taux de Traitement"
+          title="Taux de Confirmation"
           value={`${stats.treatmentRate.toFixed(1)}%`}
           icon={Target}
           active={currentFilter === "processed" || filterType === "processed"}
@@ -488,11 +549,29 @@ function OrdersPageContent() {
             columns={columns}
             data={filteredOrders}
             searchPlaceholder="Rechercher une commande..."
-            pageSizeOptions={[5, 10, 20]}
+            pageSizeOptions={[10, 20, 50]}
             defaultPageSize={10}
             showSearch
             showPagination
             onSelectionChange={setSelectedOrders}
+            getRowClassName={(row) => {
+               const recallAt = row.recallAt ? new Date(row.recallAt) : null;
+               if (recallAt && (isPast(recallAt) || isSameDay(recallAt, new Date()))) {
+                 return "border border-red-500 shadow-sm shadow-red-100";
+               }
+               return "";
+            }}
+            mobileRowAction={(row) => {
+               const recallAt = row.recallAt ? new Date(row.recallAt) : null;
+               if (recallAt && (isPast(recallAt) || isSameDay(recallAt, new Date()))) {
+                 return (
+                   <div className="bg-red-600 rounded-full p-1.5 shadow-sm animate-pulse">
+                     <Clock className="h-3.5 w-3.5 text-white" />
+                   </div>
+                 );
+               }
+               return null;
+            }}
             extraSearchActions={
               <div className="flex items-center gap-2">
                 {selectedOrders.length === 1 && (
@@ -548,4 +627,3 @@ export default function OrdersPage() {
     </Suspense>
   );
 }
-
