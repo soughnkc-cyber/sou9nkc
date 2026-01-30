@@ -1,15 +1,27 @@
-// app/actions/status.ts
 "use server";
 
 import prisma from "@/lib/prisma";
+
 import { StatusFormData } from "@/lib/schema";
 import { Status as PrismaStatus } from "@/app/generated/prisma/client";
 import { Status } from "@/app/(dashboard)/list/status/columns";
+import { getServerSession } from "next-auth";
+import { authOptions } from "@/app/api/auth/[...nextauth]/route";
+import { hasPermission } from "@/lib/auth-utils";
+import { checkPermission } from "../auth-helper";
+import { revalidatePath } from "next/cache";
+
+
+
+
+
+
 
 function mapStatus(s: PrismaStatus): Status {
   return {
     id: s.id,
     name: s.name,
+    color: s.color,
     recallAfterH: s.recallAfterH ?? undefined,
     createdAt: s.createdAt.toISOString(),
   };
@@ -19,7 +31,10 @@ function mapStatus(s: PrismaStatus): Status {
    GET
 ========================= */
 export async function getStatus(): Promise<Status[]> {
+  await checkPermission("canViewStatuses");
+  
   const status = await prisma.status.findMany({
+    where: { isArchived: false },
     orderBy: { createdAt: "desc" },
   });
 
@@ -30,14 +45,18 @@ export async function getStatus(): Promise<Status[]> {
    CREATE
 ========================= */
 export async function createStatusAction(data: StatusFormData) {
+  await checkPermission("canEditStatuses");
+  
   try {
     const status = await prisma.status.create({
       data: {
         name: data.name,
         recallAfterH: data.recallAfterH,
+        color: data.color || "#6366f1",
       },
     });
 
+    revalidatePath("/");
     return mapStatus(status);
   } catch (err) {
     console.error("Erreur createStatusAction:", err);
@@ -52,15 +71,19 @@ export async function updateStatusAction(
   statusId: string,
   data: Partial<StatusFormData>
 ) {
+  await checkPermission("canEditStatuses");
+  
   try {
     const status = await prisma.status.update({
       where: { id: statusId },
       data: {
         name: data.name,
         recallAfterH: data.recallAfterH,
+        color: data.color,
       },
     });
 
+    revalidatePath("/");
     return mapStatus(status);
   } catch (err) {
     console.error("Erreur updateStatusAction:", err);
@@ -68,19 +91,43 @@ export async function updateStatusAction(
   }
 }
 
+
 /* =========================
-   DELETE
+   DELETE (SOFT)
 ========================= */
 export async function deleteStatusAction(statusId: string) {
+  await checkPermission("canEditStatuses");
+  
   try {
-    const status = await prisma.status.delete({
+    // Soft delete: marks as archived
+    const status = await prisma.status.update({
       where: { id: statusId },
+      data: { isArchived: true },
     });
 
     return mapStatus(status);
+
   } catch (err) {
     console.error("Erreur deleteStatusAction:", err);
     throw new Error("Impossible de supprimer le statut");
+  }
+}
+
+export async function deleteStatusesAction(statusIds: string[]) {
+  await checkPermission("canEditStatuses");
+  
+  try {
+    // Soft delete many
+    const result = await prisma.status.updateMany({
+      where: {
+        id: { in: statusIds },
+      },
+      data: { isArchived: true },
+    });
+    return result;
+  } catch (err) {
+    console.error("Erreur deleteStatusesAction:", err);
+    throw new Error("Impossible de supprimer les statuts");
   }
 }
 
@@ -89,7 +136,10 @@ export const updateOrderStatus = async (
   orderId: string,
   statusId: string | null
 ) => {
+  await checkPermission("canEditOrders");
+  
   try {
+
     const status = statusId
       ? await prisma.status.findUnique({ where: { id: statusId } })
       : null;
@@ -124,10 +174,11 @@ export const updateOrderStatus = async (
       include: { status: true },
     });
 
-   return {
-  ...order,
-  recallAt: order.recallAt ? order.recallAt.toISOString() : null,
-};
+    return {
+      ...order,
+      recallAt: order.recallAt ? order.recallAt.toISOString() : null,
+    };
+
 
   } catch (err) {
     console.error(err);

@@ -15,10 +15,15 @@ import {
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
+import { getMe } from "@/lib/actions/users";
+import PermissionDenied from "@/components/permission-denied";
+
 
 export default function SupervisorDashboardPage() {
   const [stats, setStats] = useState<any>(null);
   const [loading, setLoading] = useState(true);
+  const [hasPermission, setHasPermission] = useState<boolean | null>(null);
+
 
   const fetchStats = async () => {
     setLoading(true);
@@ -33,10 +38,20 @@ export default function SupervisorDashboardPage() {
   };
 
   useEffect(() => {
-    fetchStats();
+    getMe().then(user => {
+      if (user?.canViewDashboard) {
+        setHasPermission(true);
+        fetchStats();
+      } else {
+        setHasPermission(false);
+        setLoading(false);
+      }
+    });
   }, []);
 
-  if (loading && !stats) {
+
+  if (hasPermission === false) return <PermissionDenied />;
+  if (hasPermission === null || (loading && !stats)) {
     return (
       <div className="flex flex-col gap-6 animate-pulse">
         <div className="h-10 w-48 bg-gray-200 rounded-md mb-2"></div>
@@ -52,6 +67,7 @@ export default function SupervisorDashboardPage() {
       </div>
     );
   }
+
 
   return (
     <div className="flex flex-col gap-8">

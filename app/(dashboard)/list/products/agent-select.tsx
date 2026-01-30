@@ -22,6 +22,7 @@ interface AgentSelectProps {
   selected: string[];
   onChange: (selected: string[]) => void;
   placeholder?: string;
+  disabled?: boolean;
 }
 
 export function AgentSelect({
@@ -29,6 +30,7 @@ export function AgentSelect({
   selected,
   onChange,
   placeholder = "Sélectionner...",
+  disabled = false,
 }: AgentSelectProps) {
   const [open, setOpen] = React.useState(false);
 
@@ -50,7 +52,8 @@ export function AgentSelect({
           variant="outline"
           role="combobox"
           aria-expanded={open}
-          className="w-full justify-between min-h-[40px] h-auto py-2"
+          disabled={disabled}
+          className="w-full justify-between min-h-[40px] h-auto py-2 disabled:opacity-50 disabled:cursor-not-allowed"
         >
           <div className="flex flex-wrap gap-1">
             {selectedLabels.length > 0 ? (

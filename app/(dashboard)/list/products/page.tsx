@@ -15,9 +15,11 @@ import { toast } from "sonner";
 
 /* Actions Products */
 import { getProducts, insertNewProducts, updateProductAgents } from "@/lib/actions/products";
-import { getUsers } from "@/lib/actions/users";
+import { getAgents, getMe } from "@/lib/actions/users";
 import { getColumns, Product } from "./column";
 import { Option } from "./agent-select";
+import PermissionDenied from "@/components/permission-denied";
+
 
 /* Stats */
 const getProductStats = (products: Product[]) => ({
@@ -29,6 +31,9 @@ export default function ProductsPage() {
   const [products, setProducts] = useState<Product[]>([]);
   const [agents, setAgents] = useState<Option[]>([]);
   const [isLoadingPage, setIsLoadingPage] = useState(false);
+  const [hasPermission, setHasPermission] = useState<boolean | null>(null);
+  const [canEditPermission, setCanEditPermission] = useState(false);
+
 
   /* Sync Shopify → DB */
   const insertProducts = useCallback(async () => {
@@ -49,16 +54,14 @@ export default function ProductsPage() {
   const fetchProducts = useCallback(async () => {
     setIsLoadingPage(true);
     try {
-      const [productsData, usersData] = await Promise.all([
+      const [productsData, agentsData] = await Promise.all([
         getProducts(),
-        getUsers()
+        getAgents()
       ]);
       setProducts(productsData);
       
-      const filteredAgents = usersData
-        .filter(u => u.role === "AGENT" || u.role === "AGENT_TEST")
-        .map(u => ({ id: u.id, name: u.name }));
-      setAgents(filteredAgents);
+      const formattedAgents = agentsData.map(u => ({ id: u.id, name: u.name }));
+      setAgents(formattedAgents);
     } catch (error) {
       console.error(error);
       toast.error("Erreur lors du chargement des données");
@@ -79,20 +82,37 @@ export default function ProductsPage() {
   };
 
   useEffect(() => {
-    fetchProducts();
-    insertProducts();
+    getMe().then(user => {
+      if (user?.canViewProducts) {
+        setHasPermission(true);
+        setCanEditPermission(user.canEditProducts);
+        fetchProducts();
+        insertProducts();
+      } else {
+        setHasPermission(false);
+      }
+    });
   }, [fetchProducts, insertProducts]);
+
 
   /* Memo */
   const stats = useMemo(() => getProductStats(products), [products]);
 
   const columns = useMemo(
-    () => getColumns(agents, handleUpdateAgents),
-    [agents]
+    () => getColumns(agents, handleUpdateAgents, canEditPermission),
+    [agents, canEditPermission]
+  );
+
+  if (hasPermission === false) return <PermissionDenied />;
+  if (hasPermission === null) return (
+    <div className="flex items-center justify-center min-h-[60vh]">
+      <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+    </div>
   );
 
   return (
     <div className="p-6 space-y-6">
+
       {/* Header */}
       <div className="flex flex-col lg:flex-row justify-between gap-4">
         <div>

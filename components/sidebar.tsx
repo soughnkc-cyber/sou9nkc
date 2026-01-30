@@ -22,6 +22,10 @@ import { Avatar, AvatarFallback } from "@/components/ui/avatar"; // Supprimé Av
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
 import { Separator } from "@/components/ui/separator";
 
+import { Permissions } from "@/lib/auth-utils";
+import { getMe } from "@/lib/actions/users";
+
+
 // Définition des rôles
 type Role = "ADMIN" | "AGENT" | "SUPERVISOR" | "AGENT_TEST";
 
@@ -30,6 +34,7 @@ interface NavItem {
   href: string;
   icon: React.ComponentType<{ className?: string }>;
   roles: Role[];
+  permission?: keyof Permissions;
 }
 
 const navigationItems: NavItem[] = [
@@ -38,50 +43,59 @@ const navigationItems: NavItem[] = [
     href: "/admin",
     icon: LayoutDashboard,
     roles: ["ADMIN"],
+    permission: "canViewDashboard",
   },
   {
     name: "Dashboard Agent",
     href: "/agent",
     icon: LayoutDashboard,
     roles: ["AGENT", "AGENT_TEST"],
+    permission: "canViewDashboard",
   },
   {
     name: "Dashboard Superviseur",
     href: "/supervisor",
     icon: LayoutDashboard,
     roles: ["SUPERVISOR"],
+    permission: "canViewDashboard",
   },
   {
     name: "Utilisateurs",
     href: "/list/users",
     icon: Users,
     roles: ["ADMIN"],
+    permission: "canViewUsers",
   },
   {
     name: "Commandes",
     href: "/list/orders",
     icon: ShoppingCart,
     roles: ["ADMIN", "SUPERVISOR", "AGENT", "AGENT_TEST"],
+    permission: "canViewOrders",
   },
   {
     name: "Reporting",
     href: "/list/reporting",
     icon: BarChart3,
     roles: ["ADMIN", "SUPERVISOR"],
+    permission: "canViewReporting",
   },
   {
     name: "Status",
     href: "/list/status",
     icon: ShieldCheck,
     roles: ["ADMIN"],
+    permission: "canViewStatuses",
   },
   {
     name: "Produits",
     href: "/list/products",
     icon: ShoppingCart,
     roles: ["ADMIN", "SUPERVISOR"],
+    permission: "canViewProducts",
   },
 ];
+
 
 export default function Sidebar({
   isCollapsed,
@@ -93,10 +107,21 @@ export default function Sidebar({
   const { data: session, status } = useSession();
   const pathname = usePathname();
   const [mounted, setMounted] = useState(false);
+  const [dbUser, setDbUser] = useState<any>(null);
 
   useEffect(() => {
     setMounted(true);
   }, []);
+
+  // Fetch real-time permissions on mount and navigation
+  useEffect(() => {
+    if (status === "authenticated") {
+      getMe().then(user => {
+        setDbUser(user);
+      });
+    }
+  }, [status, pathname]);
+
 
   // Loading state
   if (status === "loading" || !mounted) {
@@ -114,10 +139,24 @@ export default function Sidebar({
     return null;
   }
 
-  const userRole = (session.user as any).role as Role;
-  const filteredNavigation = navigationItems.filter((item) =>
-    item.roles.includes(userRole)
-  );
+  const userRole = (dbUser?.role || (session?.user as any)?.role) as Role;
+  const permissions = dbUser || (session?.user as any) || {};
+
+  const filteredNavigation = navigationItems.filter((item) => {
+    // Vérifie d'abord le rôle
+    const hasRole = item.roles.includes(userRole);
+    if (!hasRole) return false;
+
+    // Vérifie ensuite la permission spécifique si elle existe
+    if (item.permission) {
+      return permissions[item.permission] === true;
+    }
+
+    return true;
+  });
+
+
+
 
   const handleSignOut = () => {
     signOut({ callbackUrl: "/auth/signin" });
@@ -137,7 +176,8 @@ export default function Sidebar({
           mobile ? "gap-3" : (isCollapsed ? "justify-center" : "gap-3")
         )}>
           <Avatar className="h-10 w-10 border-2 border-primary/10">
-            <AvatarFallback className="bg-gradient-to-br from-blue-600 to-indigo-700 text-white font-bold">
+            <AvatarFallback className="bg-linear-to-br from-blue-600 to-indigo-700 text-white font-bold">
+
               <User className="h-5 w-5" />
             </AvatarFallback>
           </Avatar>

@@ -5,6 +5,15 @@ import { User } from "@/app/(dashboard)/list/users/columns";
 import { authOptions } from "@/app/api/auth/[...nextauth]/route";
 import prisma from "@/lib/prisma";
 import { getServerSession } from "next-auth";
+import { hasPermission } from "@/lib/auth-utils";
+import { checkPermission } from "../auth-helper";
+import { revalidatePath } from "next/cache";
+
+
+
+
+
+
 
 type ShopifyOrder = {
   order_number: number;
@@ -33,9 +42,11 @@ export const insertNewOrders = async (shopifyOrders: ShopifyOrder[]) => {
   // ----------------------------
   const agents = await prisma.user.findMany({
     where: { 
-      role: { in: ["AGENT", "AGENT_TEST"] },
-      status: "ACTIVE"
+      role: { in: ["AGENT", "AGENT_TEST", "SUPERVISOR"] }, // Ajouté SUPERVISOR si nécessaire
+      status: "ACTIVE",
+      canViewOrders: true,
     },
+
     orderBy: { id: "asc" },
   });
   if (agents.length === 0) return console.warn("Aucun agent trouvé pour l'attribution automatique");
@@ -88,7 +99,10 @@ export const insertNewOrders = async (shopifyOrders: ShopifyOrder[]) => {
     insertedOrderIds.push(created.id);
   }
 
+  revalidatePath("/");
+
   if (insertedOrderIds.length === 0) return;
+
 
   // ----------------------------
   // 3️⃣ Attribution des agents (Uniquement pour les nouvelles commandes)
@@ -156,10 +170,15 @@ type UserLite = {
 };
 
 export const getOrders = async (user: UserLite) => {
-  const isAdmin = user.role === "ADMIN" || user.role === "SUPERVISOR";
+  const session = await checkPermission("canViewOrders");
+  const sessionUser = session.user as any;
+
+  // Limitation Agent/Supervisor logic - On garde l'isolation par défaut
+  // Seuls ADMIN et SUPERVISOR (si autorisé à voir) voient tout.
+  const isGlobalViewer = sessionUser.role === "ADMIN" || sessionUser.role === "SUPERVISOR";
 
   const orders = await prisma.order.findMany({
-    where: isAdmin ? {} : { agentId: user.id },
+    where: isGlobalViewer ? {} : { agentId: sessionUser.id },
     include: {
       status: true,
       agent: {
@@ -168,6 +187,7 @@ export const getOrders = async (user: UserLite) => {
     },
     orderBy: { orderDate: "desc" },
   });
+
 
   return orders.map((o) => ({
     id: o.id,
@@ -190,10 +210,14 @@ export const updateOrderRecallAt = async (
   orderId: string,
   recallAt: Date | null
 ) => {
+  await checkPermission("canEditOrders");
+  
   const order = await prisma.order.update({
     where: { id: orderId },
     data: { recallAt },
   });
+
+  revalidatePath("/");
 
   return {
     ...order,
@@ -201,4 +225,30 @@ export const updateOrderRecallAt = async (
   };
 };
 
+export const updateOrderAgent = async (orderId: string, agentId: string) => {
+// await checkPermission("canEditOrders"); // Permission removed as requested
+  const session = await getServerSession(authOptions);
+  if (!session) throw new Error("Unauthorized");
 
+  try {
+     const order = await prisma.order.update({
+      where: { id: orderId },
+      data: { agentId },
+      include: { agent: true, status: true }
+    });
+
+    revalidatePath("/");
+    
+    return {
+        ...order,
+        orderDate: order.orderDate.toISOString(),
+        recallAt: order.recallAt ? order.recallAt.toISOString() : null,
+        status: order.status ? { id: order.status.id, name: order.status.name } : null,
+        agent: order.agent ? { id: order.agent.id, name: order.agent.name, phone: order.agent.phone } : null
+    };
+
+  } catch (err) {
+    console.error("Erreur updateOrderAgent:", err);
+    throw new Error("Impossible de modifier l'agent");
+  }
+};

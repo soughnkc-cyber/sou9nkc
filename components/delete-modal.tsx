@@ -12,6 +12,7 @@ interface DeleteUserModalProps {
   onConfirm: () => Promise<void>;
   user: User | null;
   isLoading?: boolean;
+  title?: string;
 }
 
 interface DeleteStatusModalProps {
@@ -29,16 +30,20 @@ export function DeleteUserModal({
   onConfirm,
   user,
   isLoading = false,
+  title,
 }: DeleteUserModalProps) {
-  if (!user) return null;
+  if (!user && !title) return null;
 
   return (
     <ConfirmModal
       isOpen={isOpen}
       onClose={onClose}
       onConfirm={onConfirm}
-      title="Supprimer l'utilisateur"
-      message={`Êtes-vous sûr de vouloir supprimer l'utilisateur "${user.name}" ? Cette action est irréversible.`}
+      title={title || "Supprimer l'utilisateur"}
+      message={user 
+        ? `Êtes-vous sûr de vouloir supprimer l'utilisateur "${user.name}" ? Cette action est irréversible.`
+        : "Êtes-vous sûr de vouloir supprimer les utilisateurs sélectionnés ? Cette action est irréversible."
+      }
       confirmText="Supprimer"
       cancelText="Annuler"
       variant="danger"

@@ -1,7 +1,16 @@
 "use server";
 
 import prisma from "@/lib/prisma";
+
 import { Prisma } from "@/app/generated/prisma/client";
+import { getServerSession } from "next-auth";
+import { authOptions } from "@/app/api/auth/[...nextauth]/route";
+import { hasPermission } from "@/lib/auth-utils";
+import { checkPermission } from "../auth-helper";
+
+
+
+
 
 export interface ReportFilters {
   startDate?: Date;
@@ -11,7 +20,10 @@ export interface ReportFilters {
 }
 
 export async function getReportStats(filters: ReportFilters) {
+  await checkPermission("canViewReporting");
+  
   const { startDate, endDate, agentIds, statusIds } = filters;
+
 
   const where: Prisma.OrderWhereInput = {};
 
@@ -112,7 +124,10 @@ export async function getReportStats(filters: ReportFilters) {
 }
 
 export async function getFilterOptions() {
+  await checkPermission("canViewReporting");
+  
   const [agents, statuses] = await Promise.all([
+
     prisma.user.findMany({
       where: { role: { in: ["AGENT", "AGENT_TEST", "SUPERVISOR", "ADMIN"] } },
       select: { id: true, name: true },

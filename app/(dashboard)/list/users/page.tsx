@@ -5,14 +5,16 @@ import { useState, useCallback, useEffect, useMemo } from "react";
 import { DataTable } from "@/components/datatable";
 import { getColumns, User } from "./columns";
 import { Button } from "@/components/ui/button";
-import { Plus, RefreshCw } from "lucide-react";
+import { Plus, RefreshCw, Trash2 } from "lucide-react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { useModal } from "@/hooks/use-modal";
 import { UserFormData } from "@/lib/schema";
 import { UserFormModal } from "@/components/forms/user-form-modal";
 import { DeleteUserModal } from "@/components/delete-modal";
 import { toast } from "sonner";
-import { getUsers, createUserAction, updateUserAction, deleteUserAction, toggleUserStatus } from "@/lib/actions/users";
+import { getUsers, createUserAction, updateUserAction, deleteUserAction, deleteUsersAction, toggleUserStatus, getMe } from "@/lib/actions/users";
+import PermissionDenied from "@/components/permission-denied";
+
 
 const percent = (value: number, total: number) => (total === 0 ? 0 : Math.round((value / total) * 100));
 
@@ -32,7 +34,11 @@ const getUserStats = (users: User[]) => ({
 export default function UsersPage() {
   const [users, setUsers] = useState<User[]>([]);
   const [selectedUser, setSelectedUser] = useState<User | null>(null);
+  const [selectedRows, setSelectedRows] = useState<User[]>([]);
   const [isLoadingPage, setIsLoadingPage] = useState(false);
+  const [hasPermission, setHasPermission] = useState<boolean | null>(null);
+
+
 
   // Modals
   const addModal = useModal();
@@ -54,8 +60,16 @@ export default function UsersPage() {
   }, []);
 
   useEffect(() => {
-    fetchUsers();
+    getMe().then(user => {
+      if (user?.canViewUsers) {
+        setHasPermission(true);
+        fetchUsers();
+      } else {
+        setHasPermission(false);
+      }
+    });
   }, [fetchUsers]);
+
 
   const handleEditUser = useCallback((user: User) => {
     setSelectedUser(user);
@@ -113,6 +127,24 @@ export default function UsersPage() {
   }, [selectedUser, editModal]);
 
   const handleConfirmDelete = useCallback(async () => {
+    if (selectedRows.length > 0) {
+      // Suppression groupée
+      try {
+        deleteModal.setLoading(true);
+        await deleteUsersAction(selectedRows.map(u => u.id));
+        setUsers(prev => prev.filter(u => !selectedRows.find(sr => sr.id === u.id)));
+        deleteModal.closeModal();
+        setSelectedRows([]);
+        toast.success(`${selectedRows.length} utilisateurs supprimés avec succès !`);
+      } catch (error: any) {
+        console.error("Erreur lors de la suppression groupée:", error);
+        toast.error(error.message || "Erreur lors de la suppression des utilisateurs");
+      } finally {
+        deleteModal.setLoading(false);
+      }
+      return;
+    }
+
     if (!selectedUser) return;
     try {
       deleteModal.setLoading(true);
@@ -126,7 +158,13 @@ export default function UsersPage() {
     } finally {
       deleteModal.setLoading(false);
     }
-  }, [selectedUser, deleteModal]);
+  }, [selectedUser, selectedRows, deleteModal]);
+
+  const handleBulkDelete = useCallback(() => {
+    if (selectedRows.length === 0) return;
+    deleteModal.openModal();
+  }, [selectedRows, deleteModal]);
+
 
   const handleToggleStatus = useCallback(async (user: User) => {
     try {
@@ -139,14 +177,23 @@ export default function UsersPage() {
   }, []);
 
   const stats = useMemo(() => getUserStats(users), [users]);
-  const columns = useMemo(() => getColumns(handleToggleStatus, undefined, handleEditUser, handleDeleteUser), [
+  const columns = useMemo(() => getColumns(handleToggleStatus, undefined, handleEditUser), [
     handleToggleStatus,
     handleEditUser,
-    handleDeleteUser,
   ]);
+
+
+
+  if (hasPermission === false) return <PermissionDenied />;
+  if (hasPermission === null) return (
+    <div className="flex items-center justify-center min-h-[60vh]">
+      <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+    </div>
+  );
 
   return (
     <div className="p-6 space-y-6">
+
       {/* Header avec boutons */}
       <div className="flex flex-col lg:flex-row justify-between gap-4">
         <div>
@@ -154,27 +201,30 @@ export default function UsersPage() {
           <p className="text-gray-500 mt-1">Gestion des utilisateurs et permissions</p>
         </div>
 
-        <div className="flex gap-2">
-          <Button 
-            variant="outline" 
-            size="sm" 
-            onClick={handleRefresh} 
-            disabled={isLoadingPage || addModal.isLoading || editModal.isLoading}
-          >
-            <RefreshCw className={`h-4 w-4 mr-2 ${isLoadingPage ? "animate-spin" : ""}`} />
-            Rafraîchir
-          </Button>
+          <div className="flex gap-2">
 
-          <Button 
-            size="sm" 
-            onClick={handleAddUser} 
-            className="bg-blue-600 hover:bg-blue-700 cursor-pointer"
-            disabled={addModal.isLoading || editModal.isLoading || deleteModal.isLoading}
-          >
-            <Plus className="h-4 w-4 mr-2" />
-            Ajouter
-          </Button>
-        </div>
+
+            <Button 
+              variant="outline" 
+              size="sm" 
+              onClick={handleRefresh} 
+              disabled={isLoadingPage || addModal.isLoading || editModal.isLoading}
+            >
+              <RefreshCw className={`h-4 w-4 mr-2 ${isLoadingPage ? "animate-spin" : ""}`} />
+              Rafraîchir
+            </Button>
+
+            <Button 
+              size="sm" 
+              onClick={handleAddUser} 
+              className="bg-blue-600 hover:bg-blue-700 cursor-pointer"
+              disabled={addModal.isLoading || editModal.isLoading || deleteModal.isLoading}
+            >
+              <Plus className="h-4 w-4 mr-2" />
+              Ajouter
+            </Button>
+          </div>
+
       </div>
 
 {/* Statistiques */}
@@ -246,6 +296,21 @@ export default function UsersPage() {
           <DataTable<User, unknown>
             columns={columns}
             data={users}
+            onSelectionChange={setSelectedRows}
+            extraSearchActions={
+              selectedRows.length > 0 && (
+                <Button 
+                  variant="destructive" 
+                  size="sm" 
+                  className="h-8"
+                  onClick={handleBulkDelete}
+                  disabled={deleteModal.isLoading}
+                >
+                  <Trash2 className="h-4 w-4 mr-2" />
+                  Supprimer ({selectedRows.length})
+                </Button>
+              )
+            }
             searchPlaceholder="Rechercher un utilisateur..."
             pageSizeOptions={[5, 10, 20, 50]}
             defaultPageSize={10}
@@ -254,6 +319,7 @@ export default function UsersPage() {
             showPagination
             className="mt-4"
           />
+
         </CardContent>
       </Card>
 
@@ -282,9 +348,11 @@ export default function UsersPage() {
         isOpen={deleteModal.isOpen}
         onClose={deleteModal.closeModal}
         onConfirm={handleConfirmDelete}
-        user={selectedUser}
+        user={selectedRows.length > 0 ? null : selectedUser}
         isLoading={deleteModal.isLoading}
+        title={selectedRows.length > 0 ? `Supprimer ${selectedRows.length} utilisateurs` : undefined}
       />
+
     </div>
   );
 }

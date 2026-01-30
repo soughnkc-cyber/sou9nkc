@@ -40,6 +40,8 @@ import {
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
+import { DataTableViewOptions } from "@/components/datatable-view-options";
+
 interface DataTableProps<TData, TValue> {
   columns: ColumnDef<TData, TValue>[];
   data: TData[];
@@ -49,8 +51,12 @@ interface DataTableProps<TData, TValue> {
   showSearch?: boolean;
   showFilters?: boolean;
   showPagination?: boolean;
+  showViewOptions?: boolean;
   className?: string;
+  onSelectionChange?: (selectedRows: TData[]) => void;
+  extraSearchActions?: React.ReactNode;
 }
+
 
 export function DataTable<TData, TValue>({
   columns,
@@ -61,12 +67,20 @@ export function DataTable<TData, TValue>({
   showSearch = true,
   showFilters = true,
   showPagination = true,
+  showViewOptions = true,
   className,
+  onSelectionChange,
+  extraSearchActions,
 }: DataTableProps<TData, TValue>) {
   const [sorting, setSorting] = useState<SortingState>([]);
   const [columnFilters, setColumnFilters] = useState<ColumnFiltersState>([]);
   const [globalFilter, setGlobalFilter] = useState("");
+  const [rowSelection, setRowSelection] = useState({});
   const [isFilterOpen, setIsFilterOpen] = useState(false);
+
+
+  /* Visibility state */
+  const [columnVisibility, setColumnVisibility] = useState({});
 
   const table = useReactTable({
     data,
@@ -75,10 +89,18 @@ export function DataTable<TData, TValue>({
       sorting,
       columnFilters,
       globalFilter,
+      rowSelection,
+      columnVisibility,
     },
     onSortingChange: setSorting,
     onColumnFiltersChange: setColumnFilters,
     onGlobalFilterChange: setGlobalFilter,
+    onColumnVisibilityChange: setColumnVisibility,
+    onRowSelectionChange: (updater) => {
+      const newVal = typeof updater === "function" ? updater(rowSelection) : updater;
+      setRowSelection(newVal);
+    },
+
     getCoreRowModel: getCoreRowModel(),
     getSortedRowModel: getSortedRowModel(),
     getFilteredRowModel: getFilteredRowModel(),
@@ -90,6 +112,14 @@ export function DataTable<TData, TValue>({
       },
     },
   });
+
+  React.useEffect(() => {
+    if (onSelectionChange) {
+      const selectedRows = table.getSelectedRowModel().flatRows.map((row) => row.original);
+      onSelectionChange(selectedRows);
+    }
+  }, [rowSelection, table, onSelectionChange]);
+
 
   const totalPages = table.getPageCount();
   const currentPage = table.getState().pagination.pageIndex;
@@ -110,26 +140,13 @@ export function DataTable<TData, TValue>({
               />
             </div>
           )}
-          
-          {/* Faceted Filters Area */}
-          <div className="hidden lg:flex items-center space-x-2">
-            {table.getAllColumns().filter(col => col.getCanFilter() && col.columnDef.meta?.filterComponent).map(column => (
-              <React.Fragment key={column.id}>
-                {column.columnDef.meta?.filterComponent?.({ column, table })}
-              </React.Fragment>
-            ))}
-            {columnFilters.length > 0 && (
-              <Button
-                variant="ghost"
-                onClick={() => table.resetColumnFilters()}
-                className="h-8 px-2 lg:px-3 text-red-600 hover:text-red-700 hover:bg-red-50"
-              >
-                Réinitialiser
-                <X className="ml-2 h-4 w-4" />
-              </Button>
-            )}
-          </div>
 
+          {extraSearchActions && (
+            <div className="flex items-center space-x-2">
+              {extraSearchActions}
+            </div>
+          )}
+          
           {showFilters && (
             <Button
               variant="outline"
@@ -142,7 +159,10 @@ export function DataTable<TData, TValue>({
               {isFilterOpen && <X className="h-4 w-4 ml-2" />}
             </Button>
           )}
+
+          {showViewOptions && <DataTableViewOptions table={table} />}
         </div>
+
 
         {showPagination && (
           <div className="flex items-center space-x-2">
@@ -200,12 +220,23 @@ export function DataTable<TData, TValue>({
             {table.getHeaderGroups().map((group) => (
               <TableRow key={group.id} className="bg-gray-50/50">
                 {group.headers.map((header) => (
-                  <TableHead key={header.id} className="h-10 text-xs font-bold text-gray-700 uppercase tracking-wider">
-                    {flexRender(
-                      header.column.columnDef.header,
-                      header.getContext()
-                    )}
+                  <TableHead key={header.id} className="h-auto py-2 text-xs font-bold text-gray-700 uppercase tracking-wider">
+                    <div className="flex flex-col gap-2">
+                      {!(header.column.getCanFilter() && header.column.columnDef.meta?.filterComponent) && flexRender(
+                        header.column.columnDef.header,
+                        header.getContext()
+                      )}
+                      {header.column.getCanFilter() && header.column.columnDef.meta?.filterComponent && (
+                        <div className="normal-case font-normal">
+                          {header.column.columnDef.meta.filterComponent({ 
+                            column: header.column, 
+                            table: table 
+                          })}
+                        </div>
+                      )}
+                    </div>
                   </TableHead>
+
                 ))}
               </TableRow>
             ))}
