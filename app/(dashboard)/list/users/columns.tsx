@@ -4,7 +4,7 @@ import { ColumnDef } from "@tanstack/react-table";
 import { createColumn, createActionsColumn, createFacetedFilter, createSelectColumn } from "@/components/columns";
 import { Badge } from "@/components/ui/badge";
 import { Edit, Trash2, Eye, User as UserIcon, ShieldAlertIcon } from "lucide-react";
-import { Role } from "@/app/generated/prisma/enums";
+import { Role } from "@/app/generated/prisma";
 import { cn } from "@/lib/utils";
 
 export interface User {

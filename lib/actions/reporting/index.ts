@@ -2,7 +2,7 @@
 
 import prisma from "@/lib/prisma";
 
-import { Prisma } from "@/app/generated/prisma/client";
+import { Prisma } from "@/app/generated/prisma";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/app/api/auth/[...nextauth]/route";
 import { hasPermission } from "@/lib/auth-utils";

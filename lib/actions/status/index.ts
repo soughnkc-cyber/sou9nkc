@@ -3,7 +3,7 @@
 import prisma from "@/lib/prisma";
 
 import { StatusFormData } from "@/lib/schema";
-import { Status as PrismaStatus } from "@/app/generated/prisma/client";
+import { Status as PrismaStatus } from "@/app/generated/prisma";
 import { Status } from "@/app/(dashboard)/list/status/columns";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/app/api/auth/[...nextauth]/route";

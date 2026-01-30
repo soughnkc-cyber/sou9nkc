@@ -488,3 +488,61 @@ export async function getAdminStats(
     recallTimeline,
   };
 }
+
+export async function getAgentStats(agentId: string) {
+  const now = new Date();
+  const startMonth = startOfMonth(now);
+  const endMonth = endOfMonth(now);
+  
+  const previousMonthStart = startOfMonth(new Date(now.getFullYear(), now.getMonth() - 1, 1));
+  const previousMonthEnd = endOfMonth(new Date(now.getFullYear(), now.getMonth() - 1, 1));
+
+  const [currentMonthOrders, previousMonthOrders, totalOrders, recentOrders, allOrders] = await Promise.all([
+    prisma.order.count({ where: { agentId, orderDate: { gte: startMonth, lte: endMonth } } }),
+    prisma.order.count({ where: { agentId, orderDate: { gte: previousMonthStart, lte: previousMonthEnd } } }),
+    prisma.order.count({ where: { agentId } }),
+    prisma.order.findMany({ 
+      where: { agentId }, 
+      orderBy: { orderDate: 'desc' }, 
+      take: 5,
+      include: { status: true }
+    }),
+    prisma.order.findMany({
+      where: { agentId, orderDate: { gte: startMonth, lte: endMonth } },
+      include: { status: true }
+    })
+  ]);
+
+  const ordersTrend = previousMonthOrders > 0 
+    ? ((currentMonthOrders - previousMonthOrders) / previousMonthOrders) * 100 
+    : 0;
+
+  const totalRevenue = allOrders.reduce((sum, o) => sum + o.totalPrice, 0);
+
+  // Status distribution
+  const statusMap = new Map<string, { name: string; count: number; color: string }>();
+  allOrders.forEach(order => {
+    if (order.status) {
+      const existing = statusMap.get(order.status.id);
+      if (existing) existing.count++;
+      else statusMap.set(order.status.id, { name: order.status.name, count: 1, color: order.status.color });
+    }
+  });
+
+  return {
+    currentMonthOrders,
+    ordersTrend,
+    totalOrders,
+    revenue: totalRevenue,
+    recentOrders: recentOrders.map(o => ({
+      id: o.id,
+      orderNumber: o.orderNumber,
+      customerName: o.customerName || "Inconnu",
+      totalPrice: o.totalPrice,
+      statusName: o.status?.name || "Sans statut",
+      statusColor: o.status?.color || "#6b7280",
+      orderDate: o.orderDate.toISOString()
+    })),
+    statusDistribution: Array.from(statusMap.values())
+  };
+}

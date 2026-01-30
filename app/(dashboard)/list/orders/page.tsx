@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useCallback, useMemo } from "react";
+import { useState, useEffect, useCallback, useMemo, Suspense } from "react";
 import { useSession } from "next-auth/react";
 import { redirect, useSearchParams } from "next/navigation";
 import { toast } from "sonner";
@@ -27,7 +27,7 @@ import PermissionDenied from "@/components/permission-denied";
 import { AgentAssignmentModal } from "@/components/forms/agent-assignment-modal";
 import { AgentAssignmentData } from "@/components/forms/agent-assignment-form";
 
-export default function OrdersPage() {
+function OrdersPageContent() {
   const session = useSession();
 
   // --------------------
@@ -42,7 +42,6 @@ export default function OrdersPage() {
   // Read URL query params for filtering
   const searchParams = useSearchParams();
   const filterType = searchParams.get("filter"); // "processed", "toprocess", or "torecall"
-
 
   // --------------------
   // Redirection si non connecté
@@ -338,3 +337,16 @@ export default function OrdersPage() {
     </div>
   );
 }
+
+export default function OrdersPage() {
+  return (
+    <Suspense fallback={
+        <div className="flex items-center justify-center min-h-[60vh]">
+            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+        </div>
+    }>
+      <OrdersPageContent />
+    </Suspense>
+  );
+}
+

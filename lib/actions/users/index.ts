@@ -3,7 +3,7 @@
 
 import prisma from "@/lib/prisma";
 import { UserFormData } from "@/lib/schema";
-import { User as PrismaUser } from "@/app/generated/prisma/client";
+import { User as PrismaUser } from "@/app/generated/prisma";
 import bcrypt from "bcrypt";
 import { User } from "@/app/(dashboard)/list/users/columns";
 import { getServerSession } from "next-auth";
@@ -222,7 +222,23 @@ export async function deleteUsersAction(userIds: string[]) {
   }
 }
 
-export async function getMe() {
+export interface MeUser {
+  id: string;
+  name: string | null;
+  role: string;
+  canViewOrders: boolean;
+  canEditOrders: boolean;
+  canViewUsers: boolean;
+  canEditUsers: boolean;
+  canViewProducts: boolean;
+  canEditProducts: boolean;
+  canViewStatuses: boolean;
+  canEditStatuses: boolean;
+  canViewReporting: boolean;
+  canViewDashboard: boolean;
+}
+
+export async function getMe(): Promise<MeUser | null> {
   const session = await getServerSession(authOptions);
   if (!session?.user) return null;
 
@@ -248,7 +264,7 @@ export async function getMe() {
     }
   });
 
-  return dbUser;
+  return dbUser as unknown as MeUser;
 }
 
 export async function deleteUserAction(userId: string) {

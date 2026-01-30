@@ -1,4 +1,4 @@
-import { Role } from "@/app/generated/prisma/client";
+import { Role } from "@/app/generated/prisma";
 
 export type Permissions = {
   canViewOrders: boolean;
