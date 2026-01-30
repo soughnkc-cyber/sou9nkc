@@ -146,6 +146,7 @@ export async function toggleUserStatus(userId: string) {
       data: { status: newStatus },
     });
 
+    revalidatePath("/");
     return { id: updated.id, status: updated.status };
   } catch (err) {
     console.error("Erreur toggleUserStatus:", err);
@@ -176,6 +177,7 @@ export async function createUserAction(data: UserFormData) {
 
     });
 
+    revalidatePath("/");
     return mapUser(user);
   } catch (err) {
     console.error("Erreur createUserAction:", err);
@@ -201,6 +203,7 @@ export async function updateUserAction(userId: string, data: Partial<UserFormDat
       data: updateData,
     });
 
+    revalidatePath("/");
     return mapUser(user);
   } catch (err) {
     console.error("Erreur updateUserAction:", err);
@@ -217,6 +220,8 @@ export async function deleteUsersAction(userIds: string[]) {
         id: { in: userIds },
       },
     });
+    
+    revalidatePath("/");
     return result;
   } catch (err) {
     console.error("Erreur deleteUsersAction:", err);
@@ -274,6 +279,8 @@ export async function deleteUserAction(userId: string) {
 
   try {
     const user = await prisma.user.delete({ where: { id: userId } });
+    
+    revalidatePath("/");
     return mapUser(user);
   } catch (err) {
     console.error("Erreur deleteUserAction:", err);

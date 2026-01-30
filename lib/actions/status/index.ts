@@ -111,6 +111,7 @@ export async function deleteStatusAction(statusId: string) {
       data: { isArchived: true },
     });
 
+    revalidatePath("/");
     return mapStatus(status);
 
   } catch (err) {
@@ -130,6 +131,8 @@ export async function deleteStatusesAction(statusIds: string[]) {
       },
       data: { isArchived: true },
     });
+    
+    revalidatePath("/");
     return result;
   } catch (err) {
     console.error("Erreur deleteStatusesAction:", err);
