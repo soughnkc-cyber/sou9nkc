@@ -10,7 +10,7 @@ import { cn } from "@/lib/utils";
 import { DataTable } from "@/components/datatable";
 import { getColumns, Order } from "./columns";
 import { Button } from "@/components/ui/button";
-import { RefreshCw, Trash2, PhoneIncoming, ShoppingCart, DollarSign, Target, Clock } from "lucide-react";
+import { RefreshCw, Trash2, PhoneIncoming, ShoppingCart, DollarSign, Target, Clock, Edit } from "lucide-react";
 import {
   Card,
   CardContent,
@@ -268,7 +268,7 @@ function OrdersPageContent() {
   }: { 
     title: string; 
     value: number | string; 
-    icon: any; 
+    icon?: any; 
     active: boolean; 
     onClick: () => void;
     color: string;
@@ -278,13 +278,13 @@ function OrdersPageContent() {
     <Card 
       onClick={onClick}
       className={cn(
-        "relative p-4 sm:p-5 cursor-pointer transition-all duration-300 border border-gray-100 shadow-xs hover:shadow-md rounded-2xl overflow-hidden group bg-white flex flex-col justify-between",
+        "relative p-4 sm:p-5 cursor-pointer transition-all duration-300 border border-gray-100 shadow-xs hover:shadow-md rounded-2xl overflow-hidden group bg-white flex flex-col justify-between h-full",
         active ? "ring-2 ring-orange-500 ring-offset-2" : "hover:border-orange-200"
       )}
     >
       <div className="flex justify-between items-start mb-2 sm:mb-4">
         <div className={cn("p-1.5 sm:p-2 rounded-lg sm:rounded-xl bg-orange-50 group-hover:bg-orange-100 transition-colors", color)}>
-          <Icon className="h-4 w-4 sm:h-5 sm:w-5 text-orange-600" />
+          {Icon && <Icon className="h-4 w-4 sm:h-5 sm:w-5" />}
         </div>
         {trend && (
            <div className={cn(
@@ -494,12 +494,30 @@ function OrdersPageContent() {
             showPagination
             onSelectionChange={setSelectedOrders}
             extraSearchActions={
-              isAdmin && selectedOrders.length > 0 && (
-                <Button variant="destructive" size="sm" onClick={handleDeleteSelected} className="h-8 rounded-xl font-bold px-4">
-                  <Trash2 className="h-4 w-4 mr-2" />
-                  Supprimer ({selectedOrders.length})
-                </Button>
-              )
+              <div className="flex items-center gap-2">
+                {selectedOrders.length === 1 && (
+                  <Button 
+                    variant="outline" 
+                    size="sm" 
+                    className="h-8 rounded-xl px-3 font-bold border-gray-200 hover:bg-orange-50 hover:text-orange-600 transition-all text-xs" 
+                    onClick={() => openAssignModal(selectedOrders[0])}
+                  >
+                    <Edit className="h-3.5 w-3.5 mr-1.5" />
+                    Modifier
+                  </Button>
+                )}
+                {isAdmin && selectedOrders.length > 0 && (
+                  <Button 
+                    variant="destructive" 
+                    size="sm" 
+                    onClick={handleDeleteSelected} 
+                    className="h-8 rounded-xl font-bold px-3 text-xs"
+                  >
+                    <Trash2 className="h-3.5 w-3.5 mr-1.5" />
+                    Supprimer ({selectedOrders.length})
+                  </Button>
+                )}
+              </div>
             }
           />
         </div>

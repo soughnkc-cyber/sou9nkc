@@ -3,7 +3,7 @@
 import { useState, useCallback, useEffect, useMemo } from "react";
 import { DataTable } from "@/components/datatable";
 import { Button } from "@/components/ui/button";
-import { RefreshCw } from "lucide-react";
+import { RefreshCw, Edit } from "lucide-react";
 import {
   Card,
   CardContent,
@@ -19,6 +19,8 @@ import { getAgents, getMe } from "@/lib/actions/users";
 import { getColumns, Product } from "./column";
 import { Option } from "./agent-select";
 import PermissionDenied from "@/components/permission-denied";
+import { cn } from "@/lib/utils";
+import { ShoppingBag, DollarSign } from "lucide-react";
 
 
 /* Stats */
@@ -30,9 +32,37 @@ const getProductStats = (products: Product[]) => ({
 export default function ProductsPage() {
   const [products, setProducts] = useState<Product[]>([]);
   const [agents, setAgents] = useState<Option[]>([]);
+  const [selectedRows, setSelectedRows] = useState<Product[]>([]);
   const [isLoadingPage, setIsLoadingPage] = useState(false);
   const [hasPermission, setHasPermission] = useState<boolean | null>(null);
   const [canEditPermission, setCanEditPermission] = useState(false);
+
+  const StatCard = ({ 
+    title, 
+    value, 
+    icon: Icon, 
+    color,
+    description
+  }: { 
+    title: string; 
+    value: number | string; 
+    icon?: any;
+    color?: string;
+    description?: React.ReactNode;
+  }) => (
+    <Card className="relative p-4 sm:p-5 transition-all duration-300 border border-gray-100 shadow-xs hover:shadow-md rounded-2xl overflow-hidden group bg-white flex flex-col justify-between h-full">
+      <div className="flex justify-between items-start mb-2 sm:mb-4">
+        <div className={cn("p-1.5 sm:p-2 rounded-lg sm:rounded-xl bg-gray-50 group-hover:bg-orange-50 transition-colors", color)}>
+          {Icon && <Icon className="h-4 w-4 sm:h-5 sm:w-5" />}
+        </div>
+      </div>
+      <div>
+        <p className="text-[8px] sm:text-[10px] font-extrabold text-gray-400 uppercase tracking-widest mb-0.5 sm:mb-1">{title}</p>
+        <h3 className="text-lg sm:text-2xl font-black text-gray-900 tracking-tight leading-tight">{value}</h3>
+        {description && <div className="mt-2">{description}</div>}
+      </div>
+    </Card>
+  );
 
 
   /* Sync Shopify → DB */
@@ -111,56 +141,50 @@ export default function ProductsPage() {
   );
 
   return (
-    <div className="p-6 space-y-6">
+    <div className="space-y-6 sm:space-y-8 max-w-[1600px] mx-auto">
 
       {/* Header */}
-      <div className="flex flex-col lg:flex-row justify-between gap-4">
-        <div>
-          <h1 className="text-3xl font-bold">Produits</h1>
-          <p className="text-gray-500 mt-1">
-            Liste des produits récupérés depuis Shopify
-          </p>
+      <div className="flex flex-col md:flex-row justify-between items-center gap-4 sm:gap-6">
+        <div className="text-center md:text-left">
+          <h1 className="text-2xl sm:text-3xl font-black text-gray-900 tracking-tight leading-tight">Produits</h1>
+          <p className="text-xs sm:text-sm text-gray-500 font-medium mt-1">Liste des produits récupérés depuis Shopify</p>
         </div>
-
-        <Button
-          variant="outline"
-          size="sm"
-          onClick={fetchProducts}
-          disabled={isLoadingPage}
-        >
-          <RefreshCw
-            className={`h-4 w-4 mr-2 ${
-              isLoadingPage ? "animate-spin" : ""
-            }`}
-          />
-          Rafraîchir
-        </Button>
+        <div className="flex items-center justify-center w-full md:w-auto gap-2 sm:gap-3">
+            <Button 
+                variant="outline" 
+                size="sm" 
+                className="h-10 rounded-xl px-3 sm:px-4 font-bold border-gray-200 hover:bg-gray-50 shrink-0" 
+                onClick={fetchProducts} 
+                disabled={isLoadingPage}
+            >
+              <RefreshCw className={cn("h-4 w-4 sm:mr-2", isLoadingPage && "animate-spin")} />
+              <span className="hidden sm:inline">Rafraîchir</span>
+            </Button>
+        </div>
       </div>
 
       {/* Stats */}
       {products.length > 0 && (
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
-          <Card className="p-3">
-            <CardContent className="p-0 flex justify-between">
-              <span>Total produits</span>
-              <span className="font-bold">{stats.total}</span>
-            </CardContent>
-          </Card>
+        <div className="grid grid-cols-2 gap-3 sm:gap-6">
+          <StatCard
+            title="Total Produits"
+            value={stats.total}
+            icon={ShoppingBag}
+            color="bg-blue-50"
+          />
 
-          <Card className="p-3">
-            <CardContent className="p-0 flex justify-between">
-              <span>Valeur totale</span>
-              <span className="font-bold text-green-600">
-                {stats.totalValue.toLocaleString("fr-FR")} MRU
-              </span>
-            </CardContent>
-          </Card>
+          <StatCard
+            title="Valeur Totale"
+            value={`${stats.totalValue.toLocaleString("fr-FR")} MRU`}
+            icon={DollarSign}
+            color="bg-green-50"
+          />
         </div>
       )}
 
       {/* Table */}
-      <Card>
-        <CardHeader>
+      <Card className="border border-gray-100 shadow-xs bg-white rounded-2xl overflow-hidden">
+        <CardHeader className="bg-gray-50/50 border-b border-gray-100">
           <CardTitle>Liste des produits</CardTitle>
           <CardDescription>
             {stats.total} produits synchronisés
@@ -171,6 +195,27 @@ export default function ProductsPage() {
           <DataTable<Product, unknown>
             columns={columns}
             data={products}
+            onSelectionChange={setSelectedRows}
+            extraSearchActions={
+              <div className="flex items-center gap-2">
+                {selectedRows.length === 1 && (
+                  <Button 
+                    variant="outline" 
+                    size="sm" 
+                    className="h-8 rounded-xl px-3 font-bold border-gray-200 hover:bg-orange-50 hover:text-orange-600 transition-all text-xs font-mono" 
+                    disabled
+                  >
+                    <Edit className="h-3.5 w-3.5 mr-1.5" />
+                    Modifier
+                  </Button>
+                )}
+                {selectedRows.length > 0 && (
+                  <div className="flex items-center px-3 py-1 bg-orange-50 text-orange-700 rounded-xl border border-orange-100 font-bold text-[10px] animate-in fade-in slide-in-from-top-1">
+                    {selectedRows.length} sélectionnés
+                  </div>
+                )}
+              </div>
+            }
             searchPlaceholder="Rechercher un produit..."
             pageSizeOptions={[5, 10, 20]}
             defaultPageSize={10}

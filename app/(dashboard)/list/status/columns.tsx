@@ -62,15 +62,12 @@ export const getColumns = (
       isPrimary: true,
       sortable: true,
       cell: ({ row }) => (
-        <div className="flex items-center gap-3">
-          <div 
-            className="h-8 w-8 rounded-full flex items-center justify-center border border-gray-200"
-            style={{ backgroundColor: row.original.color || "#6366f1" }}
-          >
-            <Clock className="h-4 w-4 text-white" />
-          </div>
-          <span className="font-medium">{row.original.name}</span>
-        </div>
+        <span 
+          className="px-3 py-1 rounded-full text-xs font-bold text-white shadow-sm border border-black/5"
+          style={{ backgroundColor: row.original.color || "#6366f1" }}
+        >
+          {row.original.name}
+        </span>
       ),
     }),
 
@@ -90,7 +87,5 @@ export const getColumns = (
       sortable: true,
       cell: ({ row }) => formatDateTime(row.original.createdAt),
     }),
-
-    ...(actions.length ? [createActionsColumn<Status>(actions)] : []),
   ];
 };

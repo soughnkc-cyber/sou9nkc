@@ -343,9 +343,6 @@ export const getColumns = (
         </Badge>
       ),
     }),
-
-
-    ...(actions.length ? [createActionsColumn<Order>(actions)] : []),
   ];
   
 };

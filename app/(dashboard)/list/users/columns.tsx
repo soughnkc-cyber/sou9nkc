@@ -239,8 +239,5 @@ export const getColumns = (
         </div>
       ),
     }),
-
-
-    ...(actions.length ? [createActionsColumn<User>(actions)] : []),
   ];
 };

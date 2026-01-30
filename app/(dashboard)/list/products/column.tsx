@@ -1,7 +1,7 @@
 "use client";
 
 import { ColumnDef } from "@tanstack/react-table";
-import { createColumn, createActionsColumn, createFacetedFilter } from "@/components/columns";
+import { createColumn, createActionsColumn, createFacetedFilter, createSelectColumn } from "@/components/columns";
 import { Badge } from "@/components/ui/badge";
 import { Edit, Trash2, Eye } from "lucide-react";
 import { AgentSelect, Option } from "./agent-select";
@@ -80,6 +80,7 @@ export const getColumns = (
     });
 
   return [
+    createSelectColumn<Product>(),
     createColumn<Product>({
       accessorKey: "title",
       header: "Produit",
@@ -147,7 +148,5 @@ export const getColumns = (
       ]),
       cell: ({ row }) => <StatusBadge status={row.original.status} />,
     }),
-
-    ...(actions.length ? [createActionsColumn<Product>(actions)] : []),
   ];
 };

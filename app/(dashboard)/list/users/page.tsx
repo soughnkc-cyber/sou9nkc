@@ -5,7 +5,7 @@ import { useState, useCallback, useEffect, useMemo } from "react";
 import { DataTable } from "@/components/datatable";
 import { getColumns, User } from "./columns";
 import { Button } from "@/components/ui/button";
-import { Plus, RefreshCw, Trash2 } from "lucide-react";
+import { Plus, RefreshCw, Trash2, Edit, Users, UserCheck, UserX } from "lucide-react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { useModal } from "@/hooks/use-modal";
 import { UserFormData } from "@/lib/schema";
@@ -14,6 +14,7 @@ import { DeleteUserModal } from "@/components/delete-modal";
 import { toast } from "sonner";
 import { getUsers, createUserAction, updateUserAction, deleteUserAction, deleteUsersAction, toggleUserStatus, getMe } from "@/lib/actions/users";
 import PermissionDenied from "@/components/permission-denied";
+import { cn } from "@/lib/utils";
 
 
 const percent = (value: number, total: number) => (total === 0 ? 0 : Math.round((value / total) * 100));
@@ -184,6 +185,33 @@ export default function UsersPage() {
 
 
 
+  const StatCard = ({ 
+    title, 
+    value, 
+    icon: Icon, 
+    color,
+    description
+  }: { 
+    title: string; 
+    value: number | string; 
+    icon?: any;
+    color?: string;
+    description?: React.ReactNode;
+  }) => (
+    <Card className="relative p-4 sm:p-5 transition-all duration-300 border border-gray-100 shadow-xs hover:shadow-md rounded-2xl overflow-hidden group bg-white flex flex-col justify-between h-full">
+      <div className="flex justify-between items-start mb-2 sm:mb-4">
+        <div className={cn("p-1.5 sm:p-2 rounded-lg sm:rounded-xl bg-gray-50 group-hover:bg-orange-50 transition-colors", color)}>
+          {Icon && <Icon className="h-4 w-4 sm:h-5 sm:w-5" />}
+        </div>
+      </div>
+      <div>
+        <p className="text-[8px] sm:text-[10px] font-extrabold text-gray-400 uppercase tracking-widest mb-0.5 sm:mb-1">{title}</p>
+        <h3 className="text-lg sm:text-2xl font-black text-gray-900 tracking-tight leading-tight">{value}</h3>
+        {description && <div className="mt-2">{description}</div>}
+      </div>
+    </Card>
+  );
+
   if (hasPermission === false) return <PermissionDenied />;
   if (hasPermission === null) return (
     <div className="flex items-center justify-center min-h-[60vh]">
@@ -192,94 +220,80 @@ export default function UsersPage() {
   );
 
   return (
-    <div className="p-6 space-y-6">
+    <div className="space-y-6 sm:space-y-8 max-w-[1600px] mx-auto">
 
-      {/* Header avec boutons */}
-      <div className="flex flex-col lg:flex-row justify-between gap-4">
-        <div>
-          <h1 className="text-3xl font-bold">Utilisateurs</h1>
-          <p className="text-gray-500 mt-1">Gestion des utilisateurs et permissions</p>
+      {/* Header */}
+      <div className="flex flex-col md:flex-row justify-between items-center gap-4 sm:gap-6">
+        <div className="text-center md:text-left">
+          <h1 className="text-2xl sm:text-3xl font-black text-gray-900 tracking-tight leading-tight">Utilisateurs</h1>
+          <p className="text-xs sm:text-sm text-gray-500 font-medium mt-1">Gestion des utilisateurs et permissions</p>
         </div>
 
-          <div className="flex gap-2">
-
-
+        <div className="flex items-center justify-center w-full md:w-auto gap-2 sm:gap-3">
             <Button 
-              variant="outline" 
-              size="sm" 
-              onClick={handleRefresh} 
-              disabled={isLoadingPage || addModal.isLoading || editModal.isLoading}
+                variant="outline" 
+                size="sm" 
+                className="h-10 rounded-xl px-3 sm:px-4 font-bold border-gray-200 hover:bg-gray-50 shrink-0" 
+                onClick={handleRefresh} 
+                disabled={isLoadingPage || addModal.isLoading || editModal.isLoading}
             >
-              <RefreshCw className={`h-4 w-4 mr-2 ${isLoadingPage ? "animate-spin" : ""}`} />
-              Rafraîchir
+              <RefreshCw className={cn("h-4 w-4 sm:mr-2", isLoadingPage && "animate-spin")} />
+              <span className="hidden sm:inline">Rafraîchir</span>
             </Button>
 
             <Button 
               size="sm" 
               onClick={handleAddUser} 
-              className="bg-blue-600 hover:bg-blue-700 cursor-pointer"
+              className="h-10 rounded-xl px-4 font-bold bg-orange-600 hover:bg-orange-700 text-white shrink-0 shadow-lg shadow-orange-100 transition-all"
               disabled={addModal.isLoading || editModal.isLoading || deleteModal.isLoading}
             >
               <Plus className="h-4 w-4 mr-2" />
               Ajouter
             </Button>
-          </div>
-
+        </div>
       </div>
 
-{/* Statistiques */}
-{users.length > 0 && (
-  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-2">
-    <Card className="p-3">
-      <CardHeader className="pb-1">
-        <CardTitle className="text-sm font-medium text-gray-500">Total utilisateurs</CardTitle>
-      </CardHeader>
-      <CardContent className="p-0">
-        <div className="flex justify-between items-center text-base font-medium">
-          <span>Total</span>
-          <span className="text-lg font-bold">{stats.total}</span>
-        </div>
-        <div className="flex flex-wrap gap-1 text-xs mt-1">
-          <span className="px-2 py-0.5 bg-gray-100 rounded">{stats.byRole.ADMIN} Admin</span>
-          <span className="px-2 py-0.5 bg-gray-100 rounded">{stats.byRole.AGENT} Agent</span>
-          <span className="px-2 py-0.5 bg-gray-100 rounded">{stats.byRole.SUPERVISOR} Superviseur</span>
-        </div>
-      </CardContent>
-    </Card>
+      {/* Statistiques */}
+      {users.length > 0 && (
+        <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 sm:gap-6">
+          <StatCard
+            title="Total Utilisateurs"
+            value={stats.total}
+            icon={Users}
+            color="bg-blue-50"
+            description={
+              <div className="flex flex-wrap gap-1">
+                <span className="text-[8px] uppercase font-bold text-gray-400">{stats.byRole.ADMIN} Adm</span>
+                <span className="text-[8px] uppercase font-bold text-gray-400">{stats.byRole.AGENT} Agt</span>
+              </div>
+            }
+          />
 
-    <Card className="p-3">
-      <CardHeader className="pb-1">
-        <CardTitle className="text-sm font-medium text-gray-500">Utilisateurs actifs</CardTitle>
-      </CardHeader>
-      <CardContent className="p-0">
-        <div className="flex justify-between items-center text-base font-medium">
-          <span>Actifs</span>
-          <span className="text-lg font-bold text-green-600">{stats.active}</span>
-        </div>
-        <div className="flex justify-between text-xs text-gray-500 mt-1">
-          <span>% du total</span>
-          <span>{percent(stats.active, stats.total)}%</span>
-        </div>
-      </CardContent>
-    </Card>
+          <StatCard
+            title="Utilisateurs Actifs"
+            value={stats.active}
+            icon={UserCheck}
+            color="bg-green-50"
+            description={
+              <div className="text-[10px] font-bold text-green-600">
+                {percent(stats.active, stats.total)}% du total
+              </div>
+            }
+          />
 
-    <Card className="p-3">
-      <CardHeader className="pb-1">
-        <CardTitle className="text-sm font-medium text-gray-500">Utilisateurs inactifs</CardTitle>
-      </CardHeader>
-      <CardContent className="p-0">
-        <div className="flex justify-between items-center text-base font-medium">
-          <span>Inactifs</span>
-          <span className="text-lg font-bold text-red-600">{stats.inactive}</span>
+          <StatCard
+            title="Utilisateurs Inactifs"
+            value={stats.inactive}
+            icon={UserX}
+            color="bg-red-50"
+            description={
+              <div className="text-[10px] font-bold text-red-600">
+                {percent(stats.inactive, stats.total)}% du total
+              </div>
+            }
+          />
         </div>
-        <div className="flex justify-between text-xs text-gray-500 mt-1">
-          <span>% du total</span>
-          <span>{percent(stats.inactive, stats.total)}%</span>
-        </div>
-      </CardContent>
-    </Card>
-  </div>
-)}
+      )}
 
       {/* Tableau des utilisateurs */}
       <Card>
@@ -298,18 +312,31 @@ export default function UsersPage() {
             data={users}
             onSelectionChange={setSelectedRows}
             extraSearchActions={
-              selectedRows.length > 0 && (
-                <Button 
-                  variant="destructive" 
-                  size="sm" 
-                  className="h-8"
-                  onClick={handleBulkDelete}
-                  disabled={deleteModal.isLoading}
-                >
-                  <Trash2 className="h-4 w-4 mr-2" />
-                  Supprimer ({selectedRows.length})
-                </Button>
-              )
+              <div className="flex items-center gap-2">
+                {selectedRows.length === 1 && (
+                  <Button 
+                    variant="outline" 
+                    size="sm" 
+                    className="h-8 rounded-xl px-3 font-bold border-gray-200 hover:bg-orange-50 hover:text-orange-600 transition-all text-xs" 
+                    onClick={() => handleEditUser(selectedRows[0])}
+                  >
+                    <Edit className="h-3.5 w-3.5 mr-1.5" />
+                    Modifier
+                  </Button>
+                )}
+                {selectedRows.length > 0 && (
+                  <Button 
+                    variant="destructive" 
+                    size="sm" 
+                    className="h-8 rounded-xl font-bold px-3 text-xs"
+                    onClick={handleBulkDelete}
+                    disabled={deleteModal.isLoading}
+                  >
+                    <Trash2 className="h-3.5 w-3.5 mr-1.5" />
+                    Supprimer ({selectedRows.length})
+                  </Button>
+                )}
+              </div>
             }
             searchPlaceholder="Rechercher un utilisateur..."
             pageSizeOptions={[5, 10, 20, 50]}
