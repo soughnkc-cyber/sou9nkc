@@ -42,11 +42,11 @@ export function DateRangePicker({ range, onChange, className }: DateRangePickerP
             id="date"
             variant={"outline"}
             className={cn(
-              "w-[260px] justify-start text-left font-normal bg-white border-orange-200 text-gray-900 shadow-sm",
+              "w-[260px] justify-start text-left font-normal bg-white border-blue-200 text-gray-900 shadow-sm",
               !range && "text-muted-foreground"
             )}
           >
-            <CalendarIcon className="mr-2 h-4 w-4 text-orange-600" />
+            <CalendarIcon className="mr-2 h-4 w-4 text-[#1F30AD]" />
             {range?.from ? (
               range.to ? (
                 <>
@@ -69,7 +69,7 @@ export function DateRangePicker({ range, onChange, className }: DateRangePickerP
                 key={preset.label}
                 variant="ghost"
                 size="sm"
-                className="justify-start font-medium text-xs hover:bg-orange-50 hover:text-orange-700"
+                className="justify-start font-medium text-xs hover:bg-blue-50 hover:text-[#1F30AD]"
                 onClick={() => onChange(preset.range)}
               >
                 {preset.label}
@@ -100,7 +100,7 @@ export function DateRangePicker({ range, onChange, className }: DateRangePickerP
             </div>
             <Button 
                 size="sm" 
-                className="mt-2 bg-orange-600 hover:bg-orange-700"
+                className="mt-2 bg-[#1F30AD] hover:bg-[#172585]"
                 onClick={() => {
                     if (range.from && !range.to) onChange({...range, to: range.from});
                 }}

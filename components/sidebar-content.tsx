@@ -120,7 +120,7 @@ export function SidebarContent({
           "flex items-center gap-3 p-2 rounded-lg border bg-gray-50/50",
           isCollapsed && !mobile && "justify-center border-none bg-transparent"
         )}>
-          <div className="h-10 w-10 rounded-md bg-orange-600 flex items-center justify-center shrink-0 shadow-lg shadow-orange-100">
+          <div className="h-10 w-10 rounded-md bg-[#1F30AD] flex items-center justify-center shrink-0 shadow-lg shadow-blue-100">
             <span className="text-white font-bold text-xl leading-none">S</span>
           </div>
           {showLabels && (
@@ -187,7 +187,7 @@ export function SidebarContent({
                     >
                       <Link href={item.href}>
                         {isActive && (
-                            <div className="absolute left-0 top-1/2 -translate-y-1/2 w-1 h-5 bg-orange-500 rounded-r-full" />
+                            <div className="absolute left-0 top-1/2 -translate-y-1/2 w-1 h-5 bg-[#1F30AD] rounded-r-full" />
                         )}
                         <item.icon className={cn(
                           "h-4 w-4 shrink-0 transition-colors", 

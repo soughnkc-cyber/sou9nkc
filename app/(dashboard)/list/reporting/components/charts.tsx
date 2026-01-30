@@ -21,13 +21,13 @@ import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { cn } from "@/lib/utils";
 
 const CHART_COLORS = [
-  "#f97316", // orange-500
-  "#fb923c", // orange-400
-  "#fdba74", // orange-300
-  "#ea580c", // orange-600
-  "#c2410c", // orange-700
+  "#1F30AD", // brand blue
+  "#3b82f6", // blue-500
+  "#60a5fa", // blue-400
+  "#1e40af", // blue-800
+  "#172585", // brand darker
   "#f59e0b", // amber-500
-  "#d97706", // amber-600
+  "#10b981", // emerald-500
 ];
 
 interface ChartCardProps {
@@ -37,7 +37,7 @@ interface ChartCardProps {
 }
 
 const ChartCard = ({ title, children, className }: ChartCardProps) => (
-  <Card className={cn("transition-all duration-300 hover:shadow-md hover:border-orange-100", className)}>
+  <Card className={cn("transition-all duration-300 hover:shadow-md hover:border-blue-100", className)}>
     <CardHeader className="pb-2 bg-gray-50/50 border-b border-gray-100 mb-4">
       <CardTitle className="text-[10px] font-black text-gray-400 uppercase tracking-widest">{title}</CardTitle>
     </CardHeader>
@@ -56,8 +56,8 @@ export const RevenueAreaChart = ({ data }: { data: any[] }) => {
         <AreaChart data={data} margin={{ top: 10, right: 30, left: 0, bottom: 0 }}>
           <defs>
             <linearGradient id="colorRevenue" x1="0" y1="0" x2="0" y2="1">
-              <stop offset="5%" stopColor="#f97316" stopOpacity={0.1}/>
-              <stop offset="95%" stopColor="#f97316" stopOpacity={0}/>
+              <stop offset="5%" stopColor="#1F30AD" stopOpacity={0.1}/>
+              <stop offset="95%" stopColor="#1F30AD" stopOpacity={0}/>
             </linearGradient>
           </defs>
           <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f1f5f9" />
@@ -88,7 +88,7 @@ export const RevenueAreaChart = ({ data }: { data: any[] }) => {
           <Area 
             type="monotone" 
             dataKey="revenue" 
-            stroke="#f97316" 
+            stroke="#1F30AD" 
             strokeWidth={3}
             fillOpacity={1} 
             fill="url(#colorRevenue)" 
@@ -124,7 +124,7 @@ export const OrdersBarChart = ({ data }: { data: any[] }) => {
             contentStyle={{ borderRadius: '12px', border: 'none', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)' }}
             labelFormatter={(label) => format(parseISO(label), "PPPP", { locale: fr })}
           />
-          <Bar dataKey="orders" fill="#f97316" radius={[4, 4, 0, 0]} name="Commandes" />
+          <Bar dataKey="orders" fill="#1F30AD" radius={[4, 4, 0, 0]} name="Commandes" />
         </BarChart>
       </ResponsiveContainer>
     </ChartCard>

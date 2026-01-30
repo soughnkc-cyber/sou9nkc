@@ -200,7 +200,7 @@ export default function UsersPage() {
   }) => (
     <Card className="relative p-4 sm:p-5 transition-all duration-300 border border-gray-100 shadow-xs hover:shadow-md rounded-2xl overflow-hidden group bg-white flex flex-col justify-between h-full">
       <div className="flex justify-between items-start mb-2 sm:mb-4">
-        <div className={cn("p-1.5 sm:p-2 rounded-lg sm:rounded-xl bg-gray-50 group-hover:bg-orange-50 transition-colors", color)}>
+        <div className={cn("p-1.5 sm:p-2 rounded-lg sm:rounded-xl bg-gray-50 group-hover:bg-blue-50 transition-colors", color)}>
           {Icon && <Icon className="h-4 w-4 sm:h-5 sm:w-5" />}
         </div>
       </div>
@@ -233,7 +233,7 @@ export default function UsersPage() {
             <Button 
                 variant="outline" 
                 size="sm" 
-                className="h-10 rounded-xl px-3 sm:px-4 font-bold border-gray-200 hover:bg-gray-50 shrink-0" 
+                className="h-10 rounded-xl px-3 sm:px-4 font-bold border-gray-200 hover:bg-blue-50 hover:text-[#1F30AD] hover:border-blue-200 shrink-0" 
                 onClick={handleRefresh} 
                 disabled={isLoadingPage || addModal.isLoading || editModal.isLoading}
             >
@@ -244,7 +244,7 @@ export default function UsersPage() {
             <Button 
               size="sm" 
               onClick={handleAddUser} 
-              className="h-10 rounded-xl px-4 font-bold bg-orange-600 hover:bg-orange-700 text-white shrink-0 shadow-lg shadow-orange-100 transition-all"
+              className="h-10 rounded-xl px-4 font-bold bg-[#1F30AD] hover:bg-[#172585] text-white shrink-0 shadow-lg shadow-blue-100 transition-all"
               disabled={addModal.isLoading || editModal.isLoading || deleteModal.isLoading}
             >
               <Plus className="h-4 w-4 mr-2" />
@@ -317,7 +317,7 @@ export default function UsersPage() {
                   <Button 
                     variant="outline" 
                     size="sm" 
-                    className="h-8 rounded-xl px-3 font-bold border-gray-200 hover:bg-orange-50 hover:text-orange-600 transition-all text-xs" 
+                    className="h-8 rounded-xl px-3 font-bold border-gray-200 hover:bg-blue-50 hover:text-[#1F30AD] transition-all text-xs" 
                     onClick={() => handleEditUser(selectedRows[0])}
                   >
                     <Edit className="h-3.5 w-3.5 mr-1.5" />

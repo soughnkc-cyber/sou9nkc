@@ -19,7 +19,7 @@ export function StatusDistribution({ stats }: StatusDistributionProps) {
     <Card className="col-span-full lg:col-span-3 border-slate-100 shadow-xs rounded-2xl overflow-hidden transition-all duration-300 hover:shadow-lg">
       <CardHeader className="bg-gray-50/50 border-b border-gray-100">
         <CardTitle className="text-[10px] font-black text-gray-400 uppercase tracking-widest flex items-center">
-          <PieChartIcon className="mr-2 h-4 w-4 text-orange-600" />
+          <PieChartIcon className="mr-2 h-4 w-4 text-[#1F30AD]" />
           Répartition des Statuts
         </CardTitle>
       </CardHeader>
@@ -34,11 +34,11 @@ export function StatusDistribution({ stats }: StatusDistributionProps) {
               <div key={stat.name} className="space-y-2">
                 <div className="flex items-center justify-between text-xs">
                   <span className="font-bold text-slate-700 uppercase tracking-tight">{stat.name}</span>
-                  <span className="font-black text-orange-600">{stat.count}</span>
+                  <span className="font-black text-[#1F30AD]">{stat.count}</span>
                 </div>
                 <div className="relative h-2 w-full rounded-full bg-slate-100 overflow-hidden shadow-inner">
                   <div
-                    className="absolute inset-y-0 left-0 rounded-full transition-all duration-1000 bg-linear-to-r from-orange-500 to-orange-600 shadow-[0_0_8px_rgba(249,115,22,0.4)]"
+                    className="absolute inset-y-0 left-0 rounded-full transition-all duration-1000 bg-linear-to-r from-[#1F30AD] to-[#172585] shadow-[0_0_8px_rgba(31,48,173,0.4)]"
                     style={{
                       width: total > 0 ? `${(stat.count / total) * 100}%` : "0%",
                       transitionDelay: `${index * 100}ms`

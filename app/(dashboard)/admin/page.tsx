@@ -100,7 +100,7 @@ export default function AdminDashboardPage() {
             size="sm" 
             onClick={fetchStats} 
             disabled={loading}
-            className="bg-white border-slate-200 text-slate-700 hover:bg-slate-50 shadow-sm"
+            className="bg-white border-slate-200 text-slate-700 hover:bg-blue-50 hover:text-[#1F30AD] hover:border-blue-200 shadow-sm"
           >
             <RefreshCwIcon className={`mr-2 h-4 w-4 ${loading && "animate-spin"}`} />
             Actualiser
@@ -137,7 +137,7 @@ export default function AdminDashboardPage() {
                 value={stats.toProcessOrders}
                 description="Urgent"
                 icon={<AlertCircleIcon className="h-5 w-5" />}
-                className="ring-1 ring-orange-100"
+                className="ring-1 ring-[#1F30AD]/20"
                 href="/list/orders?filter=toprocess"
               />
               <StatsCard
@@ -159,7 +159,7 @@ export default function AdminDashboardPage() {
       {/* Section 2: Performances Agents */}
       <div>
         <div className="flex items-center gap-3 mb-6">
-          <div className="h-6 w-1 bg-indigo-600 rounded-full" />
+          <div className="h-6 w-1 bg-[#1F30AD] rounded-full" />
           <h2 className="text-lg font-bold text-slate-900 uppercase tracking-wider">Productivité des Agents</h2>
         </div>
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">

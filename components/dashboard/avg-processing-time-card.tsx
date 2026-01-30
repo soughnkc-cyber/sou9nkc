@@ -24,7 +24,7 @@ const getMedalIcon = (rank: number) => {
 const getRankColor = (rank: number) => {
   if (rank === 1) return "bg-gradient-to-r from-yellow-50 to-amber-50 border-yellow-200";
   if (rank === 2) return "bg-gradient-to-r from-gray-50 to-slate-50 border-gray-200";
-  if (rank === 3) return "bg-gradient-to-r from-orange-50 to-amber-50 border-orange-200";
+  if (rank === 3) return "bg-gradient-to-r from-blue-50 to-indigo-50 border-blue-200";
   return "bg-white border-gray-100";
 };
 

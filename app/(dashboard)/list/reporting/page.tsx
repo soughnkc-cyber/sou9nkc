@@ -119,7 +119,7 @@ export default function ReportingPage() {
       <div className="flex flex-col md:flex-row items-center justify-between gap-4 sm:gap-6">
         <div className="text-center md:text-left">
           <h1 className="text-2xl sm:text-3xl font-black text-gray-900 tracking-tight leading-tight flex items-center justify-center md:justify-start gap-2">
-            <FileBarChart2Icon className="h-6 w-6 sm:h-8 sm:w-8 text-orange-600" />
+            <FileBarChart2Icon className="h-6 w-6 sm:h-8 sm:w-8 text-[#1F30AD]" />
             Reporting & Analytics
           </h1>
           <p className="text-xs sm:text-sm text-gray-500 font-medium mt-1">Analyse détaillée des performances de la plateforme</p>
@@ -129,7 +129,7 @@ export default function ReportingPage() {
             variant="outline" 
             size="sm" 
             onClick={handleExport} 
-            className="h-10 rounded-xl px-3 sm:px-4 font-bold border-gray-200 hover:bg-orange-50 hover:text-orange-600 hover:border-orange-200 transition-all shrink-0 text-gray-700"
+            className="h-10 rounded-xl px-3 sm:px-4 font-bold border-gray-200 hover:bg-blue-50 hover:text-[#1F30AD] hover:border-blue-200 transition-all shrink-0 text-gray-700"
           >
             <DownloadIcon className="mr-2 h-4 w-4" />
             <span className="hidden sm:inline">Exporter CSV</span>
@@ -140,7 +140,7 @@ export default function ReportingPage() {
             size="sm" 
             onClick={fetchData} 
             disabled={loading}
-            className="h-10 rounded-xl px-3 sm:px-4 font-bold border-gray-200 text-orange-600 bg-orange-50/50 hover:bg-orange-600 hover:text-white hover:border-orange-600 transition-all shrink-0"
+            className="h-10 rounded-xl px-3 sm:px-4 font-bold border-gray-200 text-[#1F30AD] bg-blue-50/50 hover:bg-[#1F30AD] hover:text-white hover:border-[#1F30AD] transition-all shrink-0"
           >
             <RefreshCwIcon className={cn("sm:mr-2 h-4 w-4", loading && "animate-spin")} />
             <span className="hidden sm:inline">Actualiser</span>
@@ -158,7 +158,7 @@ export default function ReportingPage() {
                 <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
                 <Input 
                   placeholder="Client, numéro..." 
-                  className="pl-9 h-10 rounded-xl border-gray-200 bg-gray-50/30 focus-visible:ring-orange-500 focus-visible:ring-offset-0 focus-visible:border-orange-500 transition-all placeholder:text-gray-400 font-medium"
+                  className="pl-9 h-10 rounded-xl border-gray-200 bg-gray-50/30 focus-visible:ring-[#1F30AD] focus-visible:ring-offset-0 focus-visible:border-[#1F30AD] transition-all placeholder:text-gray-400 font-medium"
                   value={filters.searchQuery}
                   onChange={(e) => setFilters(f => ({ ...f, searchQuery: e.target.value }))}
                 />
@@ -224,7 +224,7 @@ export default function ReportingPage() {
               value={stats.totalRevenue.toLocaleString("fr-FR", { style: "currency", currency: "MRU" })}
               description={`Volume période`}
               icon={<WalletIcon className="h-5 w-5" />}
-              className="bg-orange-600 text-white border-none shadow-orange-100 shadow-lg"
+              className="bg-[#1F30AD] text-white border-none shadow-blue-100 shadow-lg"
             />
             <StatsCard
               title="Commandes"
@@ -259,7 +259,7 @@ export default function ReportingPage() {
             <Card className="col-span-full border border-gray-100 shadow-xs bg-white rounded-2xl overflow-hidden transition-all duration-300 hover:shadow-md">
               <CardHeader className="bg-gray-50/50 border-b border-gray-100">
                 <CardTitle className="text-[10px] font-black text-gray-400 uppercase tracking-widest flex items-center">
-                  <UsersIcon className="mr-2 h-4 w-4 text-orange-600" />
+                  <UsersIcon className="mr-2 h-4 w-4 text-[#1F30AD]" />
                   Performance des Agents
                 </CardTitle>
               </CardHeader>
@@ -277,15 +277,15 @@ export default function ReportingPage() {
                     </thead>
                     <tbody className="divide-y divide-gray-100">
                       {stats.agentPerformance.map((agent: any) => (
-                        <tr key={agent.agentId} className="hover:bg-orange-50/30 transition-colors">
+                        <tr key={agent.agentId} className="hover:bg-blue-50/30 transition-colors">
                           <td className="px-6 py-4 font-bold text-gray-900">{agent.agentName}</td>
                           <td className="px-6 py-4 text-center font-medium">{agent.totalOrders}</td>
                           <td className="px-6 py-4 text-center text-green-600 font-bold">{agent.confirmedOrders}</td>
                           <td className="px-6 py-4 text-center">
                             <div className="flex flex-col items-center gap-1">
-                                <span className="font-extrabold text-orange-600">{agent.conversionRate}%</span>
+                                <span className="font-extrabold text-[#1F30AD]">{agent.conversionRate}%</span>
                                 <div className="hidden sm:block w-16 h-1 bg-gray-100 rounded-full overflow-hidden">
-                                    <div className="bg-orange-500 h-full" style={{ width: `${agent.conversionRate}%` }} />
+                                    <div className="bg-[#1F30AD] h-full" style={{ width: `${agent.conversionRate}%` }} />
                                 </div>
                             </div>
                           </td>

@@ -59,7 +59,7 @@ export default function StatusPage() {
   }) => (
     <Card className="relative p-4 sm:p-5 transition-all duration-300 border border-gray-100 shadow-xs hover:shadow-md rounded-2xl overflow-hidden group bg-white flex flex-col justify-between h-full">
       <div className="flex justify-between items-start mb-2 sm:mb-4">
-        <div className={cn("p-1.5 sm:p-2 rounded-lg sm:rounded-xl bg-gray-50 group-hover:bg-orange-50 transition-colors", color)}>
+        <div className={cn("p-1.5 sm:p-2 rounded-lg sm:rounded-xl bg-gray-50 group-hover:bg-blue-50 transition-colors", color)}>
           {Icon && <Icon className="h-4 w-4 sm:h-5 sm:w-5" />}
         </div>
       </div>
@@ -229,7 +229,7 @@ export default function StatusPage() {
             <Button 
               size="sm" 
               onClick={handleAdd} 
-              className="h-10 rounded-xl px-4 font-bold bg-orange-600 hover:bg-orange-700 text-white shrink-0 shadow-lg shadow-orange-100 transition-all"
+              className="h-10 rounded-xl px-4 font-bold bg-[#1F30AD] hover:bg-[#172585] text-white shrink-0 shadow-lg shadow-blue-100 transition-all"
               disabled={addModal.isLoading || editModal.isLoading || deleteModal.isLoading}
             >
               <Plus className="h-4 w-4 mr-2" />
@@ -252,9 +252,9 @@ export default function StatusPage() {
             title="Avec Rappel"
             value={stats.withRecall}
             icon={BellRing}
-            color="bg-orange-50"
+            color="bg-blue-50"
             description={
-              <div className="text-[10px] font-bold text-orange-600">
+              <div className="text-[10px] font-bold text-[#1F30AD]">
                 {percent(stats.withRecall, stats.total)}% du total
               </div>
             }
@@ -295,7 +295,7 @@ export default function StatusPage() {
                   <Button 
                     variant="outline" 
                     size="sm" 
-                    className="h-8 rounded-xl px-3 font-bold border-gray-200 hover:bg-orange-50 hover:text-orange-600 transition-all text-xs" 
+                    className="h-8 rounded-xl px-3 font-bold border-gray-200 hover:bg-blue-50 hover:text-[#1F30AD] transition-all text-xs" 
                     onClick={() => handleEdit(selectedRows[0])}
                   >
                     <Edit className="h-3.5 w-3.5 mr-1.5" />

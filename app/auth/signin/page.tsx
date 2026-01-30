@@ -28,7 +28,8 @@ export default function SignInPage() {
         AGENT_TEST: "/agent",
       };
       const targetPath = roleRoutes[role] || "/accueil";
-      router.replace(targetPath);
+      // Force hard navigation to ensure sidebar session state is synced
+      window.location.href = targetPath;
     }
   }, [status, session, router]);
 
@@ -85,7 +86,7 @@ export default function SignInPage() {
     return (
       <div className="min-h-screen bg-slate-50 flex items-center justify-center">
         <div className="flex flex-col items-center">
-          <Loader2 className="w-12 h-12 text-orange-600 animate-spin" />
+          <Loader2 className="w-12 h-12 text-[#1F30AD] animate-spin" />
           <p className="mt-4 text-slate-600 font-bold uppercase tracking-widest text-[10px]">Vérification de la session...</p>
         </div>
       </div>
@@ -95,11 +96,11 @@ export default function SignInPage() {
   return (
     <div className="min-h-screen bg-slate-50 flex items-center justify-center p-4 relative overflow-hidden">
       {/* Decorative background blobs */}
-      <div className="absolute top-[-10%] right-[-10%] w-[40%] h-[40%] bg-orange-100/50 rounded-full blur-3xl" />
-      <div className="absolute bottom-[-10%] left-[-10%] w-[40%] h-[40%] bg-orange-50/50 rounded-full blur-3xl" />
+      <div className="absolute top-[-10%] right-[-10%] w-[40%] h-[40%] bg-blue-100/50 rounded-full blur-3xl" />
+      <div className="absolute bottom-[-10%] left-[-10%] w-[40%] h-[40%] bg-blue-50/50 rounded-full blur-3xl" />
       
-      <Card className="max-w-md w-full shadow-2xl rounded-2xl overflow-hidden border-slate-100 bg-white/80 backdrop-blur-sm relative z-10 transition-all duration-500 hover:shadow-orange-500/5">
-        <div className="bg-linear-to-br from-orange-500 to-orange-600 p-10 text-white text-center relative overflow-hidden">
+      <Card className="max-w-md w-full shadow-2xl rounded-2xl overflow-hidden border-slate-100 bg-white/80 backdrop-blur-sm relative z-10 transition-all duration-500 hover:shadow-[#1F30AD]/5">
+        <div className="bg-linear-to-br from-[#1F30AD] to-[#172585] p-10 text-white text-center relative overflow-hidden">
           {/* Subtle background pattern */}
           <div className="absolute inset-0 opacity-10 pointer-events-none">
             <svg width="100%" height="100%" xmlns="http://www.w3.org/2000/svg">
@@ -114,7 +115,7 @@ export default function SignInPage() {
           
           <div className="relative z-10">
             <CardTitle className="text-3xl font-black mb-2 tracking-tight">Content de vous revoir</CardTitle>
-            <p className="text-orange-50 font-medium text-sm tracking-wide opacity-90">
+            <p className="text-blue-50 font-medium text-sm tracking-wide opacity-90">
               Connectez-vous à votre espace personnel
             </p>
           </div>
@@ -126,7 +127,7 @@ export default function SignInPage() {
               <Label htmlFor="phone" className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Numéro de téléphone</Label>
               <div className="relative group">
                 <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
-                  <Phone className="h-4 w-4 text-slate-400 group-focus-within:text-orange-500 transition-colors" />
+                  <Phone className="h-4 w-4 text-slate-400 group-focus-within:text-[#1F30AD] transition-colors" />
                 </div>
                 <Input
                   id="phone"
@@ -134,7 +135,7 @@ export default function SignInPage() {
                   placeholder="0612345678"
                   value={phone}
                   onChange={(e) => setPhone(e.target.value)}
-                  className="pl-12 h-12 rounded-xl border-slate-200 bg-slate-50/30 focus-visible:ring-orange-500 focus-visible:ring-offset-0 focus-visible:border-orange-500 transition-all placeholder:text-slate-300 font-medium"
+                  className="pl-12 h-12 rounded-xl border-slate-200 bg-slate-50/30 focus-visible:ring-[#1F30AD] focus-visible:ring-offset-0 focus-visible:border-[#1F30AD] transition-all placeholder:text-slate-300 font-medium"
                   required
                   disabled={isLoading}
                 />
@@ -147,7 +148,7 @@ export default function SignInPage() {
               </div>
               <div className="relative group">
                 <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
-                  <Lock className="h-4 w-4 text-slate-400 group-focus-within:text-orange-500 transition-colors" />
+                  <Lock className="h-4 w-4 text-slate-400 group-focus-within:text-[#1F30AD] transition-colors" />
                 </div>
                 <Input
                   id="password"
@@ -155,7 +156,7 @@ export default function SignInPage() {
                   placeholder="••••••••"
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
-                  className="pl-12 h-12 rounded-xl border-slate-200 bg-slate-50/30 focus-visible:ring-orange-500 focus-visible:ring-offset-0 focus-visible:border-orange-500 transition-all placeholder:text-slate-300"
+                  className="pl-12 h-12 rounded-xl border-slate-200 bg-slate-50/30 focus-visible:ring-[#1F30AD] focus-visible:ring-offset-0 focus-visible:border-[#1F30AD] transition-all placeholder:text-slate-300"
                   required
                   disabled={isLoading}
                 />
@@ -165,7 +166,7 @@ export default function SignInPage() {
             <Button
               type="submit"
               disabled={isLoading}
-              className="w-full bg-linear-to-r from-orange-500 to-orange-600 hover:from-orange-600 hover:to-orange-700 text-white h-12 rounded-xl font-black text-sm uppercase tracking-widest shadow-lg shadow-orange-500/20 active:scale-[0.98] transition-all duration-200 border-none"
+              className="w-full bg-linear-to-r from-[#1F30AD] to-[#172585] hover:from-[#172585] hover:to-[#101A60] text-white h-12 rounded-xl font-black text-sm uppercase tracking-widest shadow-lg shadow-[#1F30AD]/20 active:scale-[0.98] transition-all duration-200 border-none"
             >
               {isLoading ? (
                 <>
@@ -182,7 +183,7 @@ export default function SignInPage() {
             <p className="text-slate-400 text-[11px] font-medium leading-relaxed">
               En vous connectant, vous accédez à votre <span className="text-slate-900 font-bold">Espace Personnel</span>. 
               <br />
-              Un problème ? <span className="text-orange-600 font-bold cursor-pointer hover:underline underline-offset-4">Contactez l'administrateur</span>.
+              Un problème ? <span className="text-[#1F30AD] font-bold cursor-pointer hover:underline underline-offset-4">Contactez l'administrateur</span>.
             </p>
           </div>
         </CardContent>

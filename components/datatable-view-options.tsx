@@ -28,7 +28,7 @@ export function DataTableViewOptions<TData>({
           size="sm"
           className="ml-auto hidden h-10 rounded-xl px-4 font-bold border-gray-200 hover:bg-gray-50 lg:flex"
         >
-          <Settings2 className="mr-2 h-4 w-4 text-orange-600" />
+          <Settings2 className="mr-2 h-4 w-4 text-[#1F30AD]" />
           Affichage
         </Button>
       </DropdownMenuTrigger>

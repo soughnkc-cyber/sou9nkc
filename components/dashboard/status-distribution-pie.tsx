@@ -23,7 +23,7 @@ const COLORS = [
   "#8b5cf6", // purple
   "#ec4899", // pink
   "#06b6d4", // cyan
-  "#f97316", // orange
+  "#1F30AD", // brand blue
 ];
 
 export function StatusDistributionPie({ stats }: StatusDistributionPieProps) {

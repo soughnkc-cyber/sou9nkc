@@ -60,7 +60,7 @@ export const getColumns = (
       accessorKey: "name",
       header: "Nom du statut",
       isPrimary: true,
-      sortable: true,
+      sortable: false,
       cell: ({ row }) => (
         <span 
           className="px-3 py-1 rounded-full text-xs font-bold text-white shadow-sm border border-black/5"
@@ -75,7 +75,7 @@ export const getColumns = (
       accessorKey: "recallAfterH",
       header: "Rappel",
       isPrimary: true,
-      sortable: true,
+      sortable: false,
       cell: ({ row }) => (
         <RecallBadge hours={row.original.recallAfterH} />
       ),
@@ -84,7 +84,7 @@ export const getColumns = (
     createColumn<Status>({
       accessorKey: "createdAt",
       header: "Créé le",
-      sortable: true,
+      sortable: false,
       cell: ({ row }) => formatDateTime(row.original.createdAt),
     }),
   ];

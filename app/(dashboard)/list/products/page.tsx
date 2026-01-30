@@ -52,7 +52,7 @@ export default function ProductsPage() {
   }) => (
     <Card className="relative p-4 sm:p-5 transition-all duration-300 border border-gray-100 shadow-xs hover:shadow-md rounded-2xl overflow-hidden group bg-white flex flex-col justify-between h-full">
       <div className="flex justify-between items-start mb-2 sm:mb-4">
-        <div className={cn("p-1.5 sm:p-2 rounded-lg sm:rounded-xl bg-gray-50 group-hover:bg-orange-50 transition-colors", color)}>
+        <div className={cn("p-1.5 sm:p-2 rounded-lg sm:rounded-xl bg-gray-50 group-hover:bg-blue-50 transition-colors", color)}>
           {Icon && <Icon className="h-4 w-4 sm:h-5 sm:w-5" />}
         </div>
       </div>
@@ -153,7 +153,7 @@ export default function ProductsPage() {
             <Button 
                 variant="outline" 
                 size="sm" 
-                className="h-10 rounded-xl px-3 sm:px-4 font-bold border-gray-200 hover:bg-gray-50 shrink-0" 
+                className="h-10 rounded-xl px-3 sm:px-4 font-bold border-gray-200 hover:bg-blue-50 hover:text-[#1F30AD] hover:border-blue-200 shrink-0" 
                 onClick={fetchProducts} 
                 disabled={isLoadingPage}
             >
@@ -202,7 +202,7 @@ export default function ProductsPage() {
                   <Button 
                     variant="outline" 
                     size="sm" 
-                    className="h-8 rounded-xl px-3 font-bold border-gray-200 hover:bg-orange-50 hover:text-orange-600 transition-all text-xs font-mono" 
+                    className="h-8 rounded-xl px-3 font-bold border-gray-200 hover:bg-blue-50 hover:text-[#1F30AD] transition-all text-xs font-mono" 
                     disabled
                   >
                     <Edit className="h-3.5 w-3.5 mr-1.5" />
@@ -210,7 +210,7 @@ export default function ProductsPage() {
                   </Button>
                 )}
                 {selectedRows.length > 0 && (
-                  <div className="flex items-center px-3 py-1 bg-orange-50 text-orange-700 rounded-xl border border-orange-100 font-bold text-[10px] animate-in fade-in slide-in-from-top-1">
+                  <div className="flex items-center px-3 py-1 bg-blue-50 text-[#1F30AD] rounded-xl border border-blue-100 font-bold text-[10px] animate-in fade-in slide-in-from-top-1">
                     {selectedRows.length} sélectionnés
                   </div>
                 )}

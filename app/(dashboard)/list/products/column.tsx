@@ -85,7 +85,7 @@ export const getColumns = (
       accessorKey: "title",
       header: "Produit",
       isPrimary: true,
-      sortable: true,
+      sortable: false,
       cell: ({ row }) => (
         <span className="font-medium">{row.original.title}</span>
       ),
@@ -133,14 +133,14 @@ export const getColumns = (
       accessorKey: "price",
       header: "Prix",
       isPrimary: true,
-      sortable: true,
+      sortable: false,
       cell: ({ row }) => <PriceBadge price={row.original.price} />,
     }),
 
     createColumn<Product>({
       accessorKey: "status",
       header: "Statut",
-      sortable: true,
+      sortable: false,
       filterComponent: createFacetedFilter("Statut", [
         { label: "Actif", value: "active" },
         { label: "Archivé", value: "archived" },

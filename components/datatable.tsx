@@ -133,12 +133,12 @@ export function DataTable<TData, TValue>({
         <div className="flex flex-1 items-center space-x-2 w-full lg:w-auto">
           {showSearch && (
             <div className="relative w-full lg:w-[320px] group">
-              <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400 group-focus-within:text-orange-500 transition-colors" />
+              <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400 group-focus-within:text-[#1F30AD] transition-colors" />
               <Input
                 placeholder={searchPlaceholder}
                 value={globalFilter}
                 onChange={(e) => setGlobalFilter(e.target.value)}
-                className="pl-10 h-10 rounded-xl border-gray-200 bg-gray-50/30 focus-visible:ring-orange-500 focus-visible:ring-offset-0 focus-visible:border-orange-500 transition-all placeholder:text-gray-400 font-medium"
+                className="pl-10 h-10 rounded-xl border-gray-200 bg-gray-50/30 focus-visible:ring-[#1F30AD] focus-visible:ring-offset-0 focus-visible:border-[#1F30AD] transition-all placeholder:text-gray-400 font-medium"
               />
             </div>
           )}
@@ -156,7 +156,7 @@ export function DataTable<TData, TValue>({
               className="lg:hidden h-10 rounded-xl px-4 font-bold border-gray-200 hover:bg-gray-50 transition-colors"
               onClick={() => setIsFilterOpen((v) => !v)}
             >
-              <Filter className="h-4 w-4 mr-2 text-orange-600" />
+              <Filter className="h-4 w-4 mr-2 text-[#1F30AD]" />
               Filtres
               {isFilterOpen && <X className="h-4 w-4 ml-2" />}
             </Button>
@@ -248,14 +248,14 @@ export function DataTable<TData, TValue>({
                 <TableRow 
                   key={row.id} 
                   className={cn(
-                    "hover:bg-orange-50/30 transition-colors border-b border-gray-50 group relative",
-                    row.getIsSelected() && "bg-orange-50/50"
+                    "hover:bg-blue-50/30 transition-colors border-b border-gray-50 group relative",
+                    row.getIsSelected() && "bg-blue-50/50"
                   )}
                 >
                   {row.getVisibleCells().map((cell, index) => (
                     <TableCell key={cell.id} className={cn("py-4 pl-4", index === 0 && "relative")}>
                       {index === 0 && row.getIsSelected() && (
-                          <div className="absolute left-0 top-0 bottom-0 w-1 bg-orange-500 rounded-r-full" />
+                          <div className="absolute left-0 top-0 bottom-0 w-1 bg-[#1F30AD] rounded-r-full" />
                       )}
                       <div className="text-[13px] font-medium text-gray-700">
                         {flexRender(
@@ -307,7 +307,7 @@ export function DataTable<TData, TValue>({
                 key={row.id} 
                 className={cn(
                   "border border-gray-100 rounded-2xl bg-white shadow-xs overflow-hidden transition-all duration-300",
-                  isRowExpanded ? "ring-1 ring-orange-200 shadow-md" : ""
+                  isRowExpanded ? "ring-1 ring-blue-200 shadow-md" : ""
                 )}
               >
                 {/* Mobile Card Header (Always visible) */}
@@ -334,7 +334,7 @@ export function DataTable<TData, TValue>({
                       size="icon" 
                       className={cn(
                         "h-8 w-8 rounded-full border border-gray-200 transition-all",
-                        isRowExpanded ? "bg-orange-500 border-orange-500 text-white rotate-180" : "text-gray-400"
+                        isRowExpanded ? "bg-[#1F30AD] border-[#1F30AD] text-white rotate-180" : "text-gray-400"
                       )}
                     >
                       <ChevronDown className="h-4 w-4" />

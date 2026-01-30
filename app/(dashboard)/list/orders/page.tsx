@@ -279,11 +279,11 @@ function OrdersPageContent() {
       onClick={onClick}
       className={cn(
         "relative p-4 sm:p-5 cursor-pointer transition-all duration-300 border border-gray-100 shadow-xs hover:shadow-md rounded-2xl overflow-hidden group bg-white flex flex-col justify-between h-full",
-        active ? "ring-2 ring-orange-500 ring-offset-2" : "hover:border-orange-200"
+        active ? "ring-2 ring-[#1F30AD] ring-offset-2" : "hover:border-blue-200"
       )}
     >
       <div className="flex justify-between items-start mb-2 sm:mb-4">
-        <div className={cn("p-1.5 sm:p-2 rounded-lg sm:rounded-xl bg-orange-50 group-hover:bg-orange-100 transition-colors", color)}>
+        <div className={cn("p-1.5 sm:p-2 rounded-lg sm:rounded-xl bg-blue-50 group-hover:bg-blue-100 transition-colors", color)}>
           {Icon && <Icon className="h-4 w-4 sm:h-5 sm:w-5" />}
         </div>
         {trend && (
@@ -300,7 +300,7 @@ function OrdersPageContent() {
         <h3 className="text-lg sm:text-2xl font-black text-gray-900 tracking-tight leading-tight">{value}</h3>
       </div>
       {active && (
-          <div className="absolute bottom-0 left-0 right-0 h-1 bg-orange-500" />
+          <div className="absolute bottom-0 left-0 right-0 h-1 bg-[#1F30AD]" />
       )}
     </Card>
   );
@@ -391,7 +391,7 @@ function OrdersPageContent() {
             <Button 
                 variant="outline" 
                 size="sm" 
-                className="h-10 rounded-xl px-3 sm:px-4 font-bold border-gray-200 hover:bg-gray-50 shrink-0" 
+                className="h-10 rounded-xl px-3 sm:px-4 font-bold border-gray-200 hover:bg-blue-50 hover:text-[#1F30AD] hover:border-blue-200 shrink-0" 
                 onClick={fetchOrders} 
                 disabled={isLoadingPage}
             >
@@ -423,7 +423,7 @@ function OrdersPageContent() {
             icon={PhoneIncoming}
             active={currentFilter === "torecall" || filterType === "torecall"}
             onClick={() => toggleFilter("torecall")}
-            color="bg-orange-50"
+            color="bg-blue-50"
             trend="3.2%"
             trendUp={false}
           />
@@ -457,7 +457,7 @@ function OrdersPageContent() {
           icon={Target}
           active={currentFilter === "processed" || filterType === "processed"}
           onClick={() => toggleFilter("processed")}
-          color="bg-orange-50"
+          color="bg-blue-50"
           trend="5.4%"
           trendUp={true}
         />
@@ -499,7 +499,7 @@ function OrdersPageContent() {
                   <Button 
                     variant="outline" 
                     size="sm" 
-                    className="h-8 rounded-xl px-3 font-bold border-gray-200 hover:bg-orange-50 hover:text-orange-600 transition-all text-xs" 
+                    className="h-8 rounded-xl px-3 font-bold border-gray-200 hover:bg-blue-50 hover:text-[#1F30AD] transition-all text-xs" 
                     onClick={() => openAssignModal(selectedOrders[0])}
                   >
                     <Edit className="h-3.5 w-3.5 mr-1.5" />

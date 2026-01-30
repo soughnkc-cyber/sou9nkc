@@ -111,7 +111,7 @@ export default function AgentDashboardPage() {
           value={stats.revenue.toLocaleString("fr-FR", { style: "currency", currency: "MRU" })}
           description="Commission potentielle estimée"
           icon={<WalletIcon className="h-5 w-5" />}
-          className="border-l-4 border-l-orange-500"
+          className="border-l-4 border-l-[#1F30AD]"
         />
         <StatsCard
           title="Total Confirmées"

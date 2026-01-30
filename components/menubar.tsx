@@ -74,10 +74,10 @@ export default function MenuBar() {
       {/* Right Actions */}
       <div className="flex items-center gap-1 sm:gap-3">
         {/* Notifications */}
-        <Button variant="ghost" size="icon" className="relative text-gray-400 hover:text-black hover:bg-gray-50 rounded-xl h-9 w-9 sm:h-10 sm:w-10">
+        {/* <Button variant="ghost" size="icon" className="relative text-gray-400 hover:text-black hover:bg-gray-50 rounded-xl h-9 w-9 sm:h-10 sm:w-10">
            <Bell className="h-5 w-5" />
-           <span className="absolute top-2 right-2 sm:top-2.5 sm:right-2.5 h-2 w-2 bg-orange-500 rounded-full border-2 border-white"></span>
-        </Button>
+           <span className="absolute top-2 right-2 sm:top-2.5 sm:right-2.5 h-2 w-2 bg-[#1F30AD] rounded-full border-2 border-white"></span>
+        </Button> */}
 
         <div className="h-6 sm:h-8 w-px bg-gray-100 mx-1 sm:mx-2" />
 
@@ -85,11 +85,11 @@ export default function MenuBar() {
             <DropdownMenuTrigger asChild>
                 <div className="flex items-center gap-2 sm:gap-3 pl-1 sm:pl-2 cursor-pointer group">
                     <div className="flex-col items-end text-right hidden sm:flex">
-                        <span className="text-sm font-bold leading-none group-hover:text-orange-600 transition-colors uppercase">{session?.user?.name}</span>
+                        <span className="text-sm font-bold leading-none group-hover:text-[#1F30AD] transition-colors uppercase">{session?.user?.name}</span>
                         <span className="text-[10px] text-gray-400 font-medium uppercase tracking-wider">{userRole}</span>
                     </div>
-                    <Avatar className="h-9 w-9 sm:h-10 sm:w-10 border-2 border-white ring-2 ring-gray-100 shadow-sm group-hover:ring-orange-200 transition-all">
-                        <AvatarFallback className="bg-orange-600 text-white font-bold text-xs uppercase">
+                    <Avatar className="h-9 w-9 sm:h-10 sm:w-10 border-2 border-white ring-2 ring-gray-100 shadow-sm group-hover:ring-blue-200 transition-all">
+                        <AvatarFallback className="bg-[#1F30AD] text-white font-bold text-xs uppercase">
                             {session?.user?.name?.substring(0, 2)}
                         </AvatarFallback>
                     </Avatar>
@@ -97,10 +97,10 @@ export default function MenuBar() {
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end" className="w-56 p-2 rounded-2xl border-gray-100 shadow-xl mt-2">
                 <DropdownMenuLabel className="font-black text-xs uppercase tracking-widest text-gray-400 px-3 py-2">Mon Compte</DropdownMenuLabel>
-                <DropdownMenuItem className="rounded-xl px-3 py-2 cursor-pointer font-bold focus:bg-orange-50 focus:text-orange-600">
+                <DropdownMenuItem className="rounded-xl px-3 py-2 cursor-pointer font-bold focus:bg-blue-50 focus:text-[#1F30AD]">
                     <User className="h-4 w-4 mr-2" /> Profil
                 </DropdownMenuItem>
-                <DropdownMenuItem className="rounded-xl px-3 py-2 cursor-pointer font-bold focus:bg-orange-50 focus:text-orange-600">
+                <DropdownMenuItem className="rounded-xl px-3 py-2 cursor-pointer font-bold focus:bg-blue-50 focus:text-[#1F30AD]">
                     <Settings className="h-4 w-4 mr-2" /> Paramètres
                 </DropdownMenuItem>
                 <DropdownMenuSeparator className="bg-gray-50 mx-2 my-1" />

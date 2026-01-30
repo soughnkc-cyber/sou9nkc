@@ -48,7 +48,7 @@ export function MultiSelect({
         <Button
           variant="outline"
           className={cn(
-            "w-full justify-between min-h-8 h-auto font-normal bg-white border-orange-200 text-gray-900 shadow-sm px-2 py-1",
+            "w-full justify-between min-h-8 h-auto font-normal bg-white border-blue-200 text-gray-900 shadow-sm px-2 py-1",
             className
           )}
         >
@@ -62,11 +62,11 @@ export function MultiSelect({
                 <Badge
                   key={val}
                   variant="secondary"
-                  className="bg-orange-50 text-orange-700 text-[10px] px-1 h-5 flex items-center gap-1 border-orange-100"
+                  className="bg-blue-50 text-[#1F30AD] text-[10px] px-1 h-5 flex items-center gap-1 border-blue-100"
                 >
                   {option?.label || val}
                   <X
-                    className="h-2 w-2 cursor-pointer hover:text-orange-900"
+                    className="h-2 w-2 cursor-pointer hover:text-blue-900"
                     onClick={(e) => {
                       e.stopPropagation();
                       removeOption(val);
@@ -85,8 +85,8 @@ export function MultiSelect({
             <div
               key={option.value}
               className={cn(
-                "flex items-center justify-between px-2 py-1.5 text-xs rounded-sm cursor-pointer hover:bg-orange-50 transition-colors",
-                selected.includes(option.value) && "bg-orange-100 font-bold text-orange-900"
+                "flex items-center justify-between px-2 py-1.5 text-xs rounded-sm cursor-pointer hover:bg-blue-50 transition-colors",
+                selected.includes(option.value) && "bg-blue-100 font-bold text-blue-900"
               )}
               onClick={() => toggleOption(option.value)}
             >
