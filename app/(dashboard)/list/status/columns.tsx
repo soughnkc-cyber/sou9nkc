@@ -59,6 +59,7 @@ export const getColumns = (
     createColumn<Status>({
       accessorKey: "name",
       header: "Nom du statut",
+      isPrimary: true,
       sortable: true,
       cell: ({ row }) => (
         <div className="flex items-center gap-3">
@@ -76,6 +77,7 @@ export const getColumns = (
     createColumn<Status>({
       accessorKey: "recallAfterH",
       header: "Rappel",
+      isPrimary: true,
       sortable: true,
       cell: ({ row }) => (
         <RecallBadge hours={row.original.recallAfterH} />

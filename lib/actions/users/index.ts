@@ -117,6 +117,7 @@ export async function getAgents(): Promise<{ id: string; name: string; role: str
       id: true,
       name: true,
       role: true,
+      iconColor: true,
     },
     orderBy: { name: "asc" },
   });
@@ -125,6 +126,7 @@ export async function getAgents(): Promise<{ id: string; name: string; role: str
     id: a.id,
     name: a.name ?? "Sans nom",
     role: a.role,
+    iconColor: a.iconColor,
   }));
 }
 

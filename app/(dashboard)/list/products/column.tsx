@@ -83,6 +83,7 @@ export const getColumns = (
     createColumn<Product>({
       accessorKey: "title",
       header: "Produit",
+      isPrimary: true,
       sortable: true,
       cell: ({ row }) => (
         <span className="font-medium">{row.original.title}</span>
@@ -130,6 +131,7 @@ export const getColumns = (
     createColumn<Product>({
       accessorKey: "price",
       header: "Prix",
+      isPrimary: true,
       sortable: true,
       cell: ({ row }) => <PriceBadge price={row.original.price} />,
     }),

@@ -18,6 +18,7 @@ export function createColumn<T>(config: {
   accessorFn?: (originalRow: T) => any;
   id?: string;
   header: string;
+  isPrimary?: boolean;
   mobileLabel?: string;
   sortable?: boolean;
   filterFn?: any;
@@ -56,6 +57,8 @@ export function createColumn<T>(config: {
       return true;
     }),
     meta: {
+      title: config.header,
+      isPrimary: config.isPrimary,
       mobileLabel: config.mobileLabel ?? config.header,
       filterComponent: config.filterComponent,
     },
@@ -149,6 +152,8 @@ export function createSelectFilter<T>(
 
 declare module "@tanstack/react-table" {
   interface ColumnMeta<TData, TValue> {
+    title?: string;
+    isPrimary?: boolean;
     mobileLabel?: string;
     filterComponent?: (props: {
       column: Column<TData, TValue>;

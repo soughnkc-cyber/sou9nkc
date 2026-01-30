@@ -31,7 +31,7 @@ function mapStatus(s: PrismaStatus): Status {
    GET
 ========================= */
 export async function getStatus(): Promise<Status[]> {
-  await checkPermission("canViewStatuses");
+  await checkPermission(["canViewStatuses", "canViewOrders"]);
   
   const status = await prisma.status.findMany({
     where: { isArchived: false },
@@ -177,6 +177,7 @@ export const updateOrderStatus = async (
     return {
       ...order,
       recallAt: order.recallAt ? order.recallAt.toISOString() : null,
+      status: order.status ? { id: order.status.id, name: order.status.name, color: order.status.color } : null,
     };
 
 

@@ -37,6 +37,7 @@ import {
   Search,
   Filter,
   X,
+  ChevronDown,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
@@ -73,7 +74,8 @@ export function DataTable<TData, TValue>({
   extraSearchActions,
 }: DataTableProps<TData, TValue>) {
   const [sorting, setSorting] = useState<SortingState>([]);
-  const [columnFilters, setColumnFilters] = useState<ColumnFiltersState>([]);
+  const [columnFilters, setColumnFilters] = React.useState<ColumnFiltersState>([]);
+  const [expandedRows, setExpandedRows] = React.useState<Record<string, boolean>>({});
   const [globalFilter, setGlobalFilter] = useState("");
   const [rowSelection, setRowSelection] = useState({});
   const [isFilterOpen, setIsFilterOpen] = useState(false);
@@ -130,13 +132,13 @@ export function DataTable<TData, TValue>({
       <div className="flex flex-col lg:flex-row gap-4 justify-between items-start lg:items-center">
         <div className="flex flex-1 items-center space-x-2 w-full lg:w-auto">
           {showSearch && (
-            <div className="relative w-full lg:w-[300px]">
-              <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-gray-500" />
+            <div className="relative w-full lg:w-[320px] group">
+              <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400 group-focus-within:text-orange-500 transition-colors" />
               <Input
                 placeholder={searchPlaceholder}
                 value={globalFilter}
                 onChange={(e) => setGlobalFilter(e.target.value)}
-                className="pl-9 h-8"
+                className="pl-10 h-10 rounded-xl border-gray-200 bg-gray-50/30 focus-visible:ring-orange-500 focus-visible:ring-offset-0 focus-visible:border-orange-500 transition-all placeholder:text-gray-400 font-medium"
               />
             </div>
           )}
@@ -151,10 +153,10 @@ export function DataTable<TData, TValue>({
             <Button
               variant="outline"
               size="sm"
-              className="lg:hidden h-8"
+              className="lg:hidden h-10 rounded-xl px-4 font-bold border-gray-200 hover:bg-gray-50 transition-colors"
               onClick={() => setIsFilterOpen((v) => !v)}
             >
-              <Filter className="h-4 w-4 mr-2" />
+              <Filter className="h-4 w-4 mr-2 text-orange-600" />
               Filtres
               {isFilterOpen && <X className="h-4 w-4 ml-2" />}
             </Button>
@@ -170,7 +172,7 @@ export function DataTable<TData, TValue>({
               value={`${table.getState().pagination.pageSize}`}
               onValueChange={(value) => table.setPageSize(Number(value))}
             >
-              <SelectTrigger className="w-[120px] h-8">
+               <SelectTrigger className="w-[130px] h-10 rounded-xl border-gray-200 bg-gray-50/30 transition-all font-bold">
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
@@ -214,13 +216,13 @@ export function DataTable<TData, TValue>({
       )}
 
       {/* Table desktop */}
-      <div className="hidden lg:block border rounded-md bg-white">
+      <div className="hidden lg:block border border-gray-100 rounded-2xl bg-white overflow-hidden shadow-sm">
         <Table>
           <TableHeader>
             {table.getHeaderGroups().map((group) => (
-              <TableRow key={group.id} className="bg-gray-50/50">
+              <TableRow key={group.id} className="bg-gray-50/80 hover:bg-gray-50/80 border-b border-gray-100">
                 {group.headers.map((header) => (
-                  <TableHead key={header.id} className="h-auto py-2 text-xs font-bold text-gray-700 uppercase tracking-wider">
+                  <TableHead key={header.id} className="h-12 py-3 text-[10px] font-extrabold text-gray-500 uppercase tracking-widest pl-4">
                     <div className="flex flex-col gap-2">
                       {!(header.column.getCanFilter() && header.column.columnDef.meta?.filterComponent) && flexRender(
                         header.column.columnDef.header,
@@ -236,7 +238,6 @@ export function DataTable<TData, TValue>({
                       )}
                     </div>
                   </TableHead>
-
                 ))}
               </TableRow>
             ))}
@@ -244,20 +245,31 @@ export function DataTable<TData, TValue>({
           <TableBody>
             {table.getRowModel().rows.length ? (
               table.getRowModel().rows.map((row) => (
-                <TableRow key={row.id} className="hover:bg-gray-50/50 transition-colors">
-                  {row.getVisibleCells().map((cell) => (
-                    <TableCell key={cell.id} className="py-2">
-                      {flexRender(
-                        cell.column.columnDef.cell,
-                        cell.getContext()
+                <TableRow 
+                  key={row.id} 
+                  className={cn(
+                    "hover:bg-orange-50/30 transition-colors border-b border-gray-50 group relative",
+                    row.getIsSelected() && "bg-orange-50/50"
+                  )}
+                >
+                  {row.getVisibleCells().map((cell, index) => (
+                    <TableCell key={cell.id} className={cn("py-4 pl-4", index === 0 && "relative")}>
+                      {index === 0 && row.getIsSelected() && (
+                          <div className="absolute left-0 top-0 bottom-0 w-1 bg-orange-500 rounded-r-full" />
                       )}
+                      <div className="text-[13px] font-medium text-gray-700">
+                        {flexRender(
+                          cell.column.columnDef.cell,
+                          cell.getContext()
+                        )}
+                      </div>
                     </TableCell>
                   ))}
                 </TableRow>
               ))
             ) : (
               <TableRow>
-                <TableCell colSpan={columns.length} className="text-center h-24 text-gray-500 italic">
+                <TableCell colSpan={columns.length} className="text-center h-32 text-gray-400 italic">
                   Aucun résultat
                 </TableCell>
               </TableRow>
@@ -266,29 +278,96 @@ export function DataTable<TData, TValue>({
         </Table>
       </div>
 
+      {/* Pagination component logic removed from main return for length, assuming it's below */}
+
       {/* Mobile cards */}
-      <div className="lg:hidden space-y-3">
+      <div className="lg:hidden space-y-4">
         {table.getRowModel().rows.length ? (
-          table.getRowModel().rows.map((row) => (
-            <div key={row.id} className="border rounded-lg p-4 space-y-3 bg-white shadow-sm">
-              {row.getVisibleCells().map((cell) => (
-                <div key={cell.id} className="flex flex-col space-y-1">
-                  <span className="text-[10px] font-bold text-gray-400 uppercase tracking-tighter">
-                    {cell.column.columnDef.meta?.mobileLabel ??
-                      (typeof cell.column.columnDef.header === 'string' ? cell.column.columnDef.header : cell.column.id)}
-                  </span>
-                  <div className="text-sm">
-                    {flexRender(
-                      cell.column.columnDef.cell,
-                      cell.getContext()
-                    )}
+          table.getRowModel().rows.map((row) => {
+            const isRowExpanded = expandedRows[row.id] || false;
+            const toggleRow = () => {
+              setExpandedRows(prev => ({
+                ...prev,
+                [row.id]: !isRowExpanded
+              }));
+            };
+            
+            const visibleCells = row.getVisibleCells();
+            
+            // Primary columns (marked as isPrimary or fallback to first 2)
+            let primaryCells = visibleCells.filter(cell => cell.column.columnDef.meta?.isPrimary);
+            if (primaryCells.length === 0) {
+              primaryCells = visibleCells.filter(c => c.column.id !== "select" && c.column.id !== "actions").slice(0, 2);
+            }
+            
+            const secondaryCells = visibleCells.filter(cell => !primaryCells.includes(cell) && cell.column.id !== "select");
+
+            return (
+              <div 
+                key={row.id} 
+                className={cn(
+                  "border border-gray-100 rounded-2xl bg-white shadow-xs overflow-hidden transition-all duration-300",
+                  isRowExpanded ? "ring-1 ring-orange-200 shadow-md" : ""
+                )}
+              >
+                {/* Mobile Card Header (Always visible) */}
+                <div 
+                  className="p-4 flex items-center justify-between gap-4 cursor-pointer active:bg-gray-50 transition-colors"
+                  onClick={toggleRow}
+                >
+                  <div className="flex items-center gap-4 flex-1">
+                    {primaryCells.map((cell) => (
+                      <div key={cell.id} className="flex flex-col">
+                        <span className="text-[9px] font-black text-gray-400 uppercase tracking-widest mb-0.5">
+                          {cell.column.columnDef.meta?.title || cell.column.id}
+                        </span>
+                        <div className="text-sm font-bold text-gray-900">
+                          {flexRender(cell.column.columnDef.cell, cell.getContext())}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                  
+                  <div className="flex items-center gap-2">
+                    <Button 
+                      variant="ghost" 
+                      size="icon" 
+                      className={cn(
+                        "h-8 w-8 rounded-full border border-gray-200 transition-all",
+                        isRowExpanded ? "bg-orange-500 border-orange-500 text-white rotate-180" : "text-gray-400"
+                      )}
+                    >
+                      <ChevronDown className="h-4 w-4" />
+                    </Button>
                   </div>
                 </div>
-              ))}
-            </div>
-          ))
+
+                {/* Mobile Card Expanded Details */}
+                {isRowExpanded && (
+                  <div className="px-4 pb-4 pt-0 space-y-4 animate-in slide-in-from-top-2 duration-200">
+                    <div className="h-px bg-gray-50 -mx-4 mb-4" />
+                    <div className="grid grid-cols-2 gap-4">
+                      {secondaryCells.map((cell) => (
+                        <div key={cell.id} className="flex flex-col space-y-1">
+                          <span className="text-[10px] font-bold text-gray-400 uppercase tracking-tighter">
+                            {cell.column.columnDef.meta?.title || cell.column.id}
+                          </span>
+                          <div className="text-[13px] font-medium text-gray-700">
+                            {flexRender(
+                              cell.column.columnDef.cell,
+                              cell.getContext()
+                            )}
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+              </div>
+            );
+          })
         ) : (
-          <div className="text-center py-10 border rounded-lg italic text-gray-500">
+          <div className="text-center py-12 bg-white border border-dashed rounded-2xl italic text-gray-400">
             Aucun résultat
           </div>
         )}

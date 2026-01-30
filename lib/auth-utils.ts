@@ -24,9 +24,14 @@ export const hasPermission = (
 ): boolean => {
   if (!role) return false;
   
-  // Rule: ADMIN and SUPERVISOR can NEVER edit orders
-  if (requiredPermission === "canEditOrders" && (role === "ADMIN" || role === "SUPERVISOR")) {
-    return false;
+  // Rule: ADMIN is a super-user
+  if (role === "ADMIN") return true;
+
+  // Rule: SUPERVISOR has default view permissions for management
+  if (role === "SUPERVISOR") {
+    if (requiredPermission === "canViewOrders") return true;
+    if (requiredPermission === "canViewStatuses") return true;
+    if (requiredPermission === "canViewProducts") return true;
   }
 
   if (!permissions) return false;

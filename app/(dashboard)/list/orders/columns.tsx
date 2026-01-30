@@ -17,15 +17,17 @@ export interface Order {
   recallAt: string | null;
 
   status?: {
-  id: string;
-  name: string;
-  recallAfterH?: number | null;
-} | null;
+    id: string;
+    name: string;
+    color?: string;
+    recallAfterH?: number | null;
+  } | null;
   processingTimeMin?: number | null;
   agent?: {
     id: string;
     name: string | null;
     phone: string;
+    iconColor?: string;
   } | null;
 }
 
@@ -36,10 +38,12 @@ const StatusSelect = ({
   readOnly,
 }: {
   order: Order;
-  statuses: { id: string; name: string }[];
+  statuses: { id: string; name: string; color?: string }[];
   onChange: (orderId: string, statusId: string | null) => void;
   readOnly?: boolean;
 }) => {
+  const selectedStatus = statuses.find(s => s.id === order.status?.id);
+
   return (
     <div onClick={(e) => e.stopPropagation()}>
       <Select
@@ -47,14 +51,22 @@ const StatusSelect = ({
         onValueChange={(value) => onChange(order.id, value)}
         disabled={readOnly}
       >
-        <SelectTrigger className={cn("h-7 w-[130px] text-xs", readOnly && "opacity-50 cursor-not-allowed")}>
-          <SelectValue placeholder="Sélectionner" />
+        <SelectTrigger className={cn("h-7 w-[140px] text-xs", readOnly && "opacity-50 cursor-not-allowed")}>
+          <div className="flex items-center gap-2 truncate">
+             {order.status?.id && selectedStatus?.color && (
+                <div 
+                   className="w-2 h-2 rounded-full shrink-0" 
+                   style={{ backgroundColor: selectedStatus.color }}
+                />
+             )}
+             <SelectValue placeholder="Sélectionner" />
+          </div>
         </SelectTrigger>
 
         <SelectContent>
           {statuses.map((s) => (
             <SelectItem key={s.id} value={s.id}>
-              {s.name}
+               <span>{s.name}</span>
             </SelectItem>
           ))}
         </SelectContent>
@@ -70,32 +82,42 @@ const AgentSelect = ({
     readOnly,
   }: {
     order: Order;
-    agents: { id: string; name: string }[];
+    agents: { id: string; name: string; iconColor?: string }[];
     onChange: (orderId: string, agentId: string) => void;
     readOnly?: boolean;
   }) => {
+    const selectedAgent = agents.find(a => a.id === order.agent?.id);
+
     return (
       <div onClick={(e) => e.stopPropagation()}>
         <Select
           value={order.agent?.id ?? "unassigned"}
           onValueChange={(value) => {
-              if (value !== "unassigned") onChange(order.id, value)
+              onChange(order.id, value)
           }}
           disabled={readOnly}
         >
-          <SelectTrigger className={cn("h-7 min-w-[130px] text-xs border-dashed", 
-              !order.agent && "text-muted-foreground",
-              readOnly && "opacity-50 cursor-not-allowed")}>
-            <div className="flex items-center gap-2">
-              <UserIcon className="h-3 w-3" />
-              <span className="truncate max-w-[100px]">{order.agent?.name || "Non affecté"}</span>
-            </div>
+          <SelectTrigger className={cn("h-7 w-[150px] text-xs", readOnly && "opacity-50 cursor-not-allowed")}>
+             <div className="flex items-center gap-2 truncate">
+                {order.agent?.id && selectedAgent?.iconColor && (
+                   <div 
+                      className="w-2 h-2 rounded-full shrink-0" 
+                      style={{ backgroundColor: selectedAgent.iconColor }}
+                   />
+                )}
+                <SelectValue placeholder="Agent" />
+             </div>
           </SelectTrigger>
     
           <SelectContent>
+            <SelectItem value="unassigned" className="text-gray-400 italic">
+               Non affecté
+            </SelectItem>
             {agents.map((a) => (
               <SelectItem key={a.id} value={a.id}>
-                {a.name}
+                <div className="flex items-center gap-2">
+                   <span>{a.name}</span>
+                </div>
               </SelectItem>
             ))}
           </SelectContent>
@@ -129,47 +151,61 @@ const PriceBadge = ({ price }: { price: number }) => (
 );
 
 /* -------- Columns -------- */
+import { differenceInDays, isSameDay, isPast, parseISO } from "date-fns";
+import { Checkbox } from "@/components/ui/checkbox";
+
 export const getColumns = (
   role: string | undefined,
   canEditOrders: boolean,
-  statuses: { id: string; name: string }[],
-  agents: { id: string; name: string }[],
+  statuses: { id: string; name: string; color?: string }[],
+  agents: { id: string; name: string; iconColor?: string }[],
   productOptions: string[],
   onStatusChange: (orderId: string, statusId: string | null) => void,
-  onAssignAgent: (order: Order) => void,
+  onAgentChange: (orderId: string, agentId: string) => void,
   onRecallChange: (orderId: string, date: string | null) => void,
   onView?: (o: Order) => void,
   onEdit?: (o: Order) => void,
   onDelete?: (o: Order) => void
 ): ColumnDef<Order>[] => {
   const isAdminOrSupervisor = role === "ADMIN" || role === "SUPERVISOR";
+  const isAdmin = role === "ADMIN";
 
   const actions = [];
   
-  // Action assigner agent (Admin/Super)
-  if (isAdminOrSupervisor) {
-      actions.push({ 
-          icon: UserIcon, 
-          onClick: onAssignAgent, 
-          className: "text-orange-600 hover:text-orange-800",
-          label: "Assigner" 
-      });
-  }
-
   if (onView)
     actions.push({ icon: Eye, onClick: onView, className: "text-blue-600 hover:text-blue-800" });
   if (onEdit)
     actions.push({ icon: Edit, onClick: onEdit, className: "text-blue-600 hover:text-blue-800" });
-  if (onDelete)
+  if (onDelete && isAdmin)
     actions.push({ icon: Trash2, onClick: onDelete, className: "text-red-600 hover:text-red-800" });
 
 
   return [
+    {
+      id: "select",
+      header: ({ table }) => (
+        <Checkbox
+          checked={table.getIsAllPageRowsSelected() || (table.getIsSomePageRowsSelected() && "indeterminate")}
+          onCheckedChange={(value) => table.toggleAllPageRowsSelected(!!value)}
+          aria-label="Sélectionner tout"
+        />
+      ),
+      cell: ({ row }) => (
+        <Checkbox
+          checked={row.getIsSelected()}
+          onCheckedChange={(value) => row.toggleSelected(!!value)}
+          aria-label="Sélectionner la ligne"
+        />
+      ),
+      enableSorting: false,
+      enableHiding: false,
+    },
     
     createColumn<Order>({
       accessorKey: "orderNumber",
       header: "N°",
-      sortable: true,
+      isPrimary: true,
+      sortable: false,
       cell: ({ row }) => <span className="font-mono text-xs">#{row.original.orderNumber}</span>,
     }),
 
@@ -186,9 +222,17 @@ export const getColumns = (
     }),
 
     createColumn<Order>({
+      accessorKey: "orderDate",
+      header: "Date Commande",
+      sortable: false,
+      cell: ({ row }) => <span className="text-xs text-gray-500 whitespace-nowrap">{formatDateTime(row.original.orderDate)}</span>,
+    }),
+
+    createColumn<Order>({
       accessorKey: "totalPrice",
       header: "Prix",
-      sortable: true,
+      isPrimary: true,
+      sortable: false,
       cell: ({ row }) => <PriceBadge price={row.original.totalPrice} />,
     }),
 
@@ -203,28 +247,25 @@ export const getColumns = (
              agents.map(a => ({ label: a.name, value: a.name }))
           ),
           cell: ({ row }) => (
-             <div className="flex items-center gap-2">
-                <div className={cn("h-6 w-6 rounded-full flex items-center justify-center", 
-                    row.original.agent ? "bg-blue-100 text-blue-600" : "bg-gray-100 text-gray-400")}>
-                  <UserIcon className="h-3 w-3" />
-                </div>
-                <span className={cn("text-xs font-medium", !row.original.agent && "text-gray-400 italic")}>
-                  {row.original.agent?.name || "Non affecté"}
-                </span>
-              </div>
+             <AgentSelect 
+                order={row.original} 
+                agents={agents} 
+                onChange={onAgentChange} 
+                readOnly={!isAdminOrSupervisor} 
+             />
           ),
         })
       : createColumn<Order>({
           accessorKey: "customerName",
           header: "Client", // Show client instead of agent for agents themselves
-          sortable: true,
+          sortable: false,
           cell: ({ row }) => <span className="font-medium text-xs">{row.original.customerName}</span>,
       }),
 
     createColumn<Order>({
       accessorKey: "status",
       header: "Statut",
-      sortable: true,
+      sortable: false,
       filterComponent: createFacetedFilter(
         "Statut",
         statuses.map((s) => ({ label: s.name, value: s.name }))
@@ -236,7 +277,7 @@ export const getColumns = (
             order={row.original}
             statuses={statuses}
             onChange={onStatusChange}
-            readOnly={!canEditOrders}
+            readOnly={!canEditOrders || isAdminOrSupervisor}
           />
         );
       },
@@ -245,27 +286,48 @@ export const getColumns = (
     createColumn<Order>({
       accessorKey: "customerPhone",
       header: "Téléphone",
-      sortable: true,
+      sortable: false,
       cell: ({ row }) => row.original.customerPhone ?? "-",
     }),
     
     createColumn<Order>({
-      accessorKey: "orderDate",
-      header: "Date de commande",
-      sortable: true,
-      cell: ({ row }) => formatDateTime(row.original.orderDate),
-    }),
-    
-    createColumn<Order>({
       accessorKey: "recallAt",
-      header: "Rappel",
-      sortable: true,
+      header: "État du rappel",
+      sortable: false,
+      cell: ({ row }) => {
+        const recallAt = row.original.recallAt;
+        if (!recallAt) return <span className="text-gray-400 italic text-xs">-</span>;
+        
+        const date = new Date(recallAt);
+        const now = new Date();
+
+        if (isSameDay(date, now)) {
+          return <span className="text-red-600 font-bold text-xs">À téléphoner</span>;
+        }
+
+        if (isPast(date)) {
+          return <span className="text-gray-600 text-xs">Temps passé</span>;
+        }
+
+        if (differenceInDays(date, now) >= 1) {
+          return <span className="text-blue-600 text-xs">Bientôt</span>;
+        }
+
+        return <span className="text-gray-600 text-xs">-</span>;
+      },
+    }),
+
+    createColumn<Order>({
+      id: "recallAtValue",
+      header: "Date Rappel",
+      sortable: false,
+      accessorFn: (row) => row.recallAt,
       cell: ({ row }) => {
         return (
           <RecallCell
             order={row.original}
             onChange={onRecallChange}
-            readOnly={!canEditOrders}
+            readOnly={!canEditOrders || isAdminOrSupervisor}
           />
         );
       },
@@ -274,7 +336,7 @@ export const getColumns = (
     createColumn<Order>({
       accessorKey: "processingTimeMin",
       header: "Délai",
-      sortable: true,
+      sortable: false,
       cell: ({ row }) => (
         <Badge variant="outline" className="text-[10px] whitespace-nowrap text-blue-600 bg-blue-50 border-blue-100">
           {formatDuration(row.original.processingTimeMin)}

@@ -182,7 +182,7 @@ export const getOrders = async (user: UserLite) => {
     include: {
       status: true,
       agent: {
-        select: { id: true, name: true, phone: true },
+        select: { id: true, name: true, phone: true, iconColor: true },
       },
     },
     orderBy: { orderDate: "desc" },
@@ -199,9 +199,9 @@ export const getOrders = async (user: UserLite) => {
     totalPrice: o.totalPrice,
     recallAt: o.recallAt?.toISOString() || null,
     processingTimeMin: o.processingTimeMin,
-    status: o.status ? { id: o.status.id, name: o.status.name } : null,
+    status: o.status ? { id: o.status.id, name: o.status.name, color: o.status.color } : null,
     agent: o.agent
-      ? { id: o.agent.id, name: o.agent.name, phone: o.agent.phone }
+      ? { id: o.agent.id, name: o.agent.name, phone: o.agent.phone, iconColor: o.agent.iconColor }
       : null,
   }));
 };
@@ -226,14 +226,13 @@ export const updateOrderRecallAt = async (
 };
 
 export const updateOrderAgent = async (orderId: string, agentId: string) => {
-// await checkPermission("canEditOrders"); // Permission removed as requested
   const session = await getServerSession(authOptions);
   if (!session) throw new Error("Unauthorized");
 
   try {
      const order = await prisma.order.update({
       where: { id: orderId },
-      data: { agentId },
+      data: { agentId: agentId === "unassigned" ? null : agentId },
       include: { agent: true, status: true }
     });
 
@@ -243,12 +242,35 @@ export const updateOrderAgent = async (orderId: string, agentId: string) => {
         ...order,
         orderDate: order.orderDate.toISOString(),
         recallAt: order.recallAt ? order.recallAt.toISOString() : null,
-        status: order.status ? { id: order.status.id, name: order.status.name } : null,
-        agent: order.agent ? { id: order.agent.id, name: order.agent.name, phone: order.agent.phone } : null
+        status: order.status ? { id: order.status.id, name: order.status.name, color: order.status.color } : null,
+        agent: order.agent ? { id: order.agent.id, name: order.agent.name, phone: order.agent.phone, iconColor: order.agent.iconColor } : null
     };
 
   } catch (err) {
     console.error("Erreur updateOrderAgent:", err);
     throw new Error("Impossible de modifier l'agent");
+  }
+};
+export const deleteOrders = async (orderIds: string[]) => {
+  await checkPermission("canEditOrders");
+  
+  const session = await getServerSession(authOptions);
+  if (!session) throw new Error("Unauthorized");
+  if ((session.user as any).role !== "ADMIN") throw new Error("Seul un administrateur peut supprimer des commandes");
+
+  try {
+    await prisma.order.deleteMany({
+      where: {
+        id: { in: orderIds },
+      },
+    });
+
+    revalidatePath("/");
+    
+    return { success: true };
+
+  } catch (err) {
+    console.error("Erreur deleteOrders:", err);
+    throw new Error("Impossible de supprimer les commandes");
   }
 };

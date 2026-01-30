@@ -26,9 +26,9 @@ export function DataTableViewOptions<TData>({
         <Button
           variant="outline"
           size="sm"
-          className="ml-auto hidden h-8 lg:flex"
+          className="ml-auto hidden h-10 rounded-xl px-4 font-bold border-gray-200 hover:bg-gray-50 lg:flex"
         >
-          <Settings2 className="mr-2 h-4 w-4" />
+          <Settings2 className="mr-2 h-4 w-4 text-orange-600" />
           Affichage
         </Button>
       </DropdownMenuTrigger>
@@ -45,13 +45,14 @@ export function DataTableViewOptions<TData>({
             return (
               <DropdownMenuCheckboxItem
                 key={column.id}
-                className="capitalize"
+                className=""
                 checked={column.getIsVisible()}
                 onCheckedChange={(value) => column.toggleVisibility(!!value)}
               >
-                {typeof column.columnDef.header === 'string' 
+                {column.columnDef.meta?.title || 
+                 (typeof column.columnDef.header === 'string' 
                    ? column.columnDef.header 
-                   : column.id}
+                   : column.id)}
               </DropdownMenuCheckboxItem>
             );
           })}

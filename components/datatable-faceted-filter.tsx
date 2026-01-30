@@ -2,7 +2,7 @@
 
 import * as React from "react";
 import { Column } from "@tanstack/react-table";
-import { Check, PlusCircle, Search, X } from "lucide-react";
+import { Check, ChevronDown, PlusCircle, Search, X } from "lucide-react";
 
 import { cn } from "@/lib/utils";
 import { Badge } from "@/components/ui/badge";
@@ -41,40 +41,18 @@ export function DataTableFacetedFilter<TData, TValue>({
   return (
     <Popover>
       <PopoverTrigger asChild>
-        <Button variant="outline" size="sm" className="h-8 border-dashed">
-          <PlusCircle className="mr-2 h-4 w-4" />
+        <Button variant="ghost" size="sm" className="h-8 px-2 font-bold text-gray-500 hover:text-gray-900 group whitespace-nowrap">
           {title}
+          <ChevronDown className="ml-1 h-3.5 w-3.5 transition-transform duration-200 group-data-[state=open]:rotate-180" />
           {selectedValues?.size > 0 && (
             <>
               <Separator orientation="vertical" className="mx-2 h-4" />
               <Badge
                 variant="secondary"
-                className="rounded-sm px-1 font-normal lg:hidden"
+                className="rounded-lg px-1.5 py-0 font-bold bg-orange-50 text-orange-600 border-orange-100 text-[10px]"
               >
                 {selectedValues.size}
               </Badge>
-              <div className="hidden space-x-1 lg:flex">
-                {selectedValues.size > 2 ? (
-                  <Badge
-                    variant="secondary"
-                    className="rounded-sm px-1 font-normal"
-                  >
-                    {selectedValues.size} sélectionnés
-                  </Badge>
-                ) : (
-                  options
-                    .filter((option) => selectedValues.has(option.value))
-                    .map((option) => (
-                      <Badge
-                        variant="secondary"
-                        key={option.value}
-                        className="rounded-sm px-1 font-normal"
-                      >
-                        {option.label}
-                      </Badge>
-                    ))
-                )}
-              </div>
             </>
           )}
         </Button>
@@ -103,7 +81,7 @@ export function DataTableFacetedFilter<TData, TValue>({
                     <div
                       key={option.value}
                       className={cn(
-                        "relative flex cursor-default select-none items-center rounded-sm px-2 py-1.5 text-sm outline-none hover:bg-accent hover:text-accent-foreground data-[disabled]:pointer-events-none data-[disabled]:opacity-50",
+                        "relative flex cursor-default select-none items-center rounded-sm px-2 py-1.5 text-sm outline-none hover:bg-accent hover:text-accent-foreground data-disabled:pointer-events-none data-disabled:opacity-50",
                         isSelected && "bg-accent/50"
                       )}
                       onClick={() => {

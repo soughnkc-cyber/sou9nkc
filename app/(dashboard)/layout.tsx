@@ -11,16 +11,16 @@ const DashboardLayout = ({ children }: { children: React.ReactNode }) => {
 
   return (
     <AuthWrapper>
-      <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100">
+      <div className="min-h-screen bg-gray-50/30">
         <Sidebar isCollapsed={isCollapsed} setIsCollapsed={setIsCollapsed} />
         <main
           className={cn(
-            "transition-all duration-300 min-h-screen flex flex-col",
-            isCollapsed ? "lg:ml-[70px]" : "lg:ml-64"
+            "transition-all duration-500 ease-in-out min-h-screen flex flex-col",
+            isCollapsed ? "lg:ml-[80px]" : "lg:ml-64"
           )}
         >
           <MenuBar />
-          <div className="p-6 flex-1 h-full">
+          <div className="p-3 sm:p-8 flex-1 h-full">
               {children}
           </div>
         </main>

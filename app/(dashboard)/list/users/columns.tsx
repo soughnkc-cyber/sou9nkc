@@ -149,6 +149,7 @@ export const getColumns = (
     createColumn<User>({
       accessorKey: "name",
       header: "Nom",
+      isPrimary: true,
       sortable: true,
       hideSortIcon: true,
       cell: ({ row }) => (
@@ -173,6 +174,7 @@ export const getColumns = (
     createColumn<User>({
       accessorKey: "role",
       header: "Rôle",
+      isPrimary: true,
       sortable: true,
       hideSortIcon: true,
       filterComponent: RoleFilter,
