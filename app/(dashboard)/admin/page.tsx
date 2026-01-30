@@ -7,6 +7,14 @@ import { StatusDistributionPie } from "@/components/dashboard/status-distributio
 import { AgentPerformanceChart } from "@/components/dashboard/agent-performance-chart";
 import { TopAgentsLeaderboard } from "@/components/dashboard/avg-processing-time-card";
 import { DateFilter } from "@/components/dashboard/date-filter";
+import { RevenueCards } from "@/components/dashboard/revenue-cards";
+import { OrdersTrendChart } from "@/components/dashboard/orders-trend-chart";
+import { OrdersByWeekdayChart } from "@/components/dashboard/orders-by-weekday-chart";
+import { TopProductsChart } from "@/components/dashboard/top-products-chart";
+import { PriceDistributionPie } from "@/components/dashboard/price-distribution-pie";
+import { ProcessingTimeTrend } from "@/components/dashboard/processing-time-trend";
+import { AgentsDetailedTable } from "@/components/dashboard/agents-detailed-table";
+import { RecallTimeline } from "@/components/dashboard/recall-timeline";
 import { 
   ShoppingBagIcon, 
   CheckCircle2Icon,
@@ -79,11 +87,11 @@ export default function AdminDashboardPage() {
 
 
   return (
-    <div className="flex flex-col gap-8">
-      <div className="flex items-center justify-between">
+    <div className="flex flex-col gap-12 pb-12 bg-slate-50/20">
+      <div className="flex items-center justify-between border-b border-slate-100 pb-6">
         <div>
-          <h1 className="text-3xl font-black text-blue-900 tracking-tight">Tableau de Bord</h1>
-          <p className="text-muted-foreground font-medium">Vue d'ensemble des commandes</p>
+          <h1 className="text-4xl font-black text-slate-900 tracking-tight">Vue d'ensemble</h1>
+          <p className="text-slate-500 font-medium">Analyse et performance de la plateforme</p>
         </div>
         <div className="flex gap-3">
           <DateFilter value={dateFilter} onChange={handleDateFilterChange} />
@@ -92,7 +100,7 @@ export default function AdminDashboardPage() {
             size="sm" 
             onClick={fetchStats} 
             disabled={loading}
-            className="bg-white border-blue-200 text-blue-700 hover:bg-blue-50"
+            className="bg-white border-slate-200 text-slate-700 hover:bg-slate-50 shadow-sm"
           >
             <RefreshCwIcon className={`mr-2 h-4 w-4 ${loading && "animate-spin"}`} />
             Actualiser
@@ -100,76 +108,155 @@ export default function AdminDashboardPage() {
         </div>
       </div>
 
-      {/* Main Layout: Cards Left (50%), Pie Chart Right (50%) */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        {/* Left Column: 4 Stat Cards in 2x2 grid */}
-        <div>
-          <div className="grid grid-cols-2 gap-4">
-            <StatsCard
-              title="Total Commandes"
-              value={stats.totalOrders}
-              description="Toutes les commandes"
-              icon={<ShoppingBagIcon className="h-5 w-5" />}
-              href="/list/orders"
-            />
-            <StatsCard
-              title="Commandes Traitées"
-              value={stats.processedOrders}
-              description="Avec statut"
-              icon={<CheckCircle2Icon className="h-5 w-5" />}
-              className="border-l-4 border-l-green-500"
-              href="/list/orders?filter=processed"
-            />
-            <StatsCard
-              title="À Traiter"
-              value={stats.toProcessOrders}
-              description="Sans statut"
-              icon={<AlertCircleIcon className="h-5 w-5" />}
-              className="border-l-4 border-l-orange-500"
-              href="/list/orders?filter=toprocess"
-            />
-            <StatsCard
-              title="À Rappeler"
-              value={stats.toRecallOrders}
-              description="Avec rappel programmé"
-              icon={<PhoneIcon className="h-5 w-5" />}
-              className="border-l-4 border-l-blue-500"
-              href="/list/orders?filter=torecall"
-            />
+      {/* Section 1: KPI Originaux */}
+      <div>
+        <div className="flex items-center gap-3 mb-6">
+          <div className="h-6 w-1 bg-blue-600 rounded-full" />
+          <h2 className="text-lg font-bold text-slate-900 uppercase tracking-wider">Statut des Commandes</h2>
+        </div>
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+          <div>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <StatsCard
+                title="Total Commandes"
+                value={stats.totalOrders}
+                description="Consulter tout"
+                icon={<ShoppingBagIcon className="h-5 w-5" />}
+                href="/list/orders"
+              />
+              <StatsCard
+                title="Traitées"
+                value={stats.processedOrders}
+                description="Succès"
+                icon={<CheckCircle2Icon className="h-5 w-5" />}
+                className="ring-1 ring-emerald-100"
+                href="/list/orders?filter=processed"
+              />
+              <StatsCard
+                title="À Traiter"
+                value={stats.toProcessOrders}
+                description="Urgent"
+                icon={<AlertCircleIcon className="h-5 w-5" />}
+                className="ring-1 ring-orange-100"
+                href="/list/orders?filter=toprocess"
+              />
+              <StatsCard
+                title="À Rappeler"
+                value={stats.toRecallOrders}
+                description="Planifié"
+                icon={<PhoneIcon className="h-5 w-5" />}
+                className="ring-1 ring-blue-100"
+                href="/list/orders?filter=torecall"
+              />
+            </div>
           </div>
-        </div>
-
-        {/* Right Column: Pie Chart (50%, same height as cards) */}
-        <div>
-          <StatusDistributionPie stats={stats.statusDistribution} />
-        </div>
-      </div>
-
-      {/* Additional Info Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-        <div className="p-6 bg-linear-to-br from-blue-50 to-indigo-50 rounded-xl border border-blue-100">
-          <div className="text-sm font-medium text-blue-600 mb-1">Agents Actifs</div>
-          <div className="text-3xl font-bold text-blue-900">{stats.agentCount}</div>
-          <div className="text-xs text-muted-foreground mt-1">Connectés au système</div>
-        </div>
-        <div className="p-6 bg-linear-to-br from-purple-50 to-pink-50 rounded-xl border border-purple-100">
-          <div className="text-sm font-medium text-purple-600 mb-1">Période</div>
-          <div className="text-sm font-semibold text-purple-900">
-            {new Date(stats.dateRange.start).toLocaleDateString("fr-FR")}
-            {" - "}
-            {new Date(stats.dateRange.end).toLocaleDateString("fr-FR")}
+          <div>
+            <StatusDistributionPie stats={stats.statusDistribution} />
           </div>
         </div>
       </div>
 
-      {/* Agent Performance Row: 50/50 layout */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        {/* Left: Agent Avg Processing Time Bar Chart */}
-        <AgentPerformanceChart data={stats.agentPerformance} />
-        
-        {/* Right: Top 5 Agents Leaderboard */}
-        <TopAgentsLeaderboard data={stats.agentPerformance} />
+      {/* Section 2: Performances Agents */}
+      <div>
+        <div className="flex items-center gap-3 mb-6">
+          <div className="h-6 w-1 bg-indigo-600 rounded-full" />
+          <h2 className="text-lg font-bold text-slate-900 uppercase tracking-wider">Productivité des Agents</h2>
+        </div>
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+          <AgentPerformanceChart data={stats.agentPerformance} />
+          <TopAgentsLeaderboard data={stats.agentPerformance} />
+        </div>
+      </div>
+
+      {/* Section 3: Metrics Financières & Actives */}
+      <div>
+        <div className="flex items-center gap-3 mb-6">
+          <div className="h-6 w-1 bg-emerald-600 rounded-full" />
+          <h2 className="text-lg font-bold text-slate-900 uppercase tracking-wider">Revenus & Efficacité</h2>
+        </div>
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+          <RevenueCards revenue={stats.revenue} avgBasket={stats.avgBasket} />
+          <StatsCard
+            title="Taux Traitement"
+            value={`${stats.processingRate?.value ? Math.round(stats.processingRate.value) : 0}%`}
+            description={`Sur ${stats.totalOrders} commandes`}
+            icon={<CheckCircle2Icon className="h-5 w-5" />}
+          />
+          <StatsCard
+            title="Agents Actifs"
+            value={stats.agentCount}
+            description="En ligne"
+            icon={<RefreshCwIcon className="h-5 w-5" />}
+          />
+        </div>
+      </div>
+
+      {/* Section 4: Analyse Temporelle */}
+      <div>
+        <div className="flex items-center gap-3 mb-6">
+          <div className="h-6 w-1 bg-purple-600 rounded-full" />
+          <h2 className="text-lg font-bold text-slate-900 uppercase tracking-wider">Analyses Temporelles</h2>
+        </div>
+        <div className="space-y-8">
+          <OrdersTrendChart data={stats.orderEvolution} />
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+            <OrdersByWeekdayChart data={stats.ordersByWeekday} />
+            <TopProductsChart data={stats.topProducts} />
+          </div>
+        </div>
+      </div>
+
+      {/* Row 6: Price Distribution & Global Info */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+        <PriceDistributionPie data={stats.priceDistribution} />
+        <div className="space-y-6">
+          <StatsCard
+            title="Temps Moyen"
+            value={`${stats.avgProcessingTime} min`}
+            description="Par commande"
+            icon={<AlertCircleIcon className="h-5 w-5" />}
+          />
+          <div className="p-8 bg-linear-to-br from-slate-900 to-slate-800 rounded-2xl border border-slate-800 shadow-2xl relative overflow-hidden group">
+             <div className="absolute top-0 right-0 p-4 opacity-10 group-hover:opacity-20 transition-opacity">
+                <ShoppingBagIcon className="h-24 w-24 text-white" />
+             </div>
+             <div className="relative">
+               <div className="text-xs font-bold text-slate-400 uppercase tracking-[0.2em] mb-4">Période Analysée</div>
+                <div className="text-2xl font-black text-white">
+                  {new Date(stats.dateRange.start).toLocaleDateString("fr-FR", { day: 'numeric', month: 'long' })}
+                  <span className="text-slate-500 mx-3">—</span>
+                  {new Date(stats.dateRange.end).toLocaleDateString("fr-FR", { day: 'numeric', month: 'long' })}
+                </div>
+                <div className="mt-6 flex items-center gap-2 text-slate-400 text-sm font-medium">
+                  <div className="h-2 w-2 rounded-full bg-emerald-500 animate-pulse" />
+                  Données consolidées
+                </div>
+             </div>
+          </div>
+        </div>
+      </div>
+
+      {/* Row 7: Processing Time Trend */}
+      <ProcessingTimeTrend data={stats.processingTimeTrend} />
+
+      {/* Row 8: Recall Timeline */}
+      <div>
+        <div className="flex items-center gap-3 mb-6">
+          <div className="h-6 w-1 bg-blue-400 rounded-full" />
+          <h2 className="text-lg font-bold text-slate-900 uppercase tracking-wider">Agenda des Rappels</h2>
+        </div>
+        <RecallTimeline data={stats.recallTimeline} />
+      </div>
+
+      {/* Row 9: Detailed Agent Stats Table */}
+      <div>
+        <div className="flex items-center gap-3 mb-6">
+          <div className="h-6 w-1 bg-slate-900 rounded-full" />
+          <h2 className="text-lg font-bold text-slate-900 uppercase tracking-wider">Rapport Détaillé par Agent</h2>
+        </div>
+        <AgentsDetailedTable data={stats.agentsDetailed} />
       </div>
     </div>
   );
+   
 }
