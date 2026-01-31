@@ -323,44 +323,25 @@ function OrdersPageContent() {
     };
   }, [dateFilteredOrders, recallFilterEntryTime]);
 
-  const StatCard = ({ 
-    title, 
-    value, 
-    icon: Icon, 
-    active, 
-    onClick, 
-    color, 
-    trend,
-    trendUp 
-  }: { 
-    title: string; 
-    value: number | string; 
-    icon?: any; 
-    active: boolean; 
-    onClick?: () => void;
-    color: string;
-    trend?: string;
-    trendUp?: boolean;
-  }) => {
-    const isClickable = !!onClick;
-
+  const StatCard = ({ title, value, icon: Icon, active, onClick, color, trend, trendUp, isClickable = true, bgColor }: any) => {
     return (
-      <Card 
-        onClick={isClickable ? onClick : undefined}
+      <Card
+        onClick={() => isClickable && onClick?.()}
+        style={{ backgroundColor: bgColor }}
         className={cn(
-          "relative p-2 sm:p-3 border border-gray-100 shadow-xs rounded-xl overflow-hidden bg-white flex flex-col justify-between h-full",
+          "relative p-2 sm:p-3 border border-gray-100 shadow-xs rounded-xl overflow-hidden flex flex-col justify-between h-full",
           isClickable ? "cursor-pointer transition-all duration-300 hover:shadow-md hover:border-blue-200 group" : "cursor-default",
           active ? "ring-2 ring-[#1F30AD] ring-offset-2" : ""
         )}
       >
       <div className="flex justify-between items-start mb-1 sm:mb-1">
-        <div className={cn("p-1.5 sm:p-2 rounded-lg sm:rounded-xl bg-blue-50 group-hover:bg-blue-100 transition-colors", color)}>
+        <div className={cn("p-1.5 sm:p-2 rounded-lg sm:rounded-xl group-hover:bg-black/5 transition-colors", color)}>
           {Icon && <Icon className="h-4 w-4 sm:h-4 sm:w-4" />}
         </div>
         {trend && (
            <div className={cn(
              "px-1.5 py-0.5 rounded-full text-[8px] sm:text-[10px] font-bold flex items-center gap-0.5",
-             trendUp ? "bg-green-50 text-green-600" : "bg-red-50 text-red-600"
+             trendUp ? "bg-green-500/10 text-green-600" : "bg-red-500/10 text-red-600"
            )}>
               {trendUp ? "↑" : "↓"} {trend}
            </div>
@@ -489,7 +470,8 @@ function OrdersPageContent() {
                 icon={RefreshCw}
                 active={currentFilter === "new_arrivals"}
                 onClick={() => toggleFilter(currentFilter === "new_arrivals" ? "torecall" : "new_arrivals")}
-                color="bg-purple-50"
+                color="bg-purple-500/10 text-purple-600"
+                bgColor="#f9e3ff"
                 trend="Live"
                 trendUp={true}
               />
@@ -500,7 +482,8 @@ function OrdersPageContent() {
                 icon={PhoneIncoming}
                 active={currentFilter === "torecall" || filterType === "torecall"}
                 onClick={() => toggleFilter("torecall")}
-                color="bg-blue-50"
+                color="bg-red-500/10 text-red-600"
+                bgColor="#ffe3e3"
                 trend="3.2%"
                 trendUp={false}
               />
@@ -536,7 +519,8 @@ function OrdersPageContent() {
             icon={RefreshCw}
             active={currentFilter === "new_arrivals"}
             onClick={() => toggleFilter(currentFilter === "new_arrivals" ? "torecall" : "new_arrivals")}
-            color="bg-purple-50"
+            color="bg-purple-500/10 text-purple-600"
+            bgColor="#f9e3ff"
             trend="Live"
             trendUp={true}
           />
@@ -547,7 +531,8 @@ function OrdersPageContent() {
             icon={PhoneIncoming}
             active={currentFilter === "torecall" || filterType === "torecall"}
             onClick={() => toggleFilter("torecall")}
-            color="bg-blue-50"
+            color="bg-red-500/10 text-red-600"
+            bgColor="#ffe3e3"
             trend="3.2%"
             trendUp={false}
           />
@@ -562,7 +547,8 @@ function OrdersPageContent() {
           icon={ShoppingCart}
           active={currentFilter === "all" && filterType === null}
           onClick={() => toggleFilter("all")}
-          color="bg-blue-50"
+          color="bg-blue-500/10 text-blue-600"
+          bgColor="#e3f0ff"
           trend="12.5%"
           trendUp={true}
         />
@@ -573,7 +559,8 @@ function OrdersPageContent() {
           icon={DollarSign}
           active={false}
           onClick={() => {}}
-          color="bg-green-50"
+          color="bg-emerald-500/10 text-emerald-600"
+          bgColor="#e3ffef"
           trend="8.1%"
           trendUp={true}
         />
@@ -583,7 +570,8 @@ function OrdersPageContent() {
           value={`${(stats.treatmentRate || 0).toFixed(1)}%`}
           icon={Target}
           active={false}
-          color="bg-blue-50"
+          color="bg-yellow-500/10 text-yellow-600"
+          bgColor="#fffbe3"
           trend="5.4%"
           trendUp={true}
         />
@@ -594,7 +582,8 @@ function OrdersPageContent() {
           icon={Clock}
           active={false}
           onClick={() => {}}
-          color="bg-cyan-50"
+          color="bg-gray-500/10 text-gray-600"
+          bgColor="#f6f6f6"
           trend="2.1%"
           trendUp={false}
         />
