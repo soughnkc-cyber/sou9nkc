@@ -24,12 +24,14 @@ interface DataTableFacetedFilterProps<TData, TValue> {
     value: string;
     icon?: React.ComponentType<{ className?: string }>;
   }[];
+  trigger?: React.ReactNode;
 }
 
 export function DataTableFacetedFilter<TData, TValue>({
   column,
   title,
   options,
+  trigger,
 }: DataTableFacetedFilterProps<TData, TValue>) {
   const [searchTerm, setSearchTerm] = React.useState("");
   const selectedValues = new Set(column?.getFilterValue() as string[]);
@@ -41,21 +43,23 @@ export function DataTableFacetedFilter<TData, TValue>({
   return (
     <Popover>
       <PopoverTrigger asChild>
-        <Button variant="ghost" size="sm" className="h-8 px-2 font-bold text-gray-500 hover:text-gray-900 group whitespace-nowrap">
-          {title}
-          <ChevronDown className="ml-1 h-3.5 w-3.5 transition-transform duration-200 group-data-[state=open]:rotate-180" />
-          {selectedValues?.size > 0 && (
-            <>
-              <Separator orientation="vertical" className="mx-2 h-4" />
-              <Badge
-                variant="secondary"
-                className="rounded-lg px-1.5 py-0 font-bold bg-blue-50 text-[#1F30AD] border-blue-100 text-[10px]"
-              >
-                {selectedValues.size}
-              </Badge>
-            </>
-          )}
-        </Button>
+        {trigger || (
+          <Button variant="ghost" size="sm" className="h-8 px-2 font-bold text-gray-500 hover:text-gray-900 group whitespace-nowrap">
+            {title}
+            <ChevronDown className="ml-1 h-3.5 w-3.5 transition-transform duration-200 group-data-[state=open]:rotate-180" />
+            {selectedValues?.size > 0 && (
+              <>
+                <Separator orientation="vertical" className="mx-2 h-4" />
+                <Badge
+                  variant="secondary"
+                  className="rounded-lg px-1.5 py-0 font-bold bg-blue-50 text-[#1F30AD] border-blue-100 text-[10px]"
+                >
+                  {selectedValues.size}
+                </Badge>
+              </>
+            )}
+          </Button>
+        )}
       </PopoverTrigger>
       <PopoverContent className="w-[200px] p-0" align="start">
         <div className="flex flex-col h-full max-h-[300px]">

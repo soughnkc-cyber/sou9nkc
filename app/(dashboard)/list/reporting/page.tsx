@@ -161,8 +161,8 @@ export default function ReportingPage() {
 
       {/* Filters Bar */}
       <Card className="bg-white border-gray-100 shadow-xs rounded-2xl overflow-hidden">
-        <CardContent className="p-4 space-y-4">
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+        <CardContent className="p-3 space-y-3">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-3">
             <div className="space-y-1.5">
               <label className="text-[9px] font-black text-gray-400 uppercase tracking-widest">Rechercher</label>
               <div className="relative">
@@ -229,7 +229,7 @@ export default function ReportingPage() {
       ) : stats && (
         <>
           {/* Summary Stats */}
-          <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6">
+          <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
             <StatsCard
               title="Ventes Totales"
               value={stats.totalRevenue.toLocaleString("fr-FR", { style: "currency", currency: "MRU" })}
@@ -258,14 +258,14 @@ export default function ReportingPage() {
           </div>
 
           {/* Charts Grid */}
-          <div className="grid grid-cols-1 lg:grid-cols-7 gap-6">
+          <div className="grid grid-cols-1 lg:grid-cols-7 gap-4">
             <RevenueAreaChart data={stats.dailyStats} />
             <OrdersBarChart data={stats.dailyStats} />
             <TopProductsChart data={stats.productPerformance} />
             <StatusPieChart data={stats.statusDistribution} />
           </div>
 
-          <div className="grid grid-cols-1 lg:grid-cols-7 gap-6">
+          <div className="grid grid-cols-1 lg:grid-cols-7 gap-4">
             {/* Agent Performance Table */}
             <Card className="col-span-full border border-gray-100 shadow-xs bg-white rounded-2xl overflow-hidden transition-all duration-300 hover:shadow-md">
               <CardHeader className="bg-gray-50/50 border-b border-gray-100">

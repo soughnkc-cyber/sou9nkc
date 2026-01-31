@@ -1,5 +1,4 @@
-"use client";
-
+import React from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { cn } from "@/lib/utils";
 import { ArrowDownIcon, ArrowUpIcon } from "lucide-react";
@@ -29,18 +28,18 @@ export function StatsCard({
 }: StatsCardProps) {
   const cardContent = (
     <div className="relative h-full">
-      <CardHeader className="flex flex-row items-center justify-between pb-2 space-y-0">
-        <CardTitle className="text-sm font-semibold text-muted-foreground uppercase tracking-wider">
+      <CardHeader className="flex flex-row items-center justify-between pb-1 px-3 pt-3 space-y-0">
+        <CardTitle className="text-[10px] font-extrabold text-muted-foreground uppercase tracking-widest">
           {title}
         </CardTitle>
-        <div className="h-10 w-10 rounded-xl bg-linear-to-br from-blue-50 to-blue-100 border border-blue-200 flex items-center justify-center text-[#1F30AD] transition-all duration-300 group-hover:scale-110 group-hover:shadow-md group-hover:from-[#1F30AD] group-hover:to-[#172585] group-hover:text-white group-hover:border-transparent">
-          {icon}
+        <div className="h-7 w-7 rounded-lg bg-linear-to-br from-blue-50 to-blue-100 border border-blue-200 flex items-center justify-center text-[#1F30AD] transition-all duration-300 group-hover:scale-110 group-hover:shadow-md group-hover:from-[#1F30AD] group-hover:to-[#172585] group-hover:text-white group-hover:border-transparent">
+          {icon && React.isValidElement(icon) ? React.cloneElement(icon as React.ReactElement<any>, { className: "h-3.5 w-3.5" }) : icon}
         </div>
       </CardHeader>
-      <CardContent>
-        <div className="text-3xl font-black tracking-tight text-slate-900 group-hover:text-blue-900 transition-colors">{value}</div>
+      <CardContent className="px-3 pb-3 pt-0">
+        <div className="text-xl font-black tracking-tight text-slate-900 group-hover:text-blue-900 transition-colors">{value}</div>
         {(description || trend) && (
-          <div className="mt-2 flex items-center gap-2">
+          <div className="mt-1 flex items-center gap-2">
             {trend && (
               <span
                 className={cn(

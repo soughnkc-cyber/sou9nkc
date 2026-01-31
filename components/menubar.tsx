@@ -53,7 +53,7 @@ export default function MenuBar() {
   };
 
   return (
-    <header className="bg-white/80 backdrop-blur-md border-b border-gray-100 h-16 sm:h-20 flex items-center justify-between px-3 sm:px-8 sticky top-0 z-20">
+    <header className="bg-white/80 backdrop-blur-md border-b border-gray-100 h-12 sm:h-12 flex items-center justify-between px-3 sm:px-8 sticky top-0 z-20">
       {/* Mobile Menu & Page Title */}
       <div className="flex items-center gap-2 sm:gap-4">
         <div className="lg:hidden">
@@ -82,7 +82,7 @@ export default function MenuBar() {
                 </SheetContent>
             </Sheet>
         </div>
-        <h1 className="text-xl sm:text-2xl font-black tracking-tight text-gray-900">{getPageTitle()}</h1>
+        <h1 className="text-lg sm:text-lg font-black tracking-tight text-gray-900">{getPageTitle()}</h1>
       </div>
 
       {/* Right Actions */}
@@ -102,7 +102,7 @@ export default function MenuBar() {
                         <span className="text-sm font-bold leading-none group-hover:text-[#1F30AD] transition-colors uppercase">{session?.user?.name}</span>
                         <span className="text-[10px] text-gray-400 font-medium uppercase tracking-wider">{userRole}</span>
                     </div>
-                    <Avatar className="h-9 w-9 sm:h-10 sm:w-10 border-2 border-white ring-2 ring-gray-100 shadow-sm group-hover:ring-blue-200 transition-all">
+                    <Avatar className="h-7 w-7 sm:h-8 sm:w-8 border-2 border-white ring-2 ring-gray-100 shadow-sm group-hover:ring-blue-200 transition-all">
                         <AvatarFallback className="bg-[#1F30AD] text-white font-bold text-xs uppercase">
                             {session?.user?.name?.substring(0, 2)}
                         </AvatarFallback>

@@ -453,7 +453,7 @@ function OrdersPageContent() {
 
 
   return (
-    <div className="space-y-6 sm:space-y-8 max-w-[1600px] mx-auto">
+    <div className="space-y-2 sm:space-y-2 max-w-[1600px] mx-auto">
       {/* Header */}
       <div className="flex flex-col md:flex-row justify-end items-center md:items-center gap-4 sm:gap-6">
         {/* <div className="text-center md:text-left">
@@ -461,7 +461,8 @@ function OrdersPageContent() {
           <p className="text-xs sm:text-sm text-gray-500 font-medium mt-1">Gérez vos flux de commandes synchronisées</p>
         </div> */}
 
-        <div className="hidden sm:flex items-center justify-center w-full md:w-auto gap-2 sm:gap-3">
+        {/* <div className="hidden sm:flex items-center justify-center w-full md:w-auto gap-2 sm:gap-3">
+           
             <DatePickerWithRange date={dateRange} setDate={setDateRange} className="w-[260px]" />
             {/* <Button 
                 variant="outline" 
@@ -473,7 +474,7 @@ function OrdersPageContent() {
               <RefreshCw className={cn("h-4 w-4 sm:mr-2", isLoadingPage && "animate-spin")} />
               <span className="hidden sm:inline">Actualiser</span>
             </Button> */}
-        </div>
+        {/* </div> */} 
       </div>
 
       {/* Stats Cards */}
@@ -617,6 +618,9 @@ function OrdersPageContent() {
             defaultPageSize={10}
             showSearch
             showPagination
+            rightHeaderActions={
+                <DatePickerWithRange date={dateRange} setDate={setDateRange} className="w-[180px]" />
+            }
             onSelectionChange={setSelectedOrders}
             getRowClassName={(row) => {
                const recallAt = row.recallAt ? new Date(row.recallAt) : null;
@@ -637,16 +641,16 @@ function OrdersPageContent() {
                return null;
             }}
             extraSearchActions={
-              <div className="flex items-center gap-2">
+              <div className="flex flex-wrap items-center gap-1.5">
                 {selectedOrders.length === 1 && (
                   <Button 
                     variant="outline" 
                     size="sm" 
-                    className="h-8 rounded-xl px-3 font-bold border-gray-200 hover:bg-blue-50 hover:text-[#1F30AD] transition-all text-xs" 
+                    className="h-8 rounded-lg px-2 sm:px-3 font-bold border-gray-200 hover:bg-blue-50 hover:text-[#1F30AD] transition-all text-[10px]" 
                     onClick={() => openAssignModal(selectedOrders[0])}
                   >
-                    <Edit className="h-3.5 w-3.5 mr-1.5" />
-                    Modifier
+                    <Edit className="h-3.5 w-3.5 sm:mr-1.5" />
+                    <span className="hidden sm:inline">Modifier</span>
                   </Button>
                 )}
                 {isAdmin && selectedOrders.length > 0 && (
@@ -654,10 +658,11 @@ function OrdersPageContent() {
                     variant="destructive" 
                     size="sm" 
                     onClick={handleDeleteSelected} 
-                    className="h-8 rounded-xl font-bold px-3 text-xs"
+                    className="h-8 rounded-lg font-bold px-2 sm:px-3 text-[10px]"
                   >
-                    <Trash2 className="h-3.5 w-3.5 mr-1.5" />
-                    Supprimer ({selectedOrders.length})
+                    <Trash2 className="h-3.5 w-3.5 sm:mr-1.5" />
+                    <span className="hidden sm:inline">Supprimer ({selectedOrders.length})</span>
+                    <span className="sm:hidden">{selectedOrders.length}</span>
                   </Button>
                 )}
               </div>

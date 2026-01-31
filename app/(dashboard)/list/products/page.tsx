@@ -50,16 +50,16 @@ export default function ProductsPage() {
     color?: string;
     description?: React.ReactNode;
   }) => (
-    <Card className="relative p-4 sm:p-5 transition-all duration-300 border border-gray-100 shadow-xs hover:shadow-md rounded-2xl overflow-hidden group bg-white flex flex-col justify-between h-full">
-      <div className="flex justify-between items-start mb-2 sm:mb-4">
-        <div className={cn("p-1.5 sm:p-2 rounded-lg sm:rounded-xl bg-gray-50 group-hover:bg-blue-50 transition-colors", color)}>
-          {Icon && <Icon className="h-4 w-4 sm:h-5 sm:w-5" />}
+    <Card className="relative p-3 transition-all duration-300 border border-gray-100 shadow-xs hover:shadow-md rounded-xl overflow-hidden group bg-white flex flex-col justify-between h-full">
+      <div className="flex justify-between items-start mb-1">
+        <div className={cn("p-1.5 rounded-lg bg-gray-50 group-hover:bg-blue-50 transition-colors", color)}>
+          {Icon && <Icon className="h-4 w-4" />}
         </div>
       </div>
       <div>
-        <p className="text-[8px] sm:text-[10px] font-extrabold text-gray-400 uppercase tracking-widest mb-0.5 sm:mb-1">{title}</p>
-        <h3 className="text-lg sm:text-2xl font-black text-gray-900 tracking-tight leading-tight">{value}</h3>
-        {description && <div className="mt-2">{description}</div>}
+        <p className="text-[10px] font-extrabold text-gray-400 uppercase tracking-widest mb-0.5">{title}</p>
+        <h3 className="text-xl font-black text-gray-900 tracking-tight leading-tight">{value}</h3>
+        {description && <div className="mt-1">{description}</div>}
       </div>
     </Card>
   );
@@ -165,7 +165,7 @@ export default function ProductsPage() {
 
       {/* Stats */}
       {products.length > 0 && (
-        <div className="grid grid-cols-2 gap-3 sm:gap-6">
+        <div className="grid grid-cols-2 gap-2 sm:gap-3">
           <StatCard
             title="Total Produits"
             value={stats.total}
@@ -197,21 +197,21 @@ export default function ProductsPage() {
             data={products}
             onSelectionChange={setSelectedRows}
             extraSearchActions={
-              <div className="flex items-center gap-2">
+              <div className="flex flex-wrap items-center gap-1.5">
                 {selectedRows.length === 1 && (
                   <Button 
                     variant="outline" 
                     size="sm" 
-                    className="h-8 rounded-xl px-3 font-bold border-gray-200 hover:bg-blue-50 hover:text-[#1F30AD] transition-all text-xs font-mono" 
+                    className="h-8 rounded-lg px-2 sm:px-3 font-bold border-gray-200 hover:bg-blue-50 hover:text-[#1F30AD] transition-all text-[10px] font-mono" 
                     disabled
                   >
-                    <Edit className="h-3.5 w-3.5 mr-1.5" />
-                    Modifier
+                    <Edit className="h-3.5 w-3.5 sm:mr-1.5" />
+                    <span className="hidden sm:inline">Modifier</span>
                   </Button>
                 )}
                 {selectedRows.length > 0 && (
-                  <div className="flex items-center px-3 py-1 bg-blue-50 text-[#1F30AD] rounded-xl border border-blue-100 font-bold text-[10px] animate-in fade-in slide-in-from-top-1">
-                    {selectedRows.length} sélectionnés
+                  <div className="flex items-center px-2 py-1 bg-blue-50 text-[#1F30AD] rounded-lg border border-blue-100 font-bold text-[10px] animate-in fade-in slide-in-from-top-1">
+                    {selectedRows.length} <span className="hidden sm:inline ml-1">sélectionnés</span>
                   </div>
                 )}
               </div>

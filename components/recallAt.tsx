@@ -5,6 +5,8 @@ import { useState } from "react";
 import { Input } from "@/components/ui/input";
 import { Order } from "@/app/(dashboard)/list/orders/columns";
 import { cn, formatSmartDate } from "@/lib/utils";
+import { Badge } from "@/components/ui/badge";
+import { isPast } from "date-fns";
 
 export const RecallCell = ({
   order,
@@ -45,11 +47,12 @@ export const RecallCell = ({
       )}
     >
       {order.recallAt ? (
-        <span className={cn(
-           // Color logic could go here (e.g. red if past and not validated)
-           "whitespace-nowrap"
-        )}>
-          {formatSmartDate(order.recallAt)}
+        <span className={cn("whitespace-nowrap")}>
+          {isPast(new Date(order.recallAt)) ? (
+            <Badge variant="destructive" className="text-[10px] px-1 py-0 h-5">À rappeler</Badge>
+          ) : (
+            formatSmartDate(order.recallAt)
+          )}
         </span>
       ) : (
         <span className="flex items-center gap-2">

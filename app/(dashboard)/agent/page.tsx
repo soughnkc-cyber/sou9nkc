@@ -88,8 +88,8 @@ export default function AgentDashboardPage() {
   }
 
   return (
-    <div className="flex flex-col gap-8">
-      <div className="flex items-center justify-between">
+    <div className="flex flex-col gap-4">
+      <div className="flex items-center justify-between pb-2 border-b border-gray-100">
         <div>
           <div className="flex items-center gap-2 mb-1">
             <h1 className="text-3xl font-black text-blue-900 tracking-tight">Bonjour, {session.user.name || "Agent"} !</h1>

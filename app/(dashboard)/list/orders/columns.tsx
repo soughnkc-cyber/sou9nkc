@@ -239,6 +239,14 @@ export const getColumns = (
       cell: ({ row }) => <span className="font-medium text-xs">#{row.original.orderNumber}</span>,
     }),
 
+     createColumn<Order>({
+      accessorKey: "orderDate",
+      header: "Date Commande",
+      sortable: false,
+      hideMobileLabel: true,
+      cell: ({ row }) => <span className="text-xs text-gray-500 whitespace-nowrap">{formatDateTime(row.original.orderDate)}</span>,
+    }),
+
     createColumn<Order>({
       accessorKey: "productNote",
       header: "Produit(s)",
@@ -253,22 +261,7 @@ export const getColumns = (
       cell: ({ row }) => <span className="text-xs">{row.original.productNote ?? "-"}</span>,
     }),
 
-    createColumn<Order>({
-      accessorKey: "orderDate",
-      header: "Date Commande",
-      sortable: false,
-      hideMobileLabel: true,
-      cell: ({ row }) => <span className="text-xs text-gray-500 whitespace-nowrap">{formatDateTime(row.original.orderDate)}</span>,
-    }),
-
-    createColumn<Order>({
-      accessorKey: "customerName",
-      header: "Client",
-      sortable: false,
-      hideMobileLabel: true,
-      cell: ({ row }) => <span className="text-xs">{row.original.customerName}</span>,
-    }),
-
+    
     createColumn<Order>({
       accessorKey: "totalPrice",
       header: "Prix",
@@ -283,11 +276,28 @@ export const getColumns = (
       cell: ({ row }) => <PriceBadge price={row.original.totalPrice} />,
     }),
 
+
+    createColumn<Order>({
+      accessorKey: "customerName",
+      header: "Client",
+      sortable: false,
+      hideMobileLabel: true,
+      cell: ({ row }) => <span className="text-xs">{row.original.customerName}</span>,
+    }),
+
+    createColumn<Order>({
+      accessorKey: "customerPhone",
+      header: "Téléphone",
+      sortable: false,
+      cell: ({ row }) => row.original.customerPhone ?? "-",
+    }),
+
+
     isAdminOrSupervisor
       ? createColumn<Order>({
           accessorKey: "agent",
           header: "Agent",
-          sortable: true,
+          sortable: false,
           hideMobileLabel: true,
           accessorFn: (row) => row.agent?.name || "Non affecté", // For sorting/filtering text
           filterComponent: createFacetedFilter(
@@ -333,38 +343,8 @@ export const getColumns = (
       },
     }),
 
-    createColumn<Order>({
-      accessorKey: "customerPhone",
-      header: "Téléphone",
-      sortable: false,
-      cell: ({ row }) => row.original.customerPhone ?? "-",
-    }),
 
-   
-    
-    createColumn<Order>({
-      accessorKey: "recallAt",
-      header: "État du rappel",
-      sortable: false,
-      isPrimary: false, // Hidden in mobile header
-      hideMobileLabel: true,
-      cell: ({ row }) => {
-        const recallAt = row.original.recallAt;
-        if (!recallAt) return null;
-        
-        const date = new Date(recallAt);
-        const now = new Date();
-
-        // Afficher seulement si l'heure est arrivée ou passée
-        if (date <= now) {
-          return <Badge variant="destructive" className="text-[10px] px-1 py-0 h-5">À rappeler</Badge>;
-        }
-
-        return null;
-      },
-    }),
-
-    createColumn<Order>({
+   createColumn<Order>({
       id: "recallAtValue",
       header: "Date Rappel",
       sortable: false,
@@ -394,13 +374,19 @@ export const getColumns = (
      createColumn<Order>({
        accessorKey: "recallAttempts",
        header: "Cpt",
-       sortable: true,
+       sortable: false,
        cell: ({ row }) => (
          <p className="flex items-center justify-center p-0 border-gray-300 text-gray-600">
             {row.original.recallAttempts || 0}
          </p>
        )
     }),
+    
+    
+
+    
+
+    
   ];
   
 };

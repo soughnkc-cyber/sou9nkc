@@ -104,8 +104,8 @@ export default function AdminDashboardPage() {
 
 
   return (
-    <div className="flex flex-col gap-12 pb-12 bg-slate-50/20">
-      <div className="flex items-center justify-between border-b border-slate-100 pb-6">
+    <div className="flex flex-col gap-6 pb-6 bg-slate-50/20">
+      <div className="flex items-center justify-between border-b border-slate-100 pb-3">
         <div>
           <h1 className="text-4xl font-black text-slate-900 tracking-tight">Vue d'ensemble</h1>
           <p className="text-slate-500 font-medium">Analyse et performance de la plateforme</p>
@@ -127,7 +127,7 @@ export default function AdminDashboardPage() {
 
       {/* Section 1: KPI Originaux */}
       <div>
-        <div className="flex items-center gap-3 mb-6">
+        <div className="flex items-center gap-3 mb-3">
           <div className="h-6 w-1 bg-blue-600 rounded-full" />
           <h2 className="text-lg font-bold text-slate-900 uppercase tracking-wider">Statut des Commandes</h2>
         </div>
@@ -175,11 +175,11 @@ export default function AdminDashboardPage() {
 
       {/* Section 2: Performances Agents */}
       <div>
-        <div className="flex items-center gap-3 mb-6">
+        <div className="flex items-center gap-3 mb-3">
           <div className="h-6 w-1 bg-[#1F30AD] rounded-full" />
           <h2 className="text-lg font-bold text-slate-900 uppercase tracking-wider">Productivité des Agents</h2>
         </div>
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
           <AgentPerformanceChart data={stats.agentPerformance} />
           <TopAgentsLeaderboard data={stats.agentPerformance} />
         </div>

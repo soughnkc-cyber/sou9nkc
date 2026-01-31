@@ -26,6 +26,7 @@ export function createColumn<T>(config: {
   filterComponent?: (props: {
     column: Column<T, unknown>;
     table: Table<T>;
+    trigger?: React.ReactNode;
   }) => React.ReactNode;
   cell?: (props: any) => React.ReactNode;
   hideSortIcon?: boolean;
@@ -125,8 +126,8 @@ export function createActionsColumn<T>(actions: {
 
 export function createSelectFilter<T>(
   options: { value: string; label: string }[]
-): (props: { column: Column<T, unknown>; table: Table<T> }) => React.ReactNode {
-  return function SelectFilter({ column }) {
+): (props: { column: Column<T, unknown>; table: Table<T>; trigger?: React.ReactNode }) => React.ReactNode {
+  return function SelectFilter({ column, trigger }) {
     const value = column.getFilterValue() as string | undefined;
 
     return (
@@ -136,8 +137,8 @@ export function createSelectFilter<T>(
           column.setFilterValue(v === "__all__" ? undefined : v)
         }
       >
-        <SelectTrigger>
-          <SelectValue placeholder="Tous" />
+        <SelectTrigger asChild={!!trigger}>
+          {trigger || <SelectValue placeholder="Tous" />}
         </SelectTrigger>
         <SelectContent>
           <SelectItem value="__all__">Tous</SelectItem>
@@ -161,6 +162,7 @@ declare module "@tanstack/react-table" {
     filterComponent?: (props: {
       column: Column<TData, TValue>;
       table: Table<TData>;
+      trigger?: React.ReactNode;
     }) => React.ReactNode;
   }
 }
@@ -168,14 +170,15 @@ declare module "@tanstack/react-table" {
 export function createFacetedFilter<T>(
   title: string,
   options: { label: string; value: string; icon?: React.ComponentType<{ className?: string }> }[]
-): (props: { column: Column<T, unknown>; table: Table<T> }) => React.ReactNode {
+): (props: { column: Column<T, unknown>; table: Table<T>; trigger?: React.ReactNode }) => React.ReactNode {
   const { DataTableFacetedFilter } = require("./datatable-faceted-filter");
-  return function FacetedFilter({ column }) {
+  return function FacetedFilter({ column, trigger }) {
     return (
       <DataTableFacetedFilter
         column={column}
         title={title}
         options={options}
+        trigger={trigger}
       />
     );
   };
