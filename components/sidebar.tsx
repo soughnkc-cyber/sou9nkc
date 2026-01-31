@@ -35,17 +35,7 @@ export default function Sidebar({
     }
   }, [status, pathname]);
 
-  if (status === "loading" || !mounted) {
-    return (
-      <div className="hidden lg:block fixed inset-y-0 left-0 z-30 w-64 bg-white border-r">
-        <div className="flex items-center justify-center h-full">
-          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
-        </div>
-      </div>
-    );
-  }
 
-  if (status === "unauthenticated") return null;
 
   const userRole = (dbUser?.role || (session?.user as any)?.role) as Role;
   const permissions = dbUser || (session?.user as any) || {};

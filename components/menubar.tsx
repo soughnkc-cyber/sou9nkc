@@ -64,21 +64,14 @@ export default function MenuBar() {
                     </Button>
                 </SheetTrigger>
                 <SheetContent side="left" className="p-0 w-72" showCloseButton={false}>
-                    {status === "loading" || isLoadingUser ? (
-                        <div className="flex flex-col items-center justify-center h-full gap-4">
-                            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-[#1F30AD]"></div>
-                            <span className="text-sm font-medium text-gray-400">Chargement de vos accès...</span>
-                        </div>
-                    ) : (
-                        <SidebarContent 
-                            isCollapsed={false} 
-                            mobile={true} 
-                            userRole={userRole} 
-                            permissions={permissions} 
-                            handleSignOut={() => signOut({ callbackUrl: "/auth/signin" })} 
-                            onNavigate={() => setIsSheetOpen(false)}
-                        />
-                    )}
+                    <SidebarContent 
+                        isCollapsed={false} 
+                        mobile={true} 
+                        userRole={userRole} 
+                        permissions={permissions} 
+                        handleSignOut={() => signOut({ callbackUrl: "/auth/signin" })} 
+                        onNavigate={() => setIsSheetOpen(false)}
+                    />
                 </SheetContent>
             </Sheet>
         </div>
