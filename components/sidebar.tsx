@@ -24,6 +24,15 @@ export default function Sidebar({
   const [dbUser, setDbUser] = useState<any>(null);
 
   useEffect(() => {
+    // 1. Try local storage
+    const cached = localStorage.getItem("sou9nkc_user_data");
+    if (cached) {
+      try {
+        setDbUser(JSON.parse(cached));
+      } catch (e) {
+        // ignore
+      }
+    }
     setMounted(true);
   }, []);
 
@@ -31,6 +40,7 @@ export default function Sidebar({
     if (status === "authenticated") {
       getMe().then(user => {
         setDbUser(user);
+        localStorage.setItem("sou9nkc_user_data", JSON.stringify(user));
       });
     }
   }, [status, pathname]);
@@ -40,7 +50,10 @@ export default function Sidebar({
   const userRole = (dbUser?.role || (session?.user as any)?.role) as Role;
   const permissions = dbUser || (session?.user as any) || {};
 
-  const handleSignOut = () => signOut({ callbackUrl: "/auth/signin" });
+  const handleSignOut = () => {
+    localStorage.removeItem("sou9nkc_user_data");
+    signOut({ callbackUrl: "/auth/signin" });
+  };
 
   return (
     <>

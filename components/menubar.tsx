@@ -27,10 +27,23 @@ export default function MenuBar() {
   const [isLoadingUser, setIsLoadingUser] = useState(false);
 
   useEffect(() => {
+    // 1. Try local storage
+    const cached = localStorage.getItem("sou9nkc_user_data");
+    if (cached) {
+      try {
+        setDbUser(JSON.parse(cached));
+      } catch (e) {
+        // ignore
+      }
+    }
+  }, []);
+
+  useEffect(() => {
     if (session?.user) {
       setIsLoadingUser(true);
       getMe().then(user => {
         setDbUser(user);
+        localStorage.setItem("sou9nkc_user_data", JSON.stringify(user));
         setIsLoadingUser(false);
       }).catch(() => setIsLoadingUser(false));
     }
@@ -38,6 +51,11 @@ export default function MenuBar() {
 
   const userRole = (dbUser?.role || (session?.user as any)?.role);
   const permissions = dbUser || (session?.user as any) || {};
+
+  const handleSignOut = () => {
+    localStorage.removeItem("sou9nkc_user_data");
+    signOut({ callbackUrl: "/auth/signin" });
+  };
 
   // Get dynamic title based on pathname
   const getPageTitle = () => {
@@ -69,7 +87,7 @@ export default function MenuBar() {
                         mobile={true} 
                         userRole={userRole} 
                         permissions={permissions} 
-                        handleSignOut={() => signOut({ callbackUrl: "/auth/signin" })} 
+                        handleSignOut={handleSignOut} 
                         onNavigate={() => setIsSheetOpen(false)}
                     />
                 </SheetContent>
@@ -113,7 +131,7 @@ export default function MenuBar() {
                 <DropdownMenuSeparator className="bg-gray-50 mx-2 my-1" />
                 <DropdownMenuItem 
                     className="rounded-xl px-3 py-2 cursor-pointer font-bold text-red-600 focus:bg-red-50 focus:text-red-700"
-                    onClick={() => signOut({ callbackUrl: "/auth/signin" })}
+                    onClick={handleSignOut}
                 >
                     <LogOut className="h-4 w-4 mr-2" /> Déconnexion
                 </DropdownMenuItem>
