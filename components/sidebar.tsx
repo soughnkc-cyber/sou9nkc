@@ -45,7 +45,7 @@ export default function Sidebar({
     );
   }
 
-  if (!session?.user) return null;
+  if (status === "unauthenticated") return null;
 
   const userRole = (dbUser?.role || (session?.user as any)?.role) as Role;
   const permissions = dbUser || (session?.user as any) || {};
