@@ -217,8 +217,8 @@ export default function ProductsPage() {
               </div>
             }
             searchPlaceholder="Rechercher un produit..."
-            pageSizeOptions={[5, 10, 20]}
-            defaultPageSize={10}
+            pageSizeOptions={[10, 20, 50]}
+            defaultPageSize={50}
             showSearch
             showPagination
           />

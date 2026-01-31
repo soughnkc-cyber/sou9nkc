@@ -26,34 +26,20 @@ export function DatePickerWithRange({
   setDate: (date: DateRange | undefined) => void;
 }) {
   return (
-    <div className={cn("grid gap-2", className)}>
+    <div className={className}>
       <Popover>
         <PopoverTrigger asChild>
           <Button
             id="date"
             variant={"outline"}
             size="sm"
+            style={{ width: '32px' }}
             className={cn(
-              "w-full justify-start text-left text-[11px] font-bold h-8 rounded-lg border-gray-200 hover:bg-gray-50 transition-colors px-4 overflow-hidden",
+              "h-8 rounded-lg border-gray-200 hover:bg-gray-50 transition-colors p-0 flex items-center justify-center shrink-0",
               !date && "text-muted-foreground"
             )}
           >
-            <CalendarIcon className="mr-2 h-4 w-4 text-[#1F30AD] shrink-0" />
-            <span className="truncate">
-            {date?.from ? (
-              date.to ? (
-                <>
-                  {format(date.from, "dd LLL", { locale: fr })} -{" "}
-                  {format(date.to, "dd LLL", { locale: fr })}
-                </>
-              ) : (
-                format(date.from, "dd LLL yyyy", { locale: fr })
-              )
-            ) : (
-              <span>Filtrer par date</span>
-            )}
-            </span>
-            <ChevronDown className="ml-auto h-4 w-4 opacity-50 shrink-0" />
+            <CalendarIcon className="h-4 w-4 text-[#1F30AD]" />
           </Button>
         </PopoverTrigger>
         <PopoverContent className="w-auto p-0 rounded-2xl border-gray-100 shadow-xl" align="end">

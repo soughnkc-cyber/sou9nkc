@@ -72,7 +72,7 @@ export function DataTable<TData, TValue>({
   data,
   searchPlaceholder = "Rechercher...",
   pageSizeOptions = [10, 20, 50],
-  defaultPageSize = 10,
+  defaultPageSize = 50,
   showSearch = true,
   showFilters = true,
   showPagination = true,
@@ -140,10 +140,11 @@ export function DataTable<TData, TValue>({
   return (
     <div className={cn("space-y-2", className)}>
       {/* Header */}
-      <div className="flex flex-col lg:flex-row gap-2 justify-between items-stretch lg:items-center">
-        <div className="flex flex-1 flex-wrap items-center gap-2 w-full lg:w-auto">
+      <div className="flex flex-col lg:flex-row items-center justify-between gap-3 mb-2">
+        {/* Left: Search */}
+        <div className="w-full lg:w-fit lg:order-0">
           {showSearch && (
-            <div className="relative w-full lg:w-[280px] group order-1 lg:order-0">
+            <div className="relative w-full lg:w-72 group">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400 group-focus-within:text-[#1F30AD] transition-colors" />
               <Input
                 placeholder={searchPlaceholder}
@@ -153,63 +154,57 @@ export function DataTable<TData, TValue>({
               />
             </div>
           )}
-
-          {extraSearchActions && (
-            <div className="flex items-center space-x-2">
-              {extraSearchActions}
-            </div>
-          )}
-          
-          {showFilters && (
-            <Button
-              variant="outline"
-              size="sm"
-              className="lg:hidden h-10 rounded-xl px-4 font-bold border-gray-200 hover:bg-gray-50 transition-colors text-[8px] sm:text-[10px]"
-              onClick={() => setIsFilterOpen((v) => !v)}
-            >
-              <Filter className="h-4 w-4 mr-2 text-[#1F30AD]" />
-              Filtres
-              {isFilterOpen && <X className="h-4 w-4 ml-2" />}
-            </Button>
-          )}
-
-          {showViewOptions && (
-             <DataTableViewOptions table={table} />
-          )}
         </div>
 
-        {showPagination && (
-          <div className="flex items-center gap-2 h-8">
-             {rightHeaderActions}
-             <Select
-              value={`${table.getState().pagination.pageSize}`}
-              onValueChange={(value) => table.setPageSize(Number(value))}
-            >
-               <SelectTrigger className="w-fit min-w-[100px] h-8 rounded-lg border-gray-200 bg-gray-50/30 transition-all font-bold text-[11px]">
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                {pageSizeOptions.map((size) => (
-                  <SelectItem key={size} value={`${size}`} className="text-[11px]">
-                    {size} lignes
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+        {/* Right: Actions Aligned */}
+        <div className="flex flex-wrap items-center gap-2 w-full lg:w-fit justify-start lg:justify-end lg:order-1">
+          {extraSearchActions}
+          
+          <div className="flex items-center gap-2">
+            {showViewOptions && <DataTableViewOptions table={table} />}
+            {rightHeaderActions}
+            
+            {showPagination && (
+              <Select
+                value={`${table.getState().pagination.pageSize}`}
+                onValueChange={(value) => table.setPageSize(Number(value))}
+              >
+                <SelectTrigger className="w-fit min-w-[32px] px-2 h-8 rounded-lg border-gray-200 bg-gray-50/30 transition-all font-bold text-[11px]">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  {pageSizeOptions.map((size) => (
+                    <SelectItem key={size} value={`${size}`} className="text-[11px]">
+                      {size}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            )}
+
+            {showFilters && (
+              <Button
+                variant="outline"
+                size="sm"
+                className="lg:hidden h-8 w-8 rounded-lg p-0 font-bold border-gray-200 hover:bg-gray-50 transition-colors relative"
+                onClick={() => setIsFilterOpen((v) => !v)}
+              >
+                <Filter className="h-4 w-4 text-[#1F30AD]" />
+                {isFilterOpen && <X className="absolute h-3 w-3 -top-1 -right-1 bg-white rounded-full border border-gray-200" />}
+              </Button>
+            )}
           </div>
-        )}
+        </div>
       </div>
 
       {/* Filters mobile */}
       {showFilters && isFilterOpen && (
         <div className="lg:hidden space-y-2 border p-4 rounded-lg bg-gray-50/50">
-          <p className="text-xs font-semibold text-gray-500 uppercase mb-2">Filtres avancés</p>
           {table
             .getAllColumns()
             .filter((col) => col.getCanFilter() && col.columnDef.meta?.filterComponent)
             .map((column) => (
               <div key={column.id} className="space-y-1">
-                <label className="text-xs font-medium text-gray-600">{column.columnDef.header as string}</label>
                 {column.columnDef.meta?.filterComponent?.({
                   column,
                   table,
@@ -237,10 +232,12 @@ export function DataTable<TData, TValue>({
                 {group.headers.map((header) => (
                   <TableHead key={header.id} className="h-10 py-2 text-[10px] font-extrabold text-gray-500 uppercase tracking-widest pl-4">
                     <div className="flex items-center gap-1.5 min-h-[32px]">
-                      {flexRender(
-                        header.column.columnDef.header,
-                        header.getContext()
-                      )}
+                      {!header.column.getCanFilter() || !header.column.columnDef.meta?.filterComponent ? (
+                        flexRender(
+                          header.column.columnDef.header,
+                          header.getContext()
+                        )
+                      ) : null}
                       
                       {header.column.getCanFilter() && header.column.columnDef.meta?.filterComponent ? (
                         header.column.columnDef.meta.filterComponent({ 
@@ -392,7 +389,7 @@ export function DataTable<TData, TValue>({
                               {cell.column.columnDef.meta?.title || cell.column.id}
                             </span>
                           )}
-                          <div className="text-[13px] font-medium text-gray-700">
+                          <div className="text-[13px] font-bold text-slate-900">
                             {flexRender(
                               cell.column.columnDef.cell,
                               cell.getContext()

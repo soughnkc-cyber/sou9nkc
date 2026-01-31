@@ -76,6 +76,7 @@ export const statusFormSchema = z.object({
     .number()
     .int()
     .min(1)
+    .nullable()
     .optional(),
   color: z.string(),
   etat: z.nativeEnum(Etat),

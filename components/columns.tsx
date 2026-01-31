@@ -104,6 +104,7 @@ export function createActionsColumn<T>(actions: {
 }[]): ColumnDef<T> {
   return {
     id: "actions",
+    header: "",
     cell: ({ row }) => (
       <div className="flex gap-2">
         {actions.map((a, i) => (
@@ -119,7 +120,7 @@ export function createActionsColumn<T>(actions: {
         ))}
       </div>
     ),
-    meta: { mobileLabel: "Actions" },
+    meta: { mobileLabel: "Actions", hideMobileLabel: true },
   };
 }
 

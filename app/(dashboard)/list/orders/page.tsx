@@ -348,7 +348,7 @@ function OrdersPageContent() {
         )}
       </div>
       <div>
-        <p className="text-[8px] sm:text-[10px] font-extrabold text-gray-400 uppercase tracking-widest mb-0.5 sm:mb-1">{title}</p>
+        <p className="text-[10px] sm:text-[10px] font-black text-gray-900 uppercase tracking-widest mb-0.5 sm:mb-1">{title}</p>
         <h3 className="text-lg sm:text-xl font-black text-gray-900 tracking-tight leading-tight">{value}</h3>
       </div>
       {active && (
@@ -460,50 +460,35 @@ function OrdersPageContent() {
 
       {/* Stats Cards */}
       {/* Sticky Header Mobile - Persistent container for Recall Card and Filters */}
-      <div className="sm:hidden sticky top-[64px] z-40 pb-2 bg-gray-50/95 backdrop-blur-sm -mx-4 px-4 pt-2 border-b border-gray-100/50 mb-2">
-         <div className="grid grid-cols-2 gap-3">
-            {/* Recall Card (Mobile Link) */}
-             {(currentFilter === "torecall" || filterType === "torecall" || currentFilter === "new_arrivals") ? (
-              <StatCard
-                title="Nouveaux Arrivés"
-                value={stats.newOrdersCount}
-                icon={RefreshCw}
-                active={currentFilter === "new_arrivals"}
-                onClick={() => toggleFilter(currentFilter === "new_arrivals" ? "torecall" : "new_arrivals")}
-                color="bg-purple-500/10 text-purple-600"
-                bgColor="#f9e3ff"
-                trend="Live"
-                trendUp={true}
-              />
-            ) : (
-              <StatCard
-                title="À Rappeler"
-                value={stats.recallToday}
-                icon={PhoneIncoming}
-                active={currentFilter === "torecall" || filterType === "torecall"}
-                onClick={() => toggleFilter("torecall")}
-                color="bg-red-500/10 text-red-600"
-                bgColor="#ffe3e3"
-                trend="3.2%"
-                trendUp={false}
-              />
-            )}
-
-            {/* Mobile Filters */}
-            <div className="flex flex-col gap-2 p-2 justify-center items-center bg-white rounded-2xl border border-gray-100 shadow-xs h-full">
-                <DatePickerWithRange date={dateRange} setDate={setDateRange} className="w-full" />
-                <Button 
-                    variant="outline" 
-                    size="sm" 
-                    className="w-full h-8 rounded-xl font-bold border-gray-200 hover:bg-blue-50 text-[#1F30AD] text-xs" 
-                    onClick={() => refreshData()} 
-                    disabled={isLoadingPage}
-                >
-                  <RefreshCw className={cn("h-3.5 w-3.5 mr-2", isLoadingPage && "animate-spin")} />
-                  Actualiser
-                </Button>
-            </div>
-         </div>
+      <div className="sm:hidden sticky top-[48px] z-40 bg-gray-50 -mx-4 px-4 pb-1 pt-2 -mt-2 border-b border-gray-100/50 mb-1">
+          <div className="w-full">
+             {/* Recall Card (Mobile Link) - Now Full Width */}
+              {(currentFilter === "torecall" || filterType === "torecall" || currentFilter === "new_arrivals") ? (
+               <StatCard
+                 title="Nouveaux Arrivés"
+                 value={stats.newOrdersCount}
+                 icon={RefreshCw}
+                 active={currentFilter === "new_arrivals"}
+                 onClick={() => toggleFilter(currentFilter === "new_arrivals" ? "torecall" : "new_arrivals")}
+                 color="bg-purple-500/10 text-purple-600"
+                 bgColor="#f9e3ff"
+                 trend="Live"
+                 trendUp={true}
+               />
+             ) : (
+               <StatCard
+                 title="À Rappeler"
+                 value={stats.recallToday}
+                 icon={PhoneIncoming}
+                 active={currentFilter === "torecall" || filterType === "torecall"}
+                 onClick={() => toggleFilter("torecall")}
+                 color="bg-red-500/10 text-red-600"
+                 bgColor="#ffe3e3"
+                 trend="3.2%"
+                 trendUp={false}
+               />
+             )}
+          </div>
       </div>
 
       {/* Stats Cards Desktop Grid */}
@@ -604,23 +589,23 @@ function OrdersPageContent() {
             data={filteredOrders}
             searchPlaceholder="Rechercher une commande..."
             pageSizeOptions={[10, 20, 50]}
-            defaultPageSize={10}
+            defaultPageSize={50}
             showSearch
             showPagination
             rightHeaderActions={
-                <DatePickerWithRange date={dateRange} setDate={setDateRange} className="w-[180px]" />
+                <DatePickerWithRange date={dateRange} setDate={setDateRange} />
             }
             onSelectionChange={setSelectedOrders}
             getRowClassName={(row) => {
                const recallAt = row.recallAt ? new Date(row.recallAt) : null;
-               if (recallAt && (isPast(recallAt) || isSameDay(recallAt, new Date()))) {
+               if (recallAt && isPast(recallAt)) {
                  return "border border-red-500 shadow-sm shadow-red-100";
                }
                return "";
             }}
             mobileRowAction={(row) => {
                const recallAt = row.recallAt ? new Date(row.recallAt) : null;
-               if (recallAt && (isPast(recallAt) || isSameDay(recallAt, new Date()))) {
+               if (recallAt && isPast(recallAt)) {
                  return (
                    <div className="bg-red-600 rounded-full p-1.5 shadow-sm animate-pulse">
                      <Clock className="h-3.5 w-3.5 text-white" />
@@ -635,11 +620,11 @@ function OrdersPageContent() {
                   <Button 
                     variant="outline" 
                     size="sm" 
-                    className="h-8 rounded-lg px-2 sm:px-3 font-bold border-gray-200 hover:bg-blue-50 hover:text-[#1F30AD] transition-all text-[10px]" 
+                    className="h-8 w-8 rounded-lg p-0 font-bold border-gray-200 hover:bg-blue-50 hover:text-[#1F30AD] transition-all flex items-center justify-center" 
                     onClick={() => openAssignModal(selectedOrders[0])}
+                    title="Modifier"
                   >
-                    <Edit className="h-3.5 w-3.5 sm:mr-1.5" />
-                    <span className="hidden sm:inline">Modifier</span>
+                    <Edit className="h-4 w-4" />
                   </Button>
                 )}
                 {isAdmin && selectedOrders.length > 0 && (
@@ -647,11 +632,11 @@ function OrdersPageContent() {
                     variant="destructive" 
                     size="sm" 
                     onClick={handleDeleteSelected} 
-                    className="h-8 rounded-lg font-bold px-2 sm:px-3 text-[10px]"
+                    className="h-8 min-w-[32px] rounded-lg font-bold px-1.5 flex items-center justify-center gap-1.5 shadow-sm shadow-red-100"
+                    title="Supprimer"
                   >
-                    <Trash2 className="h-3.5 w-3.5 sm:mr-1.5" />
-                    <span className="hidden sm:inline">Supprimer ({selectedOrders.length})</span>
-                    <span className="sm:hidden">{selectedOrders.length}</span>
+                    <Trash2 className="h-4 w-4" />
+                    <span className="text-[10px] bg-white/20 px-1 rounded-md">{selectedOrders.length}</span>
                   </Button>
                 )}
               </div>

@@ -45,7 +45,7 @@ export function StatusForm({
     resolver: zodResolver(statusFormSchema),
     defaultValues: {
       name: status?.name || "",
-      recallAfterH: status?.recallAfterH ?? undefined,
+      recallAfterH: status?.recallAfterH ?? null,
       color: status?.color || "#6366f1",
       etat: (status?.etat as Etat) || Etat.STATUS_01,
       isActive: status?.isActive ?? true,
@@ -124,13 +124,12 @@ export function StatusForm({
                 <FormControl>
                   <Input
                     type="number"
-                    min={1}
                     placeholder="Ex: 1, 2, 24"
                     value={field.value ?? ""}
                     onChange={(e) =>
                       field.onChange(
                         e.target.value === ""
-                          ? undefined
+                          ? null
                           : Number(e.target.value)
                       )
                     }

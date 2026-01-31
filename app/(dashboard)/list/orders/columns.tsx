@@ -1,4 +1,4 @@
-import { ColumnDef } from "@tanstack/react-table";
+import { ColumnDef, Table, Row } from "@tanstack/react-table";
 import { createColumn, createActionsColumn, createFacetedFilter } from "@/components/columns";
 import { Badge } from "@/components/ui/badge";
 import { Edit, Trash2, Eye, User as UserIcon, Clock } from "lucide-react";
@@ -212,14 +212,14 @@ export const getColumns = (
   return [
     {
       id: "select",
-      header: ({ table }) => (
+      header: ({ table }: { table: Table<Order> }) => (
         <Checkbox
           checked={table.getIsAllPageRowsSelected() || (table.getIsSomePageRowsSelected() && "indeterminate")}
           onCheckedChange={(value) => table.toggleAllPageRowsSelected(!!value)}
           aria-label="Sélectionner tout"
         />
       ),
-      cell: ({ row }) => (
+      cell: ({ row }: { row: Row<Order> }) => (
         <Checkbox
           checked={row.getIsSelected()}
           onCheckedChange={(value) => row.toggleSelected(!!value)}
@@ -236,7 +236,7 @@ export const getColumns = (
       isPrimary: true,
       sortable: false,
       hideMobileLabel: true,
-      cell: ({ row }) => <span className="font-medium text-xs">#{row.original.orderNumber}</span>,
+      cell: ({ row }: { row: Row<Order> }) => <span className="font-medium text-xs">#{row.original.orderNumber}</span>,
     }),
 
      createColumn<Order>({
@@ -244,7 +244,7 @@ export const getColumns = (
       header: "Date Commande",
       sortable: false,
       hideMobileLabel: true,
-      cell: ({ row }) => <span className="text-xs text-gray-500 whitespace-nowrap">{formatDateTime(row.original.orderDate)}</span>,
+      cell: ({ row }: { row: Row<Order> }) => <span className="text-xs text-gray-500 whitespace-nowrap">{formatDateTime(row.original.orderDate)}</span>,
     }),
 
     createColumn<Order>({
@@ -258,7 +258,7 @@ export const getColumns = (
         productOptions.map((p) => ({ label: p, value: p }))
       ),
       accessorFn: (row) => row.productNote, // For filtering
-      cell: ({ row }) => <span className="text-xs">{row.original.productNote ?? "-"}</span>,
+      cell: ({ row }: { row: Row<Order> }) => <span className="text-xs">{row.original.productNote ?? "-"}</span>,
     }),
 
     
@@ -273,7 +273,7 @@ export const getColumns = (
         priceOptions.map((p) => ({ label: `${p}`, value: p.toString() }))
       ),
       accessorFn: (row) => row.totalPrice.toString(),
-      cell: ({ row }) => <PriceBadge price={row.original.totalPrice} />,
+      cell: ({ row }: { row: Row<Order> }) => <PriceBadge price={row.original.totalPrice} />,
     }),
 
 
@@ -282,14 +282,25 @@ export const getColumns = (
       header: "Client",
       sortable: false,
       hideMobileLabel: true,
-      cell: ({ row }) => <span className="text-xs">{row.original.customerName}</span>,
+      cell: ({ row }: { row: Row<Order> }) => <span className="text-xs">{row.original.customerName}</span>,
     }),
 
     createColumn<Order>({
       accessorKey: "customerPhone",
       header: "Téléphone",
       sortable: false,
-      cell: ({ row }) => row.original.customerPhone ?? "-",
+      hideMobileLabel: true,
+      cell: ({ row }: { row: Row<Order> }) => (
+        row.original.customerPhone ? (
+          <a 
+            href={`tel:${row.original.customerPhone}`} 
+            className="text-[#1F30AD] hover:underline transition-all"
+            onClick={(e) => e.stopPropagation()}
+          >
+            {row.original.customerPhone}
+          </a>
+        ) : "-"
+      ),
     }),
 
 
@@ -299,12 +310,12 @@ export const getColumns = (
           header: "Agent",
           sortable: false,
           hideMobileLabel: true,
-          accessorFn: (row) => row.agent?.name || "Non affecté", // For sorting/filtering text
+          accessorFn: (row) => row.agent?.name || "Non affecté", 
           filterComponent: createFacetedFilter(
              "Agent",
              agents.map(a => ({ label: a.name, value: a.name }))
           ),
-          cell: ({ row }) => (
+          cell: ({ row }: { row: Row<Order> }) => (
              <AgentSelect 
                 order={row.original} 
                 agents={agents} 
@@ -313,12 +324,7 @@ export const getColumns = (
              />
           ),
         })
-      : createColumn<Order>({
-          accessorKey: "customerName",
-          header: "Client", // Show client instead of agent for agents themselves
-          sortable: false,
-          cell: ({ row }) => <span className="font-medium text-xs">{row.original.customerName}</span>,
-      }),
+      : null,
 
     createColumn<Order>({
       accessorKey: "status",
@@ -331,7 +337,7 @@ export const getColumns = (
         statuses.map((s) => ({ label: s.name, value: s.name }))
       ),
       accessorFn: (row) => row.status?.name,
-      cell: ({ row }) => {
+      cell: ({ row }: { row: Row<Order> }) => {
         return (
           <StatusSelect
             order={row.original}
@@ -349,7 +355,7 @@ export const getColumns = (
       header: "Date Rappel",
       sortable: false,
       accessorFn: (row) => row.recallAt,
-      cell: ({ row }) => {
+      cell: ({ row }: { row: Row<Order> }) => {
         return (
           <RecallCell
             order={row.original}
@@ -364,7 +370,7 @@ export const getColumns = (
       accessorKey: "processingTimeMin",
       header: "Délai",
       sortable: false,
-      cell: ({ row }) => (
+      cell: ({ row }: { row: Row<Order> }) => (
         <p className="whitespace-nowrap">
           {formatDuration(row.original.processingTimeMin)}
         </p>
@@ -376,7 +382,7 @@ export const getColumns = (
        header: "Cpt",
        sortable: false,
        cell: ({ row }) => (
-         <p className="flex items-center justify-center p-0 border-gray-300 text-gray-600">
+         <p className="flex items-center justify-start p-0 border-gray-300 text-gray-600">
             {row.original.recallAttempts || 0}
          </p>
        )
@@ -386,7 +392,7 @@ export const getColumns = (
 
     
 
-    
-  ];
+    createActionsColumn(actions),
+  ].filter(Boolean) as ColumnDef<Order>[];
   
 };
