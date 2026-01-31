@@ -28,6 +28,7 @@ export interface Order {
   } | null;
   processingTimeMin?: number | null;
   recallAttempts?: number; // Added field
+  createdAt: string;
   agent?: {
     id: string;
     name: string | null;
@@ -49,6 +50,22 @@ const StatusSelect = ({
 }) => {
   const selectedStatus = statuses.find(s => s.id === order.status?.id);
 
+  if (readOnly) {
+    return (
+      <div 
+        className={cn(
+          "h-7 w-[140px] text-xs font-medium flex items-center px-3 rounded-md transition-colors border-0 shadow-sm cursor-default",
+          selectedStatus?.color ? "text-white" : "border border-input bg-background"
+        )}
+        style={{ 
+          backgroundColor: selectedStatus?.color || undefined
+        }}
+      >
+        <span className="truncate">{selectedStatus?.name || "Sélectionner"}</span>
+      </div>
+    );
+  }
+
   return (
     <div onClick={(e) => e.stopPropagation()}>
       <Select
@@ -58,13 +75,11 @@ const StatusSelect = ({
             onChange(order.id, value);
           }
         }}
-        disabled={readOnly}
       >
         <SelectTrigger 
           className={cn(
             "h-7 w-[140px] text-xs font-medium transition-colors border-0 shadow-sm",
-            selectedStatus?.color ? "text-white" : "border border-input bg-background",
-            readOnly && "opacity-50 cursor-not-allowed"
+            selectedStatus?.color ? "text-white" : "border border-input bg-background"
           )}
           style={{ 
             backgroundColor: selectedStatus?.color || undefined
@@ -162,9 +177,9 @@ const formatDuration = (minutes?: number | null) => {
 };
 
 const PriceBadge = ({ price }: { price: number }) => (
-  <Badge variant="secondary" className="bg-green-100 text-green-800">
-    {price.toLocaleString("fr-FR", { style: "currency", currency: "MRU" })}
-  </Badge>
+  <>
+   {price.toLocaleString("fr-FR", { style: "currency", currency: "MRU" })}
+  </>
 );
 
 export const getColumns = (
@@ -221,7 +236,7 @@ export const getColumns = (
       isPrimary: true,
       sortable: false,
       hideMobileLabel: true,
-      cell: ({ row }) => <span className="font-mono text-xs">#{row.original.orderNumber}</span>,
+      cell: ({ row }) => <span className="font-medium text-xs">#{row.original.orderNumber}</span>,
     }),
 
     createColumn<Order>({
@@ -235,7 +250,7 @@ export const getColumns = (
         productOptions.map((p) => ({ label: p, value: p }))
       ),
       accessorFn: (row) => row.productNote, // For filtering
-      cell: ({ row }) => <span className="text-xs font-medium">{row.original.productNote ?? "-"}</span>,
+      cell: ({ row }) => <span className="text-xs">{row.original.productNote ?? "-"}</span>,
     }),
 
     createColumn<Order>({
@@ -244,6 +259,14 @@ export const getColumns = (
       sortable: false,
       hideMobileLabel: true,
       cell: ({ row }) => <span className="text-xs text-gray-500 whitespace-nowrap">{formatDateTime(row.original.orderDate)}</span>,
+    }),
+
+    createColumn<Order>({
+      accessorKey: "customerName",
+      header: "Client",
+      sortable: false,
+      hideMobileLabel: true,
+      cell: ({ row }) => <span className="text-xs">{row.original.customerName}</span>,
     }),
 
     createColumn<Order>({
@@ -291,6 +314,7 @@ export const getColumns = (
       accessorKey: "status",
       header: "Statut",
       sortable: false,
+      isPrimary: true,
       hideMobileLabel: true,
       filterComponent: createFacetedFilter(
         "Statut",
@@ -322,20 +346,21 @@ export const getColumns = (
       accessorKey: "recallAt",
       header: "État du rappel",
       sortable: false,
-      isPrimary: true, // Show in mobile header
+      isPrimary: false, // Hidden in mobile header
       hideMobileLabel: true,
       cell: ({ row }) => {
         const recallAt = row.original.recallAt;
-        if (!recallAt) return <span className="text-gray-400 italic text-xs">-</span>;
+        if (!recallAt) return null;
         
         const date = new Date(recallAt);
         const now = new Date();
 
-        if (isPast(date) || isSameDay(date, now)) {
+        // Afficher seulement si l'heure est arrivée ou passée
+        if (date <= now) {
           return <Badge variant="destructive" className="text-[10px] px-1 py-0 h-5">À rappeler</Badge>;
         }
 
-        return <span className="text-gray-400 italic text-xs">-</span>;
+        return null;
       },
     }),
 
@@ -360,9 +385,9 @@ export const getColumns = (
       header: "Délai",
       sortable: false,
       cell: ({ row }) => (
-        <Badge variant="outline" className="text-[10px] whitespace-nowrap text-blue-600 bg-blue-50 border-blue-100">
+        <p className="whitespace-nowrap">
           {formatDuration(row.original.processingTimeMin)}
-        </Badge>
+        </p>
       ),
     }),
 
@@ -371,9 +396,9 @@ export const getColumns = (
        header: "Cpt",
        sortable: true,
        cell: ({ row }) => (
-         <Badge variant="outline" className="font-mono text-[10px] h-5 w-5 flex items-center justify-center p-0 border-gray-300 text-gray-600">
+         <p className="flex items-center justify-center p-0 border-gray-300 text-gray-600">
             {row.original.recallAttempts || 0}
-         </Badge>
+         </p>
        )
     }),
   ];

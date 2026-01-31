@@ -194,7 +194,7 @@ export const updateOrderStatus = async (
     return {
       ...order,
       recallAt: order.recallAt ? order.recallAt.toISOString() : null,
-      status: order.status ? { id: order.status.id, name: order.status.name, color: order.status.color } : null,
+      status: order.status ? { id: order.status.id, name: order.status.name, color: order.status.color, etat: order.status.etat } : null,
       recallAttempts: order.recallAttempts,
     };
 

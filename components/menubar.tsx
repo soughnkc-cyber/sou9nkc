@@ -24,10 +24,15 @@ export default function MenuBar() {
   const pathname = usePathname();
   const [dbUser, setDbUser] = useState<any>(null);
   const [isSheetOpen, setIsSheetOpen] = useState(false);
+  const [isLoadingUser, setIsLoadingUser] = useState(false);
 
   useEffect(() => {
     if (session?.user) {
-      getMe().then(user => setDbUser(user));
+      setIsLoadingUser(true);
+      getMe().then(user => {
+        setDbUser(user);
+        setIsLoadingUser(false);
+      }).catch(() => setIsLoadingUser(false));
     }
   }, [session?.user]);
 
@@ -59,14 +64,21 @@ export default function MenuBar() {
                     </Button>
                 </SheetTrigger>
                 <SheetContent side="left" className="p-0 w-72" showCloseButton={false}>
-                    <SidebarContent 
-                        isCollapsed={false} 
-                        mobile={true} 
-                        userRole={userRole} 
-                        permissions={permissions} 
-                        handleSignOut={() => signOut({ callbackUrl: "/auth/signin" })} 
-                        onNavigate={() => setIsSheetOpen(false)}
-                    />
+                    {isLoadingUser ? (
+                        <div className="flex flex-col items-center justify-center h-full gap-4">
+                            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-[#1F30AD]"></div>
+                            <span className="text-sm font-medium text-gray-400">Chargement de vos accès...</span>
+                        </div>
+                    ) : (
+                        <SidebarContent 
+                            isCollapsed={false} 
+                            mobile={true} 
+                            userRole={userRole} 
+                            permissions={permissions} 
+                            handleSignOut={() => signOut({ callbackUrl: "/auth/signin" })} 
+                            onNavigate={() => setIsSheetOpen(false)}
+                        />
+                    )}
                 </SheetContent>
             </Sheet>
         </div>

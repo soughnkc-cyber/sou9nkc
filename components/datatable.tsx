@@ -297,6 +297,7 @@ export function DataTable<TData, TValue>({
             };
             
             const visibleCells = row.getVisibleCells();
+            const selectCell = visibleCells.find(cell => cell.column.id === "select");
             
             // Primary columns (marked as isPrimary or fallback to first 2)
             let primaryCells = visibleCells.filter(cell => cell.column.columnDef.meta?.isPrimary);
@@ -304,7 +305,7 @@ export function DataTable<TData, TValue>({
               primaryCells = visibleCells.filter(c => c.column.id !== "select" && c.column.id !== "actions").slice(0, 2);
             }
             
-            const secondaryCells = visibleCells.filter(cell => !primaryCells.includes(cell) && cell.column.id !== "select");
+            const secondaryCells = visibleCells.filter(cell => !primaryCells.includes(cell) && cell.column.id !== "select" && cell.column.id !== "actions");
 
             return (
               <div 
@@ -312,6 +313,7 @@ export function DataTable<TData, TValue>({
                 className={cn(
                   "border border-gray-100 rounded-2xl bg-white shadow-xs overflow-hidden transition-all duration-300",
                   isRowExpanded ? "ring-1 ring-blue-200 shadow-md" : "",
+                  row.getIsSelected() ? "bg-blue-50/30 border-blue-200" : "",
                   getRowClassName ? getRowClassName(row.original) : ""
                 )}
               >
@@ -320,19 +322,31 @@ export function DataTable<TData, TValue>({
                   className="p-4 flex items-center justify-between gap-4 cursor-pointer active:bg-gray-50 transition-colors"
                   onClick={toggleRow}
                 >
-                  <div className="flex items-center gap-4 flex-1">
-                    {primaryCells.map((cell) => (
-                      <div key={cell.id} className="flex flex-col">
-                        {!cell.column.columnDef.meta?.hideMobileLabel && (
-                          <span className="text-[9px] font-black text-gray-400 uppercase tracking-widest mb-0.5">
-                            {cell.column.columnDef.meta?.title || cell.column.id}
-                          </span>
-                        )}
-                        <div className="text-sm font-bold text-gray-900">
-                          {flexRender(cell.column.columnDef.cell, cell.getContext())}
-                        </div>
+                  <div className="flex items-center gap-4 flex-1 overflow-hidden">
+                    {selectCell && (
+                      <div className="flex items-center justify-center" onClick={(e) => e.stopPropagation()}>
+                        {flexRender(selectCell.column.columnDef.cell, selectCell.getContext())}
                       </div>
-                    ))}
+                    )}
+                    <div className="flex flex-1 items-center justify-between gap-3 overflow-hidden">
+                        {/* Left side: Stacked Info (Number + Product) */}
+                        <div className="flex flex-col gap-0.5 overflow-hidden">
+                            {primaryCells.slice(0, 2).map((cell) => (
+                                <div key={cell.id} className="text-sm font-bold text-gray-900 truncate">
+                                    {flexRender(cell.column.columnDef.cell, cell.getContext())}
+                                </div>
+                            ))}
+                        </div>
+                        
+                        {/* Right side: Status and/or other primaries */}
+                        <div className="flex items-center gap-2">
+                            {primaryCells.slice(2).map((cell) => (
+                                <div key={cell.id}>
+                                    {flexRender(cell.column.columnDef.cell, cell.getContext())}
+                                </div>
+                            ))}
+                        </div>
+                    </div>
                   </div>
                   
                   <div className="flex items-center gap-2">

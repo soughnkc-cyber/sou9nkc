@@ -25,15 +25,15 @@ export default function SupervisorDashboardPage() {
   const [hasPermission, setHasPermission] = useState<boolean | null>(null);
 
 
-  const fetchStats = async () => {
-    setLoading(true);
+  const fetchStats = async (isSilent = false) => {
+    if (!isSilent) setLoading(true);
     try {
       const data = await getAdminStats();
       setStats(data);
     } catch (error) {
       console.error("Failed to fetch supervisor stats:", error);
     } finally {
-      setLoading(false);
+      if (!isSilent) setLoading(false);
     }
   };
 
@@ -48,6 +48,17 @@ export default function SupervisorDashboardPage() {
       }
     });
   }, []);
+
+  // 🔄 Auto-Refresh Polling (Every 60 seconds for Supervisor Dashboard)
+  useEffect(() => {
+    if (!hasPermission) return;
+    
+    const interval = setInterval(() => {
+        fetchStats(true); // Silent background refresh
+    }, 60000);
+
+    return () => clearInterval(interval);
+  }, [hasPermission]);
 
 
   if (hasPermission === false) return <PermissionDenied />;
@@ -82,7 +93,7 @@ export default function SupervisorDashboardPage() {
         <Button 
           variant="outline" 
           size="sm" 
-          onClick={fetchStats} 
+          onClick={() => fetchStats()} 
           disabled={loading}
           className="bg-white border-blue-200 text-blue-700 hover:bg-blue-50"
         >

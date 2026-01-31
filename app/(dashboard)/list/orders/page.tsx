@@ -46,6 +46,7 @@ function OrdersPageContent() {
   
   const [selectedOrders, setSelectedOrders] = useState<Order[]>([]);
   const [dateRange, setDateRange] = useState<DateRange | undefined>();
+  const [lastServerTime, setLastServerTime] = useState<string | null>(null);
   const user = session.data?.user;
   const isAdmin = user?.role === "ADMIN";
 
@@ -72,19 +73,6 @@ function OrdersPageContent() {
   // --------------------
   // Actions
   // --------------------
-  const fetchOrders = useCallback(async () => {
-    if (!user) return;
-    setIsLoadingPage(true);
-    try {
-      const data = await getOrders(user);
-      setOrders(data);
-    } catch (error) {
-      console.error(error);
-      toast.error("Erreur lors du chargement des commandes");
-    } finally {
-      setIsLoadingPage(false);
-    }
-  }, [user]);
 
   // const insertOrders = useCallback(async () => {
   //   try {
@@ -158,7 +146,7 @@ function OrdersPageContent() {
       await deleteOrders(selectedOrders.map(o => o.id));
       toast.success(`${selectedOrders.length} commandes supprimées`);
       setSelectedOrders([]);
-      fetchOrders();
+      refreshData();
     } catch (error) {
       console.error(error);
       toast.error("Erreur lors de la suppression des commandes");
@@ -181,25 +169,62 @@ function OrdersPageContent() {
   // --------------------
   // useEffect
   // --------------------
+  // Silent background refresh
+  const refreshData = useCallback(async (isSilent = false) => {
+    if (!user) return;
+    if (!isSilent) setIsLoadingPage(true);
+    try {
+      const response = await getOrders(user);
+      setOrders(response.orders);
+      setLastServerTime(response.serverTime);
+    } catch (error) {
+      console.error(error);
+      if (!isSilent) toast.error("Erreur lors de la mise à jour");
+    } finally {
+      if (!isSilent) setIsLoadingPage(false);
+    }
+  }, [user]);
+
+  // Handle Initial Fetch
   useEffect(() => {
     if (hasPermission) {
-      fetchOrders();
+      refreshData(); // First load is visible
       fetchStatusesAndAgents();
     }
-  }, [hasPermission, fetchOrders, fetchStatusesAndAgents]);
+  }, [hasPermission, refreshData, fetchStatusesAndAgents]);
 
+  // 🔄 Auto-Refresh Polling (Every 15 seconds)
+  useEffect(() => {
+    if (!hasPermission || !user) return;
+    
+    const interval = setInterval(() => {
+        refreshData(true); // Silent background refresh
+    }, 5000);
 
-  // --------------------
-  // Mémo
-  // --------------------
-  
+    return () => clearInterval(interval);
+  }, [hasPermission, user, refreshData]);
+
   const [currentFilter, setCurrentFilter] = useState<string | null>(null);
+  const [recallFilterEntryTime, setRecallFilterEntryTime] = useState<Date | null>(null);
 
-  // Apply filter based on URL query param OR local state OR Date range
-  const filteredOrders = useMemo(() => {
+  // Track entry time into "torecall" filter for the "New Arrivals" alert
+  useEffect(() => {
+    const activeFilter = currentFilter || filterType;
+    if (activeFilter === "torecall") {
+        if (!recallFilterEntryTime && lastServerTime) {
+            const entryTime = new Date(lastServerTime);
+            console.log("🔔 [Lifecycle] Setting entry time to:", entryTime.toISOString());
+            setRecallFilterEntryTime(entryTime);
+        }
+    } else if (activeFilter !== "new_arrivals") {
+        if (recallFilterEntryTime) console.log("🔔 [Lifecycle] Resetting entry time (leaving filter)");
+        setRecallFilterEntryTime(null);
+    }
+  }, [currentFilter, filterType, recallFilterEntryTime, lastServerTime]);
+
+  // 1. Base filtered by Date (for Stats and for category filtering)
+  const dateFilteredOrders = useMemo(() => {
     let result = orders;
-
-    // 1. Date range filter
     if (dateRange?.from) {
         const from = startOfDay(dateRange.from);
         const to = dateRange.to ? endOfDay(dateRange.to) : endOfDay(dateRange.from);
@@ -208,49 +233,85 @@ function OrdersPageContent() {
             return isWithinInterval(date, { start: from, end: to });
         });
     }
+    return result;
+  }, [orders, dateRange]);
 
-    // 2. Tab filter (URL or local)
+  // 2. Further filtered by category (for the Table)
+  const filteredOrders = useMemo(() => {
     const activeFilter = currentFilter || filterType;
-    if (!activeFilter || activeFilter === "all") return result;
+    if (!activeFilter || activeFilter === "all") return dateFilteredOrders;
     
     switch (activeFilter) {
       case "processed":
-        return result.filter(order => order.status !== null && order.status !== undefined);
+        return dateFilteredOrders.filter(order => order.status !== null && order.status !== undefined);
       case "toprocess":
-        return result.filter(order => !order.status);
+        return dateFilteredOrders.filter(order => !order.status);
       case "torecall":
-        return result.filter(o => o.recallAt && isSameDay(new Date(o.recallAt), new Date()));
+        return dateFilteredOrders.filter(o => o.recallAt && isSameDay(new Date(o.recallAt), new Date()));
       case "new_arrivals":
-        return result.filter(o => 
-          o.recallAt && isSameDay(new Date(o.recallAt), new Date()) &&
-          differenceInHours(new Date(), new Date(o.orderDate)) <= 24
+        return dateFilteredOrders.filter(o => 
+            !o.status && 
+            recallFilterEntryTime && 
+            new Date(o.createdAt) >= recallFilterEntryTime
         );
       default:
-        return result;
+        return dateFilteredOrders;
     }
-  }, [orders, filterType, currentFilter, dateRange]);
+  }, [dateFilteredOrders, filterType, currentFilter, recallFilterEntryTime]);
 
   const stats = useMemo(() => {
-    const total = orders.length;
-    const totalRevenue = orders.reduce((sum, o) => sum + o.totalPrice, 0);
-    const recallToday = orders.filter(o => 
+    const base = dateFilteredOrders;
+    const total = base.length;
+    const totalRevenue = base.reduce((sum, o) => sum + o.totalPrice, 0);
+    const recallToday = base.filter(o => 
       o.recallAt && isSameDay(new Date(o.recallAt), new Date())
     ).length;
     
-    // Taux de traitement basé sur STATUS_15
-    const processedOrders = orders.filter(o => o.status?.etat === 'STATUS_15' || (o.status as any)?.etat === 'STATUS_15').length;
-    const treatmentRate = total > 0 ? (processedOrders / total) * 100 : 0;
+    // Taux de confirmation : STATUS_15 parmi toutes les commandes ayant un statut (dans la période)
+    const ordersWithStatus = base.filter(o => o.status?.id || o.status?.name);
+    const confirmedOrders = base.filter(o => {
+      const status = o.status as any;
+      if (!status) return false;
+      
+      const etatValue = status.etat?.toString() || "";
+      const nameValue = status.name?.toString() || "";
+      
+      return (
+        etatValue.toUpperCase() === 'STATUS_15' || 
+        nameValue.toUpperCase().includes('STATUS_15')
+      );
+    });
     
-    const ordersWithDuration = orders.filter(o => o.processingTimeMin != null && o.processingTimeMin > 0);
+    console.log("📊 [Stats Debug] Range:", dateRange);
+    console.log("📊 [Stats Debug] Total in Period:", total);
+    console.log("📊 [Stats Debug] With Status:", ordersWithStatus.length);
+    console.log("📊 [Stats Debug] Confirmed:", confirmedOrders.length);
+    if (confirmedOrders.length > 0) {
+        console.log("📊 [Stats Debug] Example Confirmed Order:", confirmedOrders[0]);
+    } else if (ordersWithStatus.length > 0) {
+        console.log("📊 [Stats Debug] Example Non-Confirmed Order Status:", ordersWithStatus[0].status);
+    }
+
+    const treatmentRate = ordersWithStatus.length > 0 ? (confirmedOrders.length / ordersWithStatus.length) * 100 : 0;
+    
+    const ordersWithDuration = base.filter(o => o.processingTimeMin != null && o.processingTimeMin > 0);
     const avgDuration = ordersWithDuration.length > 0 
       ? ordersWithDuration.reduce((sum, o) => sum + (o.processingTimeMin || 0), 0) / ordersWithDuration.length 
       : 0;
 
-    const newOrdersCount = orders.filter(o => {
-        const orderDate = new Date(o.orderDate);
-        const isRecallToday = o.recallAt && isSameDay(new Date(o.recallAt), new Date());
-        return isRecallToday && differenceInHours(new Date(), orderDate) <= 24;
+    // Live New Arrivals should NOT be filtered by the calendar date range
+    const allUnprocessed = orders.filter(o => !o.status);
+    const newOrdersCount = allUnprocessed.filter(o => {
+        if (!recallFilterEntryTime) return false;
+        const oTime = new Date(o.createdAt).getTime();
+        const eTime = recallFilterEntryTime.getTime();
+        return oTime >= eTime;
     }).length;
+    
+    if (orders.length > 0) {
+        console.log("🔔 [New Arrivals Debug] Last Order createdAt:", orders[0].createdAt);
+        console.log("🔔 [New Arrivals Debug] Is Last Order New?", recallFilterEntryTime && new Date(orders[0].createdAt).getTime() >= recallFilterEntryTime.getTime());
+    }
 
     return {
       total,
@@ -260,7 +321,7 @@ function OrdersPageContent() {
       avgDuration,
       newOrdersCount
     };
-  }, [orders]);
+  }, [dateFilteredOrders, recallFilterEntryTime]);
 
   const StatCard = ({ 
     title, 
@@ -276,21 +337,25 @@ function OrdersPageContent() {
     value: number | string; 
     icon?: any; 
     active: boolean; 
-    onClick: () => void;
+    onClick?: () => void;
     color: string;
     trend?: string;
     trendUp?: boolean;
-  }) => (
-    <Card 
-      onClick={onClick}
-      className={cn(
-        "relative p-4 sm:p-5 cursor-pointer transition-all duration-300 border border-gray-100 shadow-xs hover:shadow-md rounded-2xl overflow-hidden group bg-white flex flex-col justify-between h-full",
-        active ? "ring-2 ring-[#1F30AD] ring-offset-2" : "hover:border-blue-200"
-      )}
-    >
-      <div className="flex justify-between items-start mb-2 sm:mb-4">
+  }) => {
+    const isClickable = !!onClick;
+
+    return (
+      <Card 
+        onClick={isClickable ? onClick : undefined}
+        className={cn(
+          "relative p-2 sm:p-3 border border-gray-100 shadow-xs rounded-xl overflow-hidden bg-white flex flex-col justify-between h-full",
+          isClickable ? "cursor-pointer transition-all duration-300 hover:shadow-md hover:border-blue-200 group" : "cursor-default",
+          active ? "ring-2 ring-[#1F30AD] ring-offset-2" : ""
+        )}
+      >
+      <div className="flex justify-between items-start mb-1 sm:mb-1">
         <div className={cn("p-1.5 sm:p-2 rounded-lg sm:rounded-xl bg-blue-50 group-hover:bg-blue-100 transition-colors", color)}>
-          {Icon && <Icon className="h-4 w-4 sm:h-5 sm:w-5" />}
+          {Icon && <Icon className="h-4 w-4 sm:h-4 sm:w-4" />}
         </div>
         {trend && (
            <div className={cn(
@@ -303,13 +368,13 @@ function OrdersPageContent() {
       </div>
       <div>
         <p className="text-[8px] sm:text-[10px] font-extrabold text-gray-400 uppercase tracking-widest mb-0.5 sm:mb-1">{title}</p>
-        <h3 className="text-lg sm:text-2xl font-black text-gray-900 tracking-tight leading-tight">{value}</h3>
+        <h3 className="text-lg sm:text-xl font-black text-gray-900 tracking-tight leading-tight">{value}</h3>
       </div>
       {active && (
           <div className="absolute bottom-0 left-0 right-0 h-1 bg-[#1F30AD]" />
       )}
     </Card>
-  );
+  ); };
 
   const productOptions = useMemo(() => {
      const notes = new Set(filteredOrders.map(o => o.productNote).filter(Boolean) as string[]);
@@ -398,16 +463,16 @@ function OrdersPageContent() {
 
         <div className="hidden sm:flex items-center justify-center w-full md:w-auto gap-2 sm:gap-3">
             <DatePickerWithRange date={dateRange} setDate={setDateRange} className="w-[260px]" />
-            <Button 
+            {/* <Button 
                 variant="outline" 
                 size="sm" 
                 className="h-10 rounded-xl px-3 sm:px-4 font-bold border-gray-200 hover:bg-blue-50 hover:text-[#1F30AD] hover:border-blue-200 shrink-0" 
-                onClick={fetchOrders} 
+                onClick={() => refreshData()} 
                 disabled={isLoadingPage}
             >
               <RefreshCw className={cn("h-4 w-4 sm:mr-2", isLoadingPage && "animate-spin")} />
               <span className="hidden sm:inline">Actualiser</span>
-            </Button>
+            </Button> */}
         </div>
       </div>
 
@@ -447,7 +512,7 @@ function OrdersPageContent() {
                     variant="outline" 
                     size="sm" 
                     className="w-full h-8 rounded-xl font-bold border-gray-200 hover:bg-blue-50 text-[#1F30AD] text-xs" 
-                    onClick={fetchOrders} 
+                    onClick={() => refreshData()} 
                     disabled={isLoadingPage}
                 >
                   <RefreshCw className={cn("h-3.5 w-3.5 mr-2", isLoadingPage && "animate-spin")} />
@@ -458,7 +523,7 @@ function OrdersPageContent() {
       </div>
 
       {/* Stats Cards Desktop Grid */}
-      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3 sm:gap-6">
+      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-1 sm:gap-3">
         
 
         {/* Recall Card (Desktop Only) */}
@@ -514,10 +579,9 @@ function OrdersPageContent() {
 
         <StatCard
           title="Taux de Confirmation"
-          value={`${stats.treatmentRate.toFixed(1)}%`}
+          value={`${(stats.treatmentRate || 0).toFixed(1)}%`}
           icon={Target}
-          active={currentFilter === "processed" || filterType === "processed"}
-          onClick={() => toggleFilter("processed")}
+          active={false}
           color="bg-blue-50"
           trend="5.4%"
           trendUp={true}
@@ -537,12 +601,12 @@ function OrdersPageContent() {
 
       {/* Table Section */}
       <div className="space-y-4">
-        <div className="flex items-center justify-between">
+        {/* <div className="flex items-center justify-between">
             <h2 className="text-xl font-black text-gray-900 tracking-tight pl-1">Liste des commandes</h2>
             <div className="flex items-center gap-2">
                 <span className="text-xs font-bold text-gray-400 uppercase tracking-widest bg-gray-50 px-3 py-1 rounded-full border border-gray-100">{stats.total} total</span>
             </div>
-        </div>
+        </div> */}
         
         <div className="bg-white rounded-3xl p-2 border border-gray-100 shadow-sm">
           <DataTable<Order, unknown>

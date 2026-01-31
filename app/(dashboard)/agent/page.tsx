@@ -27,16 +27,16 @@ export default function AgentDashboardPage() {
   const [hasPermission, setHasPermission] = useState<boolean | null>(null);
 
 
-  const fetchStats = async () => {
+  const fetchStats = async (isSilent = false) => {
     if (!session?.user?.id) return;
-    setLoading(true);
+    if (!isSilent) setLoading(true);
     try {
       const data = await getAgentStats(session.user.id);
       setStats(data);
     } catch (error) {
       console.error("Failed to fetch agent stats:", error);
     } finally {
-      setLoading(false);
+      if (!isSilent) setLoading(false);
     }
   };
 
@@ -51,6 +51,17 @@ export default function AgentDashboardPage() {
       }
     });
   }, [session?.user?.id]);
+
+  // 🔄 Auto-Refresh Polling (Every 60 seconds for Agent Dashboard)
+  useEffect(() => {
+    if (!hasPermission || !session?.user?.id) return;
+    
+    const interval = setInterval(() => {
+        fetchStats(true); // Silent background refresh
+    }, 60000);
+
+    return () => clearInterval(interval);
+  }, [hasPermission, session?.user?.id]);
 
 
   if (hasPermission === false) return <PermissionDenied />;
@@ -89,7 +100,7 @@ export default function AgentDashboardPage() {
         <Button 
           variant="outline" 
           size="sm" 
-          onClick={fetchStats} 
+          onClick={() => fetchStats()} 
           disabled={loading}
           className="bg-white border-blue-200 text-blue-700 hover:bg-blue-50"
         >

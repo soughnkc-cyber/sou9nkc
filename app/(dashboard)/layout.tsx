@@ -7,7 +7,7 @@ import { cn } from "@/lib/utils";
 import AuthWrapper from "@/components/authwrapper";
 
 const DashboardLayout = ({ children }: { children: React.ReactNode }) => {
-  const [isCollapsed, setIsCollapsed] = useState(false);
+  const [isCollapsed, setIsCollapsed] = useState(true);
 
   return (
     <AuthWrapper>

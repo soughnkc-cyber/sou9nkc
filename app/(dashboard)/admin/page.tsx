@@ -35,8 +35,8 @@ export default function AdminDashboardPage() {
   const [dateRange, setDateRange] = useState<DateRange | undefined>();
 
 
-  const fetchStats = async () => {
-    setLoading(true);
+  const fetchStats = async (isSilent = false) => {
+    if (!isSilent) setLoading(true);
     try {
       // Convert DateRange to custom range format
       const customRange = dateRange?.from && dateRange?.to ? {
@@ -52,7 +52,7 @@ export default function AdminDashboardPage() {
     } catch (error) {
       console.error("Failed to fetch admin stats:", error);
     } finally {
-      setLoading(false);
+      if (!isSilent) setLoading(false);
     }
   };
 
@@ -72,6 +72,17 @@ export default function AdminDashboardPage() {
       fetchStats();
     }
   }, [hasPermission, dateRange]);
+
+  // 🔄 Auto-Refresh Polling (Every 60 seconds for Dashboard)
+  useEffect(() => {
+    if (!hasPermission) return;
+    
+    const interval = setInterval(() => {
+        fetchStats(true); // Silent background refresh
+    }, 60000);
+
+    return () => clearInterval(interval);
+  }, [hasPermission]);
 
 
 
@@ -104,7 +115,7 @@ export default function AdminDashboardPage() {
           <Button 
             variant="outline" 
             size="sm" 
-            onClick={fetchStats} 
+            onClick={() => fetchStats()} 
             disabled={loading}
             className="bg-white border-slate-200 text-slate-700 hover:bg-blue-50 hover:text-[#1F30AD] hover:border-blue-200 shadow-sm h-10 rounded-xl font-bold"
           >

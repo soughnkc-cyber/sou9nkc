@@ -48,8 +48,8 @@ export default function ReportingPage() {
     setOptions(data);
   }, []);
 
-  const fetchData = useCallback(async () => {
-    setLoading(true);
+  const fetchData = useCallback(async (isSilent = false) => {
+    if (!isSilent) setLoading(true);
     try {
       const data = await getReportStats({
         startDate: filters.dateRange.from,
@@ -63,7 +63,7 @@ export default function ReportingPage() {
     } catch (error) {
       console.error("Failed to fetch report stats:", error);
     } finally {
-      setLoading(false);
+      if (!isSilent) setLoading(false);
     }
   }, [filters]);
 
@@ -79,6 +79,17 @@ export default function ReportingPage() {
       }
     });
   }, [fetchOptions, fetchData]);
+
+  // 🔄 Auto-Refresh Polling (Every 60 seconds for Reporting)
+  useEffect(() => {
+    if (!hasPermission) return;
+    
+    const interval = setInterval(() => {
+        fetchData(true); // Silent background refresh
+    }, 60000);
+
+    return () => clearInterval(interval);
+  }, [hasPermission, fetchData]);
 
 
   const handleExport = () => {
@@ -138,7 +149,7 @@ export default function ReportingPage() {
           <Button 
             variant="outline" 
             size="sm" 
-            onClick={fetchData} 
+            onClick={() => fetchData()} 
             disabled={loading}
             className="h-10 rounded-xl px-3 sm:px-4 font-bold border-gray-200 text-[#1F30AD] bg-blue-50/50 hover:bg-[#1F30AD] hover:text-white hover:border-[#1F30AD] transition-all shrink-0"
           >

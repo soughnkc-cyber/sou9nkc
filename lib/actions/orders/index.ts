@@ -49,7 +49,12 @@ export const insertNewOrders = async (shopifyOrders: ShopifyOrder[]) => {
 
     orderBy: { id: "asc" },
   });
-  if (agents.length === 0) return console.warn("Aucun agent trouvé pour l'attribution automatique");
+  console.log(`📡 [Assignment] Found ${agents.length} active agents with canViewOrders=true:`, agents.map(a => `${a.name} (${a.role}, ${a.id})`).join(", "));
+  
+  if (agents.length === 0) {
+    console.warn("⚠️ [Assignment] Aucun agent éligible trouvé ! Vérifiez role, status:ACTIVE et canViewOrders:true");
+    return;
+  }
 
   // Identifier les agents spécialisés (ceux qui sont dans assignedAgentIds d'au moins un produit)
   const productsWithAssignments = await prisma.product.findMany({
@@ -57,6 +62,7 @@ export const insertNewOrders = async (shopifyOrders: ShopifyOrder[]) => {
     select: { assignedAgentIds: true }
   });
   const specializedAgentIds = new Set(productsWithAssignments.flatMap(p => p.assignedAgentIds));
+  console.log(`🎯 [Assignment] Specialized agents count: ${specializedAgentIds.size}`);
 
   const insertedOrderIds: string[] = [];
 
@@ -105,42 +111,89 @@ export const insertNewOrders = async (shopifyOrders: ShopifyOrder[]) => {
 
 
   // ----------------------------
-  // 3️⃣ Attribution des agents (Uniquement pour les nouvelles commandes)
+  // 3️⃣ Attribution des agents
   // ----------------------------
   const ordersToAssign = await prisma.order.findMany({
     where: { id: { in: insertedOrderIds }, agentId: null },
     include: { products: true },
   });
 
-  // Fetch current load once
+  console.log(`🔍 [Assignment] Orders to assign: ${ordersToAssign.length}`);
+
+  // Fetch current load
   const agentOrderCounts = await prisma.order.groupBy({
     by: ['agentId'],
     _count: { id: true },
     where: { agentId: { not: null } }
   });
 
-  // Local map to track assignment in this batch
-  const localCounts = new Map<string | null, number>();
-  agentOrderCounts.forEach(c => localCounts.set(c.agentId, c._count.id));
+  const localCounts = new Map<string, number>();
+  agentOrderCounts.forEach(c => {
+    if (c.agentId) localCounts.set(c.agentId, c._count.id);
+  });
 
   for (const order of ordersToAssign) {
     const getAgentScore = (agentId: string) => localCounts.get(agentId) || 0;
+    console.log(`⚡ [Assignment] Processing Order #${order.orderNumber} with ${order.products.length} known products`);
 
-    const compatibleAgents = agents.filter(agent => {
-      const isSpecialized = specializedAgentIds.has(agent.id);
+    if (order.products.length === 0) {
+        console.warn(`⚠️ [Assignment] Order #${order.orderNumber} has no products in DB. Treating as Totally General.`);
+    }
+
+    // Tentative 1: Séparation stricte (Spécialisé -> Spécialisé, Général -> Général) + Hidden
+    let candidateAgents = agents.filter(agent => {
+      const isAgentSpecialized = specializedAgentIds.has(agent.id);
+
+      if (order.products.length === 0) {
+          // Produit inconnu en base: Réservé aux non-spécialisés par défaut
+          return !isAgentSpecialized;
+      }
 
       return order.products.every(p => {
         const assigned = p.assignedAgentIds || [];
         const hidden = p.hiddenForAgentIds || [];
 
+        // Règle de base: Jamais si l'agent est banni du produit
         if (hidden.includes(agent.id)) return false;
-        if (isSpecialized) return assigned.includes(agent.id);
-        return true;
+
+        if (assigned.length > 0) {
+          // Produit Spécialisé: L'agent DOIT être dedans
+          return assigned.includes(agent.id);
+        } else if (hidden.length > 0) {
+          // Produit avec restrictions uniquement: Tout le monde sauf les banni (spécialisés inclus)
+          return !hidden.includes(agent.id);
+        } else {
+          // Produit totalement général (ni assigned ni hidden): Réservé aux non-spécialisés
+          return !isAgentSpecialized;
+        }
       });
     });
 
-    if (compatibleAgents.length > 0) {
-      const bestAgent = compatibleAgents.sort((a, b) => {
+    console.log(`🔸 [Assignment] Tier 1 candidate count: ${candidateAgents.length}`);
+
+    // Tentative 2: Fallback - On ignore la séparation Spécialisé/Général, on ne garde que le Hidden
+    if (candidateAgents.length === 0) {
+      console.log(`⚠️ [Assignment] Commande #${order.orderNumber}: Aucun match strict, passage au Fallback (Hidden uniquement)`);
+      candidateAgents = agents.filter(agent => {
+        if (order.products.length === 0) return true; // Si pas de produit, n'importe qui
+        return order.products.every(p => {
+          const hidden = p.hiddenForAgentIds || [];
+          return !hidden.includes(agent.id);
+        });
+      });
+      console.log(`🔸 [Assignment] Tier 2 candidate count: ${candidateAgents.length}`);
+    }
+
+    // Tentative 3: Secours ultime (Tous les agents actifs)
+    if (candidateAgents.length === 0) {
+      console.warn(`🚨 [Assignment] Commande #${order.orderNumber}: Conflit total, attribution d'urgence à tout agent actif`);
+      candidateAgents = agents;
+      console.log(`🔸 [Assignment] Tier 3 candidate count: ${candidateAgents.length}`);
+    }
+
+    if (candidateAgents.length > 0) {
+      // Équilibrage : On trie par nombre de commandes actuelles
+      const bestAgent = candidateAgents.sort((a, b) => {
         const scoreA = getAgentScore(a.id);
         const scoreB = getAgentScore(b.id);
         if (scoreA === scoreB) return Math.random() - 0.5;
@@ -152,12 +205,14 @@ export const insertNewOrders = async (shopifyOrders: ShopifyOrder[]) => {
         data: { agentId: bestAgent.id },
       });
       
-      // Update local count for the next order in the loop
-      localCounts.set(bestAgent.id, getAgentScore(bestAgent.id) + 1);
-      
-      console.log(`Commande #${order.orderNumber} assignée à ${bestAgent.id}`);
+      const newScore = getAgentScore(bestAgent.id) + 1;
+      localCounts.set(bestAgent.id, newScore);
+      console.log(`✅ [Assignment] Commande #${order.orderNumber} assignée à ${bestAgent.name} (ID: ${bestAgent.id}, Nouveau Score: ${newScore})`);
+    } else {
+        console.error(`❌ [Assignment] Commande #${order.orderNumber}: IMPOSSIBLE d'assigner un agent (liste d'agents actifs vide)`);
     }
   }
+
 };
 
 
@@ -177,6 +232,9 @@ export const getOrders = async (user: UserLite) => {
   // Seuls ADMIN et SUPERVISOR (si autorisé à voir) voient tout.
   const isGlobalViewer = sessionUser.role === "ADMIN" || sessionUser.role === "SUPERVISOR";
 
+  const allStatuses = await prisma.status.findMany({ select: { id: true, name: true, etat: true } });
+  console.log("📝 [DB Statuses Check]:", allStatuses);
+
   const orders = await prisma.order.findMany({
     where: isGlobalViewer ? {} : { agentId: sessionUser.id },
     include: {
@@ -188,23 +246,35 @@ export const getOrders = async (user: UserLite) => {
     orderBy: { orderDate: "desc" },
   });
 
+  // 📝 Server Diagnostics
+  const totalCount = await prisma.order.count();
+  const latestOrder = await prisma.order.findFirst({ orderBy: { createdAt: 'desc' } });
+  console.log(`🔍 [getOrders Debug] User: ${sessionUser.name} (${sessionUser.role}), Visible: ${orders.length}, Total in DB: ${totalCount}`);
+  if (latestOrder) {
+      console.log(`🔍 [getOrders Debug] Newest Order in DB: #${latestOrder.orderNumber}, CreatedAt: ${latestOrder.createdAt.toISOString()}, ServerNow: ${new Date().toISOString()}`);
+  }
 
-  return orders.map((o) => ({
-    id: o.id,
-    orderNumber: o.orderNumber,
-    customerName: o.customerName,
-    customerPhone: o.customerPhone,
-    productNote: o.productNote,
-    orderDate: o.orderDate.toISOString(),
-    totalPrice: o.totalPrice,
-    recallAt: o.recallAt?.toISOString() || null,
-    processingTimeMin: o.processingTimeMin,
-    recallAttempts: o.recallAttempts,
-    status: o.status ? { id: o.status.id, name: o.status.name, color: o.status.color } : null,
-    agent: o.agent
-      ? { id: o.agent.id, name: o.agent.name, phone: o.agent.phone, iconColor: o.agent.iconColor }
-      : null,
-  }));
+
+  return {
+    orders: orders.map((o) => ({
+      id: o.id,
+      orderNumber: o.orderNumber,
+      customerName: o.customerName,
+      customerPhone: o.customerPhone,
+      productNote: o.productNote,
+      orderDate: o.orderDate.toISOString(),
+      totalPrice: o.totalPrice,
+      recallAt: o.recallAt?.toISOString() || null,
+      processingTimeMin: o.processingTimeMin,
+      recallAttempts: o.recallAttempts,
+      status: o.status ? { id: o.status.id, name: o.status.name, color: o.status.color, etat: o.status.etat } : null,
+      agent: o.agent
+        ? { id: o.agent.id, name: o.agent.name, phone: o.agent.phone, iconColor: o.agent.iconColor }
+        : null,
+      createdAt: o.createdAt.toISOString(),
+    })),
+    serverTime: new Date().toISOString()
+  };
 };
 
 export const updateOrderRecallAt = async (
