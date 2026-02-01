@@ -182,10 +182,9 @@ export function SidebarContent({
       <div className="flex-1 overflow-auto px-4 py-2 space-y-6 scrollbar-hide">
         {navigationSections.map((section) => {
           const visibleItems = section.items.filter(item => {
-            // Optimistic UI: If no role found yet (race condition), show everything or default to safe?
-            // User requested: "displayed". So we show if role matches OR if role is undefined (optimistic)
+            // Strict UI: Only show if role is confirmed and matches
             const roleToCheck = effectiveRole; 
-            const hasRole = !roleToCheck || item.roles.includes(roleToCheck);
+            const hasRole = roleToCheck && item.roles.includes(roleToCheck);
             
             if (!hasRole) return false;
             
