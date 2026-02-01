@@ -105,23 +105,13 @@ export default function AdminDashboardPage() {
 
   return (
     <div className="flex flex-col gap-6 pb-6 bg-slate-50/20">
-      <div className="flex items-center justify-between border-b border-slate-100 pb-3">
-        <div>
+      <div className="flex items-center justify-end border-b border-slate-100 pb-3">
+        {/* <div>
           <h1 className="text-4xl font-black text-slate-900 tracking-tight">Vue d'ensemble</h1>
           <p className="text-slate-500 font-medium">Analyse et performance de la plateforme</p>
-        </div>
-        <div className="flex gap-3">
+        </div> */}
+        <div className="">
           <DatePickerWithRange date={dateRange} setDate={setDateRange} className="w-[260px]" />
-          <Button 
-            variant="outline" 
-            size="sm" 
-            onClick={() => fetchStats()} 
-            disabled={loading}
-            className="bg-white border-slate-200 text-slate-700 hover:bg-blue-50 hover:text-[#1F30AD] hover:border-blue-200 shadow-sm h-10 rounded-xl font-bold"
-          >
-            <RefreshCwIcon className={`mr-2 h-4 w-4 ${loading && "animate-spin"}`} />
-            Actualiser
-          </Button>
         </div>
       </div>
 

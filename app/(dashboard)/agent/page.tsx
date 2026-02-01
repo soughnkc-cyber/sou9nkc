@@ -97,16 +97,6 @@ export default function AgentDashboardPage() {
           </div>
           <p className="text-muted-foreground font-medium">Voici vos performances personnelles ce mois-ci</p>
         </div>
-        <Button 
-          variant="outline" 
-          size="sm" 
-          onClick={() => fetchStats()} 
-          disabled={loading}
-          className="bg-white border-blue-200 text-blue-700 hover:bg-blue-50"
-        >
-          <RefreshCwIcon className={cn("mr-2 h-4 w-4", loading && "animate-spin")} />
-          Actualiser
-        </Button>
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">

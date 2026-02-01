@@ -337,31 +337,29 @@ function OrdersPageContent() {
         onClick={() => isClickable && onClick?.()}
         style={{ backgroundColor: bgColor }}
         className={cn(
-          "relative p-2 sm:p-3 border border-gray-100 shadow-xs rounded-xl overflow-hidden flex flex-col justify-between h-full",
-          isClickable ? "cursor-pointer transition-all duration-300 hover:shadow-md hover:border-blue-200 group" : "cursor-default",
-          active ? "ring-2 ring-[#1F30AD] ring-offset-2" : ""
+          "relative p-3 sm:p-4 border-none shadow-none rounded-2xl overflow-hidden flex flex-col h-full min-h-[80px] gap-1",
+          isClickable ? "cursor-pointer transition-all duration-300 hover:brightness-95 active:scale-95" : "cursor-default"
         )}
       >
-      <div className="flex justify-between items-start mb-1 sm:mb-1">
-        <div className={cn("p-1.5 sm:p-2 rounded-lg sm:rounded-xl group-hover:bg-black/5 transition-colors", color)}>
-          {Icon && <Icon className="h-4 w-4 sm:h-4 sm:w-4" />}
-        </div>
-        {trend && (
-           <div className={cn(
-             "px-1.5 py-0.5 rounded-full text-[8px] sm:text-[10px] font-bold flex items-center gap-0.5",
-             trendUp ? "bg-green-500/10 text-green-600" : "bg-red-500/10 text-red-600"
-           )}>
-              {trendUp ? "↑" : "↓"} {trend}
-           </div>
+      <div className="flex justify-between items-start mb-0">
+        <p className="text-[10px] font-black text-gray-900 uppercase tracking-widest opacity-80">{title}</p>
+        
+        {active && (
+           <div className="absolute top-3 right-3 h-2 w-2 rounded-full bg-[#1F30AD]" />
         )}
       </div>
-      <div>
-        <p className="text-[10px] sm:text-[10px] font-black text-gray-900 uppercase tracking-widest mb-0.5 sm:mb-1">{title}</p>
-        <h3 className="text-lg sm:text-xl font-black text-gray-900 tracking-tight leading-tight">{value}</h3>
+      
+      <div className="flex justify-between items-end mt-1">
+        <h3 className="text-xl sm:text-2xl font-black text-gray-900 tracking-tight leading-none">{value}</h3>
+         {(trendUp !== undefined && trend !== undefined) && (
+            <div className={cn(
+              "px-1.5 py-0.5 rounded-lg text-[10px] font-bold flex items-center gap-1",
+              trendUp ? "bg-white/50 text-green-700" : "bg-white/50 text-red-700"
+            )}>
+               {trendUp ? "↑" : "↓"} {trend}
+            </div>
+         )}
       </div>
-      {active && (
-          <div className="absolute bottom-0 left-0 right-0 h-1 bg-[#1F30AD]" />
-      )}
     </Card>
   ); };
 
@@ -490,119 +488,87 @@ function OrdersPageContent() {
       </div>
 
       {/* Stats Cards */}
-      {/* Sticky Header Mobile - Persistent container for Recall Card and Filters */}
-      <div className="sm:hidden sticky top-[48px] z-40 bg-gray-50 -mx-4 px-4 pb-1 pt-2 -mt-2 border-b border-gray-100/50 mb-1">
-          <div className="w-full">
-             {/* Recall Card (Mobile Link) - Now Full Width */}
-              {(currentFilter === "torecall" || filterType === "torecall" || currentFilter === "new_arrivals") ? (
-               <StatCard
-                 title="Nouveaux Arrivés"
-                 value={stats.newOrdersCount}
-                 icon={RefreshCw}
-                 active={currentFilter === "new_arrivals"}
-                 onClick={() => toggleFilter(currentFilter === "new_arrivals" ? "torecall" : "new_arrivals")}
-                 color="bg-purple-500/10 text-purple-600"
-                 bgColor="#f9e3ff"
-                 trend="Live"
-                 trendUp={true}
-               />
-             ) : (
-               <StatCard
-                 title="À Rappeler"
-                 value={stats.recallToday}
-                 icon={PhoneIncoming}
-                 active={currentFilter === "torecall" || filterType === "torecall"}
-                 onClick={() => toggleFilter("torecall")}
-                 color="bg-red-500/10 text-red-600"
-                 bgColor="#ffe3e3"
-                 trend="3.2%"
-                 trendUp={false}
-               />
-             )}
-          </div>
-      </div>
-
-      {/* Stats Cards Desktop Grid */}
-      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-1 sm:gap-3">
+      {/* Stats Cards Section */}
+      <div className="flex flex-col gap-2 sm:gap-4 -mt-2 sm:mt-0">
         
-
-        {/* Recall Card (Desktop Only) */}
-        <div className="hidden sm:block">
-        {(currentFilter === "torecall" || filterType === "torecall" || currentFilter === "new_arrivals") ? (
-          <StatCard
-            title="Nouveaux Arrivés"
-            value={stats.newOrdersCount}
-            icon={RefreshCw}
-            active={currentFilter === "new_arrivals"}
-            onClick={() => toggleFilter(currentFilter === "new_arrivals" ? "torecall" : "new_arrivals")}
-            color="bg-purple-500/10 text-purple-600"
-            bgColor="#f9e3ff"
-            trend="Live"
-            trendUp={true}
-          />
-        ) : (
-           <StatCard
-            title="À Rappeler (Aujourd'hui)"
-            value={stats.recallToday}
-            icon={PhoneIncoming}
-            active={currentFilter === "torecall" || filterType === "torecall"}
-            onClick={() => toggleFilter("torecall")}
-            color="bg-red-500/10 text-red-600"
-            bgColor="#ffe3e3"
-            trend="3.2%"
-            trendUp={false}
-          />
-        )}
+        {/* Row 1: Recall / New Arrivals (Full Width) */}
+        <div className="w-full">
+            {(currentFilter === "torecall" || filterType === "torecall" || currentFilter === "new_arrivals") ? (
+              <StatCard
+                title="Nouveaux Arrivés"
+                value={stats.newOrdersCount}
+                icon={RefreshCw}
+                active={currentFilter === "new_arrivals"}
+                onClick={() => toggleFilter(currentFilter === "new_arrivals" ? "torecall" : "new_arrivals")}
+                color="bg-purple-500/10 text-purple-600"
+                bgColor="#f9e3ff"
+                trend="Live"
+                trendUp={true}
+              />
+            ) : (
+               <StatCard
+                title="À RAPPELER"
+                value={stats.recallToday}
+                icon={PhoneIncoming}
+                active={currentFilter === "torecall" || filterType === "torecall"}
+                onClick={() => toggleFilter("torecall")}
+                color="bg-red-500/10 text-red-600"
+                bgColor="#ffe3e3"
+                trend="3.2%"
+                trendUp={false} // Assuming urgency is 'negative' trend or just style
+              />
+            )}
         </div>
-        
 
+        {/* Row 2: Grid 2x2 (Mobile) / 4 cols (Desktop) */}
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-2 sm:gap-4">
+            <StatCard
+              title="TOTAL COMMANDES"
+              value={stats.total}
+              icon={ShoppingCart}
+              active={currentFilter === "all" && filterType === null}
+              onClick={() => toggleFilter("all")}
+              color="bg-blue-500/10 text-blue-600"
+              bgColor="#e3f0ff"
+              trend="12.5%"
+              trendUp={true}
+            />
 
-        <StatCard
-          title="Total Commandes"
-          value={stats.total}
-          icon={ShoppingCart}
-          active={currentFilter === "all" && filterType === null}
-          onClick={() => toggleFilter("all")}
-          color="bg-blue-500/10 text-blue-600"
-          bgColor="#e3f0ff"
-          trend="12.5%"
-          trendUp={true}
-        />
+            <StatCard
+              title="TOTAL REVENUS"
+              value={`${stats.totalRevenue.toLocaleString("fr-FR")} MRU`}
+              icon={DollarSign}
+              active={false}
+              onClick={() => {}}
+              color="bg-emerald-500/10 text-emerald-600"
+              bgColor="#e3ffef"
+              trend="8.1%"
+              trendUp={true}
+            />
 
-        <StatCard
-          title="Total Revenus"
-          value={`${stats.totalRevenue.toLocaleString("fr-FR")} MRU`}
-          icon={DollarSign}
-          active={false}
-          onClick={() => {}}
-          color="bg-emerald-500/10 text-emerald-600"
-          bgColor="#e3ffef"
-          trend="8.1%"
-          trendUp={true}
-        />
+            <StatCard
+              title="TAUX DE CONFIRMATION"
+              value={`${(stats.treatmentRate || 0).toFixed(1)}%`}
+              icon={Target}
+              active={false}
+              color="bg-yellow-500/10 text-yellow-600"
+              bgColor="#fffbe3"
+              trend="5.4%"
+              trendUp={true}
+            />
 
-        <StatCard
-          title="Taux de Confirmation"
-          value={`${(stats.treatmentRate || 0).toFixed(1)}%`}
-          icon={Target}
-          active={false}
-          color="bg-yellow-500/10 text-yellow-600"
-          bgColor="#fffbe3"
-          trend="5.4%"
-          trendUp={true}
-        />
-
-        <StatCard
-          title="Moy Temps Appel"
-          value={`${Math.round(stats.avgDuration)} min`}
-          icon={Clock}
-          active={false}
-          onClick={() => {}}
-          color="bg-gray-500/10 text-gray-600"
-          bgColor="#f6f6f6"
-          trend="2.1%"
-          trendUp={false}
-        />
+            <StatCard
+              title="MOY TEMPS APPEL"
+              value={`${Math.round(stats.avgDuration)} min`}
+              icon={Clock}
+              active={false}
+              onClick={() => {}}
+              color="bg-gray-500/10 text-gray-600"
+              bgColor="#f6f6f6"
+              trend="2.1%"
+              trendUp={false}
+            />
+        </div>
       </div>
 
       {/* Table Section */}

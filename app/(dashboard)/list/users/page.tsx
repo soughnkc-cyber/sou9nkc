@@ -186,32 +186,39 @@ export default function UsersPage() {
 
 
 
-  const StatCard = ({ 
-    title, 
-    value, 
-    icon: Icon, 
-    color,
-    description
-  }: { 
-    title: string; 
-    value: number | string; 
-    icon?: any;
-    color?: string;
-    description?: React.ReactNode;
-  }) => (
-    <Card className="relative p-3 transition-all duration-300 border border-gray-100 shadow-xs hover:shadow-md rounded-xl overflow-hidden group bg-white flex flex-col justify-between h-full">
-      <div className="flex justify-between items-start mb-1">
-        <div className={cn("p-1.5 rounded-lg bg-gray-50 group-hover:bg-blue-50 transition-colors", color)}>
-          {Icon && <Icon className="h-4 w-4" />}
+  const StatCard = ({ title, value, icon: Icon, active, onClick, color, trend, trendUp, isClickable = true, bgColor }: any) => {
+    return (
+      <Card
+        onClick={() => isClickable && onClick?.()}
+        style={{ backgroundColor: bgColor }}
+        className={cn(
+          "relative p-2 sm:p-3 border border-gray-100 shadow-xs rounded-xl overflow-hidden flex flex-col justify-between h-full",
+          isClickable ? "cursor-pointer transition-all duration-300 hover:shadow-md hover:border-blue-200 group" : "cursor-default",
+          active ? "ring-2 ring-[#1F30AD] ring-offset-2" : ""
+        )}
+      >
+      <div className="flex justify-between items-start mb-1 sm:mb-1">
+        <div className={cn("p-1.5 sm:p-2 rounded-lg sm:rounded-xl group-hover:bg-black/5 transition-colors", color)}>
+          {Icon && <Icon className="h-4 w-4 sm:h-4 sm:w-4" />}
         </div>
+        {trend && (
+           <div className={cn(
+             "px-1.5 py-0.5 rounded-full text-[8px] sm:text-[10px] font-bold flex items-center gap-0.5",
+             trendUp ? "bg-green-500/10 text-green-600" : "bg-red-500/10 text-red-600"
+           )}>
+              {trendUp ? "↑" : "↓"} {trend}
+           </div>
+        )}
       </div>
       <div>
-        <p className="text-[10px] font-extrabold text-gray-400 uppercase tracking-widest mb-0.5">{title}</p>
-        <h3 className="text-xl font-black text-gray-900 tracking-tight leading-tight">{value}</h3>
-        {description && <div className="mt-1">{description}</div>}
+        <p className="text-[10px] sm:text-[10px] font-black text-gray-900 uppercase tracking-widest mb-0.5 sm:mb-1">{title}</p>
+        <h3 className="text-lg sm:text-xl font-black text-gray-900 tracking-tight leading-tight">{value}</h3>
       </div>
+      {active && (
+          <div className="absolute bottom-0 left-0 right-0 h-1 bg-[#1F30AD]" />
+      )}
     </Card>
-  );
+  ); };
 
   if (hasPermission === false) return <PermissionDenied />;
   if (hasPermission === null) return (
@@ -239,47 +246,29 @@ export default function UsersPage() {
         </div>
       </div>
 
-      {/* Statistiques */}
-      {users.length > 0 && (
-        <div className="grid grid-cols-2 sm:grid-cols-2 gap-2 sm:gap-3">
+
+
+      <div className="grid grid-cols-2 gap-4">
           <StatCard
             title="Total Utilisateurs"
             value={stats.total}
             icon={Users}
-            color="bg-blue-50"
-            description={
-              <div className="flex flex-wrap gap-1">
-                <span className="text-[8px] uppercase font-bold text-gray-400">{stats.byRole.ADMIN} Adm</span>
-                <span className="text-[8px] uppercase font-bold text-gray-400">{stats.byRole.AGENT} Agt</span>
-              </div>
-            }
+            color="bg-blue-500/10 text-blue-600"
+            bgColor="#e3f0ff"
+            trend="Total"
+            trendUp={true}
           />
 
           <StatCard
             title="Utilisateurs Actifs"
             value={stats.active}
             icon={UserCheck}
-            color="bg-green-50"
-            description={
-              <div className="text-[10px] font-bold text-green-600">
-                {percent(stats.active, stats.total)}% du total
-              </div>
-            }
+            color="bg-emerald-500/10 text-emerald-600"
+            bgColor="#e3ffef"
+            trend={`${percent(stats.active, stats.total)}%`}
+            trendUp={true}
           />
-
-          {/* <StatCard
-            title="Utilisateurs Inactifs"
-            value={stats.inactive}
-            icon={UserX}
-            color="bg-red-50"
-            description={
-              <div className="text-[10px] font-bold text-red-600">
-                {percent(stats.inactive, stats.total)}% du total
-              </div>
-            }
-          /> */}
-        </div>
-      )}
+      </div>
 
       {/* Tableau des utilisateurs */}
       <Card>

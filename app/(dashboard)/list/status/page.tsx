@@ -44,32 +44,29 @@ export default function StatusPage() {
   const [isLoadingPage, setIsLoadingPage] = useState(false);
   const [hasPermission, setHasPermission] = useState<boolean | null>(null);
 
-  const StatCard = ({ 
-    title, 
-    value, 
-    icon: Icon, 
-    color,
-    description
-  }: { 
-    title: string; 
-    value: number | string; 
-    icon?: any;
-    color?: string;
-    description?: React.ReactNode;
-  }) => (
-    <Card className="relative p-3 transition-all duration-300 border border-gray-100 shadow-xs hover:shadow-md rounded-xl overflow-hidden group bg-white flex flex-col justify-between h-full">
-      <div className="flex justify-between items-start mb-1">
-        <div className={cn("p-1.5 rounded-lg bg-gray-50 group-hover:bg-blue-50 transition-colors", color)}>
-          {Icon && <Icon className="h-4 w-4" />}
+  const StatCard = ({ title, value, icon: Icon, active, onClick, color, trend, trendUp, isClickable = true, bgColor, description }: any) => {
+    return (
+      <Card
+        onClick={() => isClickable && onClick?.()}
+        style={{ backgroundColor: bgColor }}
+        className={cn(
+          "relative p-2 sm:p-3 border border-gray-100 shadow-xs rounded-xl overflow-hidden flex flex-col justify-between h-full",
+          isClickable ? "cursor-pointer transition-all duration-300 hover:shadow-md hover:border-blue-200 group" : "cursor-default",
+          active ? "ring-2 ring-[#1F30AD] ring-offset-2" : ""
+        )}
+      >
+      <div className="flex justify-between items-start mb-1 sm:mb-1">
+        <div className={cn("p-1.5 sm:p-2 rounded-lg sm:rounded-xl group-hover:bg-black/5 transition-colors", color)}>
+          {Icon && <Icon className="h-4 w-4 sm:h-4 sm:w-4" />}
         </div>
       </div>
       <div>
-        <p className="text-[10px] font-extrabold text-gray-400 uppercase tracking-widest mb-0.5">{title}</p>
-        <h3 className="text-xl font-black text-gray-900 tracking-tight leading-tight">{value}</h3>
-        {description && <div className="mt-1">{description}</div>}
+        <p className="text-[10px] sm:text-[10px] font-black text-gray-900 uppercase tracking-widest mb-0.5 sm:mb-1">{title}</p>
+        <h3 className="text-lg sm:text-xl font-black text-gray-900 tracking-tight leading-tight">{value}</h3>
+        {description && <div className="mt-1 text-xs text-muted-foreground">{description}</div>}
       </div>
     </Card>
-  );
+  ); };
 
 
   /* Modals */
@@ -205,11 +202,11 @@ export default function StatusPage() {
     <div className="space-y-6 sm:space-y-8 max-w-[1600px] mx-auto">
 
       {/* Header */}
-      <div className="flex flex-col md:flex-row justify-end items-center gap-4 sm:gap-6">
-        {/* <div className="text-center md:text-left">
+      {/* <div className="flex flex-col md:flex-row justify-end items-center gap-4 sm:gap-6">
+        <div className="text-center md:text-left">
           <h1 className="text-2xl sm:text-3xl font-black text-gray-900 tracking-tight leading-tight">Statuts</h1>
           <p className="text-xs sm:text-sm text-gray-500 font-medium mt-1">Gestion des statuts et rappels clients</p>
-        </div> */}
+        </div>
 
         <div className="flex items-center justify-center w-full md:w-auto gap-2 sm:gap-3">
             <Button 
@@ -225,25 +222,27 @@ export default function StatusPage() {
 
 
         </div>
-      </div>
+      </div> */}
 
       {/* Statistiques */}
       {statuses.length > 0 && (
-        <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 sm:gap-3">
+        <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
           <StatCard
             title="Total Statuts"
             value={stats.total}
             icon={ListChecks}
-            color="bg-blue-50"
+            color="bg-blue-500/10 text-blue-600"
+            bgColor="#e3f0ff"
           />
 
           <StatCard
             title="Avec Rappel"
             value={stats.withRecall}
             icon={BellRing}
-            color="bg-blue-50"
+            color="bg-amber-500/10 text-amber-600"
+            bgColor="#fff4e3"
             description={
-              <div className="text-[10px] font-bold text-[#1F30AD]">
+              <div className="text-[10px] font-bold text-amber-600">
                 {percent(stats.withRecall, stats.total)}% du total
               </div>
             }
@@ -253,7 +252,8 @@ export default function StatusPage() {
             title="Standard"
             value={stats.withoutRecall}
             icon={Clock}
-            color="bg-gray-50"
+            color="bg-gray-500/10 text-gray-600"
+            bgColor="#f8f9fa"
             description={
               <div className="text-[10px] font-bold text-gray-600">
                 {percent(stats.withoutRecall, stats.total)}% du total
