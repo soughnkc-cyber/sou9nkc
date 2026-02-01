@@ -48,6 +48,7 @@ function OrdersPageContent() {
   const [selectedOrders, setSelectedOrders] = useState<Order[]>([]);
   const [dateRange, setDateRange] = useState<DateRange | undefined>();
   const [lastServerTime, setLastServerTime] = useState<string | null>(null);
+  const [isPaused, setIsPaused] = useState(false); // New state to pause refresh
   const user = session.data?.user;
   const isAdmin = user?.role === "ADMIN";
 
@@ -198,12 +199,18 @@ function OrdersPageContent() {
   useEffect(() => {
     if (!hasPermission || !user) return;
     
+    // Skip if paused (editing)
+    if (isPaused) { 
+        console.log("⏸️ [Refresh] Paused due to user interaction");
+        return; 
+    }
+    
     const interval = setInterval(() => {
         refreshData(true); // Silent background refresh
     }, 5000);
 
     return () => clearInterval(interval);
-  }, [hasPermission, user, refreshData]);
+  }, [hasPermission, user, refreshData, isPaused]);
 
   const [currentFilter, setCurrentFilter] = useState<string | null>(null);
   const [recallFilterEntryTime, setRecallFilterEntryTime] = useState<Date | null>(null);
@@ -427,7 +434,12 @@ function OrdersPageContent() {
         priceOptions, // Add price options
         handleStatusChange, 
         handleAgentChange, 
-        handleRecallChange
+        handleRecallChange,
+        undefined, // onView
+        undefined, // onEdit
+        undefined, // onDelete
+        () => setIsPaused(true), // onInteractionStart
+        () => setIsPaused(false) // onInteractionEnd
     );
   }, [statuses, agents, productOptions, priceOptions, user?.role, (user as any)?.canEditOrders, handleStatusChange, handleAgentChange, handleRecallChange]);
 

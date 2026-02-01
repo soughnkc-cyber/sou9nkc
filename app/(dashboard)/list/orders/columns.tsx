@@ -194,7 +194,9 @@ export const getColumns = (
   onRecallChange: (orderId: string, date: string | null) => void,
   onView?: (o: Order) => void,
   onEdit?: (o: Order) => void,
-  onDelete?: (o: Order) => void
+  onDelete?: (o: Order) => void,
+  onInteractionStart?: () => void,
+  onInteractionEnd?: () => void
 ): ColumnDef<Order>[] => {
   const isAdminOrSupervisor = role === "ADMIN" || role === "SUPERVISOR";
   const isAdmin = role === "ADMIN";
@@ -361,6 +363,8 @@ export const getColumns = (
             order={row.original}
             onChange={onRecallChange}
             readOnly={!canEditOrders || isAdminOrSupervisor}
+            onInteractionStart={onInteractionStart}
+            onInteractionEnd={onInteractionEnd}
           />
         );
       },

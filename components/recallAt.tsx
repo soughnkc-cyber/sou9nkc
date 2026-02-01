@@ -12,25 +12,54 @@ export const RecallCell = ({
   order,
   onChange,
   readOnly,
+  onInteractionStart,
+  onInteractionEnd,
 }: {
   order: Order;
   onChange: (orderId: string, date: string | null) => void;
   readOnly?: boolean;
+  onInteractionStart?: () => void;
+  onInteractionEnd?: () => void;
 }) => {
   const [open, setOpen] = useState(false);
+  const [tempValue, setTempValue] = useState<string>("");
 
-  // 🔹 Si open ou (pas de date et pas readOnly) -> input
-  // Mais si date existe, on affiche le texte formatted, et au clic on ouvre
+  const startEditing = () => {
+    if (readOnly) return;
+    onInteractionStart?.();
+    setTempValue(order.recallAt?.slice(0, 16) ?? "");
+    setOpen(true);
+  };
+
+  const commitChange = () => {
+    // Only call onChange if the value actually changed
+    // (Optional optimization, but good for reducing network calls)
+    const current = order.recallAt?.slice(0, 16) ?? "";
+    if (tempValue !== current) {
+       onChange(order.id, tempValue || null);
+    }
+    setOpen(false);
+    onInteractionEnd?.();
+  };
+
+  const handleKeyDown = (e: React.KeyboardEvent) => {
+    if (e.key === 'Enter') {
+      commitChange();
+    } else if (e.key === 'Escape') {
+      setOpen(false); // Cancel
+      onInteractionEnd?.();
+    }
+  };
+
   if (open) {
     return (
       <Input
         type="datetime-local"
-        value={order.recallAt?.slice(0, 16) ?? ""}
+        value={tempValue}
         autoFocus
-        onChange={(e) =>
-          onChange(order.id, e.target.value || null)
-        }
-        onBlur={() => setOpen(false)}
+        onChange={(e) => setTempValue(e.target.value)}
+        onBlur={commitChange}
+        onKeyDown={handleKeyDown}
         className="h-8 w-[180px]"
         disabled={readOnly}
       />
@@ -39,7 +68,7 @@ export const RecallCell = ({
 
   return (
     <div
-      onClick={() => !readOnly && setOpen(true)}
+      onClick={startEditing}
       className={cn(
         "flex items-center h-8 px-2 rounded transition-colors text-sm",
         !readOnly ? "hover:bg-muted cursor-pointer" : "opacity-50 cursor-not-allowed",
