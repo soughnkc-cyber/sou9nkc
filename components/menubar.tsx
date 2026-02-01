@@ -39,7 +39,7 @@ export default function MenuBar() {
   }, []);
 
   useEffect(() => {
-    if (session?.user) {
+    if (status === "authenticated") {
       setIsLoadingUser(true);
       getMe().then(user => {
         setDbUser(user);
@@ -47,7 +47,7 @@ export default function MenuBar() {
         setIsLoadingUser(false);
       }).catch(() => setIsLoadingUser(false));
     }
-  }, [session?.user]);
+  }, [status, pathname]);
 
   const userRole = (dbUser?.role || (session?.user as any)?.role);
   const permissions = dbUser || (session?.user as any) || {};

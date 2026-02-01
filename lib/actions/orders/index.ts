@@ -42,7 +42,7 @@ export const insertNewOrders = async (shopifyOrders: ShopifyOrder[]) => {
   // ----------------------------
   const agents = await prisma.user.findMany({
     where: { 
-      role: { in: ["AGENT", "AGENT_TEST", "SUPERVISOR"] }, // Ajouté SUPERVISOR si nécessaire
+      role: { in: ["AGENT", "AGENT_TEST"] }, // SUPERVISOR retiré de l'attribution auto
       status: "ACTIVE",
       canViewOrders: true,
     },
@@ -73,7 +73,16 @@ export const insertNewOrders = async (shopifyOrders: ShopifyOrder[]) => {
     const existing = await prisma.order.findUnique({
       where: { orderNumber: order.order_number },
     });
-    if (existing) continue;
+
+    if (existing) {
+        if (!existing.agentId) {
+            console.log(`⚠️ [Assignment] Commande #${order.order_number} existe déjà mais SANS agent. Tentative de ré-attribution.`);
+            insertedOrderIds.push(existing.id);
+        } else {
+            console.log(`ℹ️ [Webhook] Commande #${order.order_number} déjà existante et assignée. Ignorée.`);
+        }
+        continue;
+    }
 
     const customerName = order.customer
       ? `${order.customer.first_name ?? ""} ${order.customer.last_name ?? ""}`.trim()
@@ -105,114 +114,117 @@ export const insertNewOrders = async (shopifyOrders: ShopifyOrder[]) => {
     insertedOrderIds.push(created.id);
   }
 
-  revalidatePath("/");
-
   if (insertedOrderIds.length === 0) return;
 
 
   // ----------------------------
   // 3️⃣ Attribution des agents
   // ----------------------------
+  
+  // ⏳ PAUSE DE SÉCURITÉ : On attend 1s pour être sûr que la transaction DB est pleinement commuée
+  // et visible pour une requête de lecture immédiate (Consistency Lag)
+  await new Promise(resolve => setTimeout(resolve, 1000));
+
   const ordersToAssign = await prisma.order.findMany({
     where: { id: { in: insertedOrderIds }, agentId: null },
     include: { products: true },
   });
 
+  if (ordersToAssign.length < insertedOrderIds.length) {
+      console.warn(`⚠️ [Assignment Warning] Inserted ${insertedOrderIds.length} orders but only found ${ordersToAssign.length} for assignment. Some might have been missed by the DB query.`);
+  }
+
   console.log(`🔍 [Assignment] Orders to assign: ${ordersToAssign.length}`);
 
-  // Fetch current load
-  const agentOrderCounts = await prisma.order.groupBy({
+  // Fetch TODAY's load for balancing (Reset at midnight)
+  const todayStart = new Date();
+  todayStart.setHours(0, 0, 0, 0);
+
+  const agentOrderCountsToday = await prisma.order.groupBy({
     by: ['agentId'],
     _count: { id: true },
-    where: { agentId: { not: null } }
+    where: { 
+        agentId: { not: null },
+        createdAt: { gte: todayStart }
+    }
   });
 
   const localCounts = new Map<string, number>();
-  agentOrderCounts.forEach(c => {
+  agents.forEach(a => localCounts.set(a.id, 0)); // Initialize all to 0
+  agentOrderCountsToday.forEach(c => {
     if (c.agentId) localCounts.set(c.agentId, c._count.id);
   });
 
+  console.log("📊 [Assignment] Initial Load (Today):", Object.fromEntries(localCounts));
+
   for (const order of ordersToAssign) {
     const getAgentScore = (agentId: string) => localCounts.get(agentId) || 0;
-    console.log(`⚡ [Assignment] Processing Order #${order.orderNumber} with ${order.products.length} known products`);
+    
+    // 1. Determine if strict assignment is needed
+    // If ANY product in the order has specific assigned agents, the order becomes "Restricted" to those agents.
+    // We take the INTERSECTION of assigned agents if multiple products have assignments (to be safe), 
+    // or UNION? Usually checking if "at least one" product requires it.
+    // Let's assume: If a product has assigned agents, only they can take it.
+    
+    let requiredAgentIds: string[] = [];
+    let blockedAgentIds: string[] = [];
 
-    if (order.products.length === 0) {
-        console.warn(`⚠️ [Assignment] Order #${order.orderNumber} has no products in DB. Treating as Totally General.`);
-    }
-
-    // Tentative 1: Séparation stricte (Spécialisé -> Spécialisé, Général -> Général) + Hidden
-    let candidateAgents = agents.filter(agent => {
-      const isAgentSpecialized = specializedAgentIds.has(agent.id);
-
-      if (order.products.length === 0) {
-          // Produit inconnu en base: Réservé aux non-spécialisés par défaut
-          return !isAgentSpecialized;
-      }
-
-      return order.products.every(p => {
-        const assigned = p.assignedAgentIds || [];
-        const hidden = p.hiddenForAgentIds || [];
-
-        // Règle de base: Jamais si l'agent est banni du produit
-        if (hidden.includes(agent.id)) return false;
-
-        if (assigned.length > 0) {
-          // Produit Spécialisé: L'agent DOIT être dedans
-          return assigned.includes(agent.id);
-        } else if (hidden.length > 0) {
-          // Produit avec restrictions uniquement: Tout le monde sauf les banni (spécialisés inclus)
-          return !hidden.includes(agent.id);
-        } else {
-          // Produit totalement général (ni assigned ni hidden): Réservé aux non-spécialisés
-          return !isAgentSpecialized;
+    // Collect constraints
+    order.products.forEach(p => {
+        if (p.assignedAgentIds && p.assignedAgentIds.length > 0) {
+            requiredAgentIds.push(...p.assignedAgentIds);
         }
-      });
+        if (p.hiddenForAgentIds && p.hiddenForAgentIds.length > 0) {
+            blockedAgentIds.push(...p.hiddenForAgentIds);
+        }
     });
 
-    console.log(`🔸 [Assignment] Tier 1 candidate count: ${candidateAgents.length}`);
+    let candidates: typeof agents = [];
 
-    // Tentative 2: Fallback - On ignore la séparation Spécialisé/Général, on ne garde que le Hidden
-    if (candidateAgents.length === 0) {
-      console.log(`⚠️ [Assignment] Commande #${order.orderNumber}: Aucun match strict, passage au Fallback (Hidden uniquement)`);
-      candidateAgents = agents.filter(agent => {
-        if (order.products.length === 0) return true; // Si pas de produit, n'importe qui
-        return order.products.every(p => {
-          const hidden = p.hiddenForAgentIds || [];
-          return !hidden.includes(agent.id);
-        });
-      });
-      console.log(`🔸 [Assignment] Tier 2 candidate count: ${candidateAgents.length}`);
-    }
-
-    // Tentative 3: Secours ultime (Tous les agents actifs)
-    if (candidateAgents.length === 0) {
-      console.warn(`🚨 [Assignment] Commande #${order.orderNumber}: Conflit total, attribution d'urgence à tout agent actif`);
-      candidateAgents = agents;
-      console.log(`🔸 [Assignment] Tier 3 candidate count: ${candidateAgents.length}`);
-    }
-
-    if (candidateAgents.length > 0) {
-      // Équilibrage : On trie par nombre de commandes actuelles
-      const bestAgent = candidateAgents.sort((a, b) => {
-        const scoreA = getAgentScore(a.id);
-        const scoreB = getAgentScore(b.id);
-        if (scoreA === scoreB) return Math.random() - 0.5;
-        return scoreA - scoreB;
-      })[0];
-
-      await prisma.order.update({
-        where: { id: order.id },
-        data: { agentId: bestAgent.id },
-      });
-      
-      const newScore = getAgentScore(bestAgent.id) + 1;
-      localCounts.set(bestAgent.id, newScore);
-      console.log(`✅ [Assignment] Commande #${order.orderNumber} assignée à ${bestAgent.name} (ID: ${bestAgent.id}, Nouveau Score: ${newScore})`);
+    if (requiredAgentIds.length > 0) {
+        // CASE A: Strict Assignment (At least one product requires specific agents)
+        // We filter agents who are in the required list AND not blocked
+        candidates = agents.filter(a => requiredAgentIds.includes(a.id) && !blockedAgentIds.includes(a.id));
     } else {
-        console.error(`❌ [Assignment] Commande #${order.orderNumber}: IMPOSSIBLE d'assigner un agent (liste d'agents actifs vide)`);
+        // CASE B: Open Assignment (No product explicitly requires an agent)
+        // Everyone is eligible EXCEPT those blocked
+        candidates = agents.filter(a => !blockedAgentIds.includes(a.id));
+    }
+
+    if (candidates.length === 0) {
+        console.warn(`🚨 [Assignment] Commande #${order.orderNumber}: Tous les agents sont exclus (Hidden/Restrictions). Attribution d'urgence à tous les agents actifs.`);
+        candidates = agents;
+    }
+
+    // 2. Load Balancing (Least Assigned Today)
+    if (candidates.length > 0) {
+        // We randomize candidates with equal scores to avoid "locking" onto one agent for batch processing
+        candidates.sort((a, b) => {
+            const scoreA = getAgentScore(a.id);
+            const scoreB = getAgentScore(b.id);
+            if (scoreA === scoreB) return Math.random() - 0.5;
+            return scoreA - scoreB;
+        });
+
+        const bestAgent = candidates[0];
+
+        try {
+            await prisma.order.update({
+                where: { id: order.id },
+                data: { agentId: bestAgent.id },
+            });
+
+            const newScore = getAgentScore(bestAgent.id) + 1;
+            localCounts.set(bestAgent.id, newScore);
+            console.log(`✅ [Assignment] Order #${order.orderNumber} -> ${bestAgent.name} (Score Today: ${newScore})`);
+        } catch (e) {
+            console.error(`❌ [Assignment] Failed to update order #${order.orderNumber}`, e);
+        }
     }
   }
 
+  // VALIDATION FINALE: On rafraichit le cache seulement à la toute fin pour que l'UI affiche le résultat final
+  revalidatePath("/");
 };
 
 

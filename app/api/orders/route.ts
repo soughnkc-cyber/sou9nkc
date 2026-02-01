@@ -18,7 +18,9 @@ export const GET = async () => {
     const data = await res.json();
 
     // Insère uniquement les nouvelles commandes
+    console.log(`🟠 [Manual Sync] Fetching orders from Shopify API...`);
     await insertNewOrders(data.orders);
+    console.log(`🟠 [Manual Sync] Processed ${data.orders.length} orders.`);
 
     return NextResponse.json({ success: true, orders: data.orders });
   } catch (error) {
