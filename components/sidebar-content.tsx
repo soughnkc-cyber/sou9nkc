@@ -183,14 +183,15 @@ export function SidebarContent({
       <div className="flex-1 overflow-auto px-4 py-2 space-y-6 scrollbar-hide">
         {navigationSections.map((section) => {
           const visibleItems = section.items.filter(item => {
-            // Strict UI: Only show if role is confirmed and matches
             const roleToCheck = effectiveRole; 
-            const hasRole = roleToCheck && item.roles.includes(roleToCheck);
-            
+            if (!roleToCheck) return false;
+
+            const hasRole = item.roles.includes(roleToCheck);
             if (!hasRole) return false;
             
-            // Only hide if permission is EXPLICITLY set to false.
-            // If undefined/loading, we assume the Role check is sufficient for visibility.
+            // 🛡️ Logic: If specific permission flag is missing (undefined), 
+            // we assume it's the first connection and trust the Role check.
+            // If it's explicitly false, we hide it.
             if (item.permission && permissions[item.permission] === false) {
                 return false;
             }
