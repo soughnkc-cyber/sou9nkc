@@ -23,7 +23,7 @@ export default function Home() {
 
       try {
         const dbUser = await getMe();
-        if (dbUser && dbUser.canViewDashboard) {
+        if (dbUser && (dbUser.canViewDashboard || dbUser.canViewOrders)) {
           setHasPermission(true);
           const role = dbUser.role;
           const roleRoutes: Record<string, string> = {

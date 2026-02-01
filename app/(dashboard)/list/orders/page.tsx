@@ -270,10 +270,6 @@ function OrdersPageContent() {
   const stats = useMemo(() => {
     const base = dateFilteredOrders;
     const total = base.length;
-    const totalRevenue = base.reduce((sum, o) => sum + o.totalPrice, 0);
-    const recallToday = base.filter(o => 
-      o.recallAt && isSameDay(new Date(o.recallAt), new Date())
-    ).length;
     
     // Taux de confirmation : STATUS_15 parmi toutes les commandes ayant un statut (dans la période)
     const ordersWithStatus = base.filter(o => o.status?.id || o.status?.name);
@@ -289,6 +285,12 @@ function OrdersPageContent() {
         nameValue.toUpperCase().includes('STATUS_15')
       );
     });
+
+    const totalRevenue = confirmedOrders.reduce((sum, o) => sum + o.totalPrice, 0);
+
+    const recallToday = base.filter(o => 
+      o.recallAt && isSameDay(new Date(o.recallAt), new Date())
+    ).length;
     
     console.log("📊 [Stats Debug] Range:", dateRange);
     console.log("📊 [Stats Debug] Total in Period:", total);
