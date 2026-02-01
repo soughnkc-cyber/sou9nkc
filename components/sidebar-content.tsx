@@ -159,7 +159,12 @@ export function SidebarContent({
           const visibleItems = section.items.filter(item => {
             const hasRole = item.roles.includes(userRole);
             if (!hasRole) return false;
-            if (item.permission) return permissions[item.permission] === true;
+            
+            // Only hide if permission is EXPLICITLY set to false.
+            // If undefined/loading, we assume the Role check is sufficient for visibility.
+            if (item.permission && permissions[item.permission] === false) {
+                return false;
+            }
             return true;
           });
 
