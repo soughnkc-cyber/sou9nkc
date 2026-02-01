@@ -28,6 +28,10 @@ export default function SignInPage() {
         AGENT_TEST: "/list/orders",
       };
       const targetPath = roleRoutes[role] || "/list/orders";
+      
+      // 🛡️ Seed local storage BEFORE redirect to ensure zero-latency hydration on next page
+      localStorage.setItem("sou9nkc_user_data", JSON.stringify(session.user));
+      
       // Force hard navigation to ensure sidebar session state is synced
       window.location.href = targetPath;
     }

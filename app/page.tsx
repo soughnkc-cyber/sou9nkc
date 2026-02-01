@@ -32,6 +32,10 @@ export default function Home() {
             AGENT: "/list/orders",
             AGENT_TEST: "/list/orders",
           };
+          
+          // Seed storage for first render of the next page
+          localStorage.setItem("sou9nkc_user_data", JSON.stringify(dbUser));
+          
           router.replace(roleRoutes[role] || "/list/orders");
         } else {
           setHasPermission(false);

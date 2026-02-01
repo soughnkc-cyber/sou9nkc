@@ -100,8 +100,8 @@ const navigationSections: NavSection[] = [
 export function SidebarContent({ 
   isCollapsed, 
   mobile = false,
-  userRole,
-  permissions,
+  userRole: propRole,
+  permissions: propPermissions,
   handleSignOut,
   onNavigate
 }: { 
@@ -114,18 +114,36 @@ export function SidebarContent({
 }) {
   const pathname = usePathname();
   const { data: session } = useSession();
+  const [forceUpdate, setForceUpdate] = useState(0);
+
+  // Force a re-render 100ms after mount to capture any late local storage or session hydration
+  // This is critical for mobile production environments where hydration can be tricky.
+  useEffect(() => {
+    const timer = setTimeout(() => setForceUpdate(prev => prev + 1), 100);
+    return () => clearTimeout(timer);
+  }, []);
+
   const showLabels = mobile ? true : !isCollapsed;
   
   // High Resiliency Role: Props -> Session -> LocalStorage (Direct sync read)
-  const effectiveRole = userRole || (session?.user as any)?.role || (() => {
+  const getEffectiveRole = () => {
+    if (propRole) return propRole;
+    if ((session?.user as any)?.role) return (session?.user as any)?.role;
+    
     if (typeof window !== "undefined") {
       const cached = localStorage.getItem("sou9nkc_user_data");
       if (cached) {
-        try { return JSON.parse(cached).role; } catch(e) {}
+        try {
+            const parsed = JSON.parse(cached);
+            return parsed.role || parsed.user?.role;
+        } catch(e) {}
       }
     }
     return null;
-  })();
+  };
+
+  const effectiveRole = getEffectiveRole();
+  const permissions = propPermissions || (session?.user as any) || {};
   
   return (
     <div className="flex flex-col h-full bg-white">

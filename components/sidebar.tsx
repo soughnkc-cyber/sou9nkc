@@ -47,8 +47,10 @@ export default function Sidebar({
   useEffect(() => {
     if (status === "authenticated") {
       getMe().then(user => {
-        setDbUser(user);
-        localStorage.setItem("sou9nkc_user_data", JSON.stringify(user));
+        if (user) {
+            setDbUser(user);
+            localStorage.setItem("sou9nkc_user_data", JSON.stringify(user));
+        }
       });
     }
   }, [status, pathname]);
