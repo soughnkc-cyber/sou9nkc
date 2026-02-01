@@ -25,6 +25,7 @@ export default function MenuBar() {
   const [dbUser, setDbUser] = useState<any>(null);
   const [isSheetOpen, setIsSheetOpen] = useState(false);
 
+
   useEffect(() => {
     // 1. Try local storage
     const cached = localStorage.getItem("sou9nkc_user_data");
@@ -48,6 +49,8 @@ export default function MenuBar() {
 
   const userRole = (dbUser?.role || (session?.user as any)?.role);
   let permissions = dbUser || (session?.user as any) || {};
+
+  const isReady = Boolean(userRole);
 
   // 🛡️ Fallback: If permissions are missing (first load/race condition), generate defaults based on Role
   // This prevents the "empty sidebar" issue on mobile before getMe() resolves
@@ -91,15 +94,20 @@ export default function MenuBar() {
                     </Button>
                 </SheetTrigger>
                 <SheetContent side="left" className="p-0 w-72" showCloseButton={false}>
-                    <SidebarContent 
-                        isCollapsed={false} 
-                        mobile={true} 
-                        userRole={userRole} 
-                        permissions={permissions} 
-                        handleSignOut={handleSignOut} 
-                        onNavigate={() => setIsSheetOpen(false)}
-                    />
-                </SheetContent>
+  {isReady ? (
+    <SidebarContent
+      isCollapsed={false}
+      mobile
+      userRole={userRole}
+      permissions={permissions}
+      handleSignOut={handleSignOut}
+      onNavigate={() => setIsSheetOpen(false)}
+    />
+  ) : (
+    <div className="p-6 text-sm text-gray-400">Chargement...</div>
+  )}
+</SheetContent>
+
             </Sheet>
         </div>
         <h1 className="text-lg sm:text-lg font-black tracking-tight text-gray-900">{getPageTitle()}</h1>
