@@ -9,7 +9,8 @@ import {
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { signOut } from "next-auth/react";
+import { signOut, useSession } from "next-auth/react";
+import { useState, useEffect } from "react";
 
 type Role = "ADMIN" | "AGENT" | "SUPERVISOR" | "AGENT_TEST";
 
@@ -112,6 +113,30 @@ export function SidebarContent({
   onNavigate?: () => void;
 }) {
   const pathname = usePathname();
+  // Recovery: If prop is missing, try to find role independently
+  const { data: session } = useSession(); // Import useSession at top
+  const [localRole, setLocalRole] = useState<Role | null>(null);
+
+  useEffect(() => {
+    if (userRole) return; // Prop is good
+    
+    // 1. Try Session
+    if ((session?.user as any)?.role) {
+        setLocalRole((session?.user as any)?.role);
+        return;
+    }
+
+    // 2. Try LocalStorage
+    const cached = localStorage.getItem("sou9nkc_user_data");
+    if (cached) {
+        try {
+            const parsed = JSON.parse(cached);
+            if (parsed.role) setLocalRole(parsed.role);
+        } catch {}
+    }
+  }, [userRole, session]);
+
+  const effectiveRole = userRole || localRole;
   const showLabels = mobile ? true : !isCollapsed;
   
   return (
@@ -157,7 +182,11 @@ export function SidebarContent({
       <div className="flex-1 overflow-auto px-4 py-2 space-y-6 scrollbar-hide">
         {navigationSections.map((section) => {
           const visibleItems = section.items.filter(item => {
-            const hasRole = item.roles.includes(userRole);
+            // Optimistic UI: If no role found yet (race condition), show everything or default to safe?
+            // User requested: "displayed". So we show if role matches OR if role is undefined (optimistic)
+            const roleToCheck = effectiveRole; 
+            const hasRole = !roleToCheck || item.roles.includes(roleToCheck);
+            
             if (!hasRole) return false;
             
             // Only hide if permission is EXPLICITLY set to false.
