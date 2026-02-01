@@ -27,18 +27,20 @@ export default function Sidebar({
   const { data: session, status } = useSession();
   const pathname = usePathname();
   const [mounted, setMounted] = useState(false);
-  const [dbUser, setDbUser] = useState<any>(null);
-
-  useEffect(() => {
-    // 1. Try local storage
-    const cached = localStorage.getItem("sou9nkc_user_data");
-    if (cached) {
-      try {
-        setDbUser(JSON.parse(cached));
-      } catch (e) {
-        // ignore
+  // 1. Initialize synchronously to avoid first-render flicker
+  const [dbUser, setDbUser] = useState<any>(() => {
+    if (typeof window !== "undefined") {
+      const cached = localStorage.getItem("sou9nkc_user_data");
+      if (cached) {
+        try {
+          return JSON.parse(cached);
+        } catch (e) {}
       }
     }
+    return null;
+  });
+
+  useEffect(() => {
     setMounted(true);
   }, []);
 

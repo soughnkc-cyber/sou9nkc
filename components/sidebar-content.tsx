@@ -113,32 +113,19 @@ export function SidebarContent({
   onNavigate?: () => void;
 }) {
   const pathname = usePathname();
-  // Recovery: If prop is missing, try to find role independently
-  const { data: session } = useSession(); // Import useSession at top
-  const [localRole, setLocalRole] = useState<Role | null>(null);
-
-  useEffect(() => {
-    if (userRole) return; // Prop is good
-    
-    // 1. Try Session
-    if ((session?.user as any)?.role) {
-        setLocalRole((session?.user as any)?.role);
-        return;
-    }
-
-    // 2. Try LocalStorage
-    const cached = localStorage.getItem("sou9nkc_user_data");
-    if (cached) {
-        try {
-            const parsed = JSON.parse(cached);
-            if (parsed.role) setLocalRole(parsed.role);
-        } catch {}
-    }
-  }, [userRole, session]);
-
-  // Priority: 1. Prop (from parent) 2. Local State (from storage) 3. Session (direct access)
-  const effectiveRole = userRole || localRole || (session?.user as any)?.role;
+  const { data: session } = useSession();
   const showLabels = mobile ? true : !isCollapsed;
+  
+  // High Resiliency Role: Props -> Session -> LocalStorage (Direct sync read)
+  const effectiveRole = userRole || (session?.user as any)?.role || (() => {
+    if (typeof window !== "undefined") {
+      const cached = localStorage.getItem("sou9nkc_user_data");
+      if (cached) {
+        try { return JSON.parse(cached).role; } catch(e) {}
+      }
+    }
+    return null;
+  })();
   
   return (
     <div className="flex flex-col h-full bg-white">
