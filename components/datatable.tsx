@@ -232,12 +232,10 @@ export function DataTable<TData, TValue>({
                 {group.headers.map((header) => (
                   <TableHead key={header.id} className="h-10 py-2 text-[10px] font-extrabold text-gray-500 uppercase tracking-widest pl-4">
                     <div className="flex items-center gap-1.5 min-h-[32px]">
-                      {!header.column.getCanFilter() || !header.column.columnDef.meta?.filterComponent ? (
-                        flexRender(
-                          header.column.columnDef.header,
-                          header.getContext()
-                        )
-                      ) : null}
+                      {flexRender(
+                        header.column.columnDef.header,
+                        header.getContext()
+                      )}
                       
                       {header.column.getCanFilter() && header.column.columnDef.meta?.filterComponent ? (
                         header.column.columnDef.meta.filterComponent({ 
