@@ -24,10 +24,10 @@ export default function SignInPage() {
       const roleRoutes: Record<string, string> = {
         ADMIN: "/admin",
         SUPERVISOR: "/supervisor",
-        AGENT: "/agent",
-        AGENT_TEST: "/agent",
+        AGENT: "/list/orders",
+        AGENT_TEST: "/list/orders",
       };
-      const targetPath = roleRoutes[role] || "/accueil";
+      const targetPath = roleRoutes[role] || "/list/orders";
       // Force hard navigation to ensure sidebar session state is synced
       window.location.href = targetPath;
     }

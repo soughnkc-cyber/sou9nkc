@@ -29,10 +29,10 @@ export default function Home() {
           const roleRoutes: Record<string, string> = {
             ADMIN: "/admin",
             SUPERVISOR: "/supervisor",
-            AGENT: "/agent",
-            AGENT_TEST: "/agent",
+            AGENT: "/list/orders",
+            AGENT_TEST: "/list/orders",
           };
-          router.replace(roleRoutes[role] || "/agent");
+          router.replace(roleRoutes[role] || "/list/orders");
         } else {
           setHasPermission(false);
         }

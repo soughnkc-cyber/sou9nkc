@@ -9,14 +9,20 @@ import { Button } from "@/components/ui/button";
 import { getMe } from "@/lib/actions/users";
 import { SidebarContent } from "./sidebar-content";
 
+import { Sheet, SheetContent } from "@/components/ui/sheet";
+
 type Role = "ADMIN" | "AGENT" | "SUPERVISOR" | "AGENT_TEST";
 
 export default function Sidebar({
   isCollapsed,
   setIsCollapsed,
+  isMobileOpen,
+  setIsMobileOpen,
 }: {
   isCollapsed: boolean;
   setIsCollapsed: (value: boolean) => void;
+  isMobileOpen?: boolean;
+  setIsMobileOpen?: (value: boolean) => void;
 }) {
   const { data: session, status } = useSession();
   const pathname = usePathname();
@@ -68,6 +74,20 @@ export default function Sidebar({
 
   return (
     <>
+      {/* Mobile Sidebar (Sheet) */}
+      <Sheet open={isMobileOpen} onOpenChange={setIsMobileOpen}>
+        <SheetContent side="left" className="p-0 w-72" showCloseButton={false}>
+          <SidebarContent 
+            isCollapsed={false} 
+            mobile={true} 
+            userRole={userRole} 
+            permissions={permissions} 
+            handleSignOut={handleSignOut} 
+            onNavigate={() => setIsMobileOpen?.(false)}
+          />
+        </SheetContent>
+      </Sheet>
+
       {/* Desktop Sidebar */}
       <div className={cn(
           "hidden lg:block fixed inset-y-0 left-0 z-30 bg-white border-r transition-all duration-500 ease-in-out shadow-sm",

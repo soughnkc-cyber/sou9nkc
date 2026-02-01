@@ -19,11 +19,10 @@ import React, { useState, useEffect } from "react";
 import { getMe } from "@/lib/actions/users";
 import { cn } from "@/lib/utils";
 
-export default function MenuBar() {
+export default function MenuBar({ onOpenMobile }: { onOpenMobile: () => void }) {
   const { data: session, status } = useSession();
   const pathname = usePathname();
   const [dbUser, setDbUser] = useState<any>(null);
-  const [isSheetOpen, setIsSheetOpen] = useState(false);
 
 
   useEffect(() => {
@@ -74,28 +73,14 @@ export default function MenuBar() {
       {/* Mobile Menu & Page Title */}
       <div className="flex items-center gap-2 sm:gap-4">
         <div className="lg:hidden">
-            <Sheet open={isSheetOpen} onOpenChange={setIsSheetOpen}>
-                <SheetTrigger asChild>
-                    <Button variant="ghost" size="icon" className="h-10 w-10 text-gray-500 rounded-xl">
-                        <Menu className="h-6 w-6" />
-                    </Button>
-                </SheetTrigger>
-                <SheetContent side="left" className="p-0 w-72" showCloseButton={false}>
-  {isReady ? (
-    <SidebarContent
-      isCollapsed={false}
-      mobile
-      userRole={userRole}
-      permissions={permissions}
-      handleSignOut={handleSignOut}
-      onNavigate={() => setIsSheetOpen(false)}
-    />
-  ) : (
-    <div className="p-6 text-sm text-gray-400">Chargement...</div>
-  )}
-</SheetContent>
-
-            </Sheet>
+            <Button 
+                variant="ghost" 
+                size="icon" 
+                className="h-10 w-10 text-gray-500 rounded-xl"
+                onClick={onOpenMobile}
+            >
+                <Menu className="h-6 w-6" />
+            </Button>
         </div>
         <h1 className="text-lg sm:text-lg font-black tracking-tight text-gray-900">{getPageTitle()}</h1>
       </div>
