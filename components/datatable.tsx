@@ -45,6 +45,7 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from "@/components/ui/popover";
+import { Checkbox } from "@/components/ui/checkbox";
 
 import { DataTableViewOptions } from "@/components/datatable-view-options";
 
@@ -294,6 +295,24 @@ export function DataTable<TData, TValue>({
 
       {/* Mobile cards */}
       <div className="lg:hidden space-y-4">
+        <div className="flex items-center gap-3 px-1 pb-2">
+            <div className="flex items-center gap-2 bg-white border border-gray-200 rounded-lg px-3 py-2 shadow-sm">
+                <Checkbox 
+                    checked={table.getIsAllPageRowsSelected() || (table.getIsSomePageRowsSelected() && "indeterminate")}
+                    onCheckedChange={(value) => table.toggleAllPageRowsSelected(!!value)}
+                    aria-label="Tout sélectionner"
+                />
+                <span className="text-xs font-bold text-gray-700">
+                    Tout sélectionner
+                </span>
+            </div>
+            {Object.keys(rowSelection).length > 0 && (
+                <span className="text-xs font-bold text-[#1F30AD] bg-blue-50 px-2 py-1 rounded-md">
+                    {Object.keys(rowSelection).length} sélectionné(s)
+                </span>
+            )}
+        </div>
+
         {table.getRowModel().rows.length ? (
           table.getRowModel().rows.map((row) => {
             const isRowExpanded = expandedRows[row.id] || false;

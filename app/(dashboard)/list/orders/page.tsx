@@ -20,7 +20,7 @@ import {
 } from "@/components/ui/card";
 
 /* Actions */
-import { getOrders, insertNewOrders, updateOrderRecallAt, updateOrderAgent, deleteOrders } from "@/lib/actions/orders";
+import { getOrders, insertNewOrders, updateOrderRecallAt, updateOrderAgent, deleteOrders, updateOrdersAgent, updateOrdersStatus } from "@/lib/actions/orders";
 import { getStatus, updateOrderStatus } from "@/lib/actions/status";
 import { getMe, getAgents } from "@/lib/actions/users";
 import PermissionDenied from "@/components/permission-denied";
@@ -28,6 +28,7 @@ import PermissionDenied from "@/components/permission-denied";
 
 import { AgentAssignmentModal } from "@/components/forms/agent-assignment-modal";
 import { AgentAssignmentData } from "@/components/forms/agent-assignment-form";
+import { BulkEditModal } from "@/components/forms/bulk-edit-modal"; // Import BulkEditModal
 import { DatePickerWithRange } from "@/components/date-range-picker";
 import { DateRange } from "react-day-picker";
 import { startOfDay, endOfDay, isWithinInterval } from "date-fns";
@@ -375,6 +376,8 @@ function OrdersPageContent() {
     order: null,
   });
   const [isAssigning, setIsAssigning] = useState(false);
+  const [isBulkEditing, setIsBulkEditing] = useState(false); // State for bulk edit
+  const [bulkEditModalOpen, setBulkEditModalOpen] = useState(false); // State for modal visibility
 
   const openAssignModal = (order: Order) => {
     setAssignModal({ isOpen: true, order });
@@ -392,6 +395,22 @@ function OrdersPageContent() {
       closeAssignModal();
     } finally {
       setIsAssigning(false);
+    }
+  };
+
+  const handleBulkUpdate = async (agentId: string) => {
+    if (selectedOrders.length === 0) return;
+    setIsBulkEditing(true);
+    try {
+        await updateOrdersAgent(selectedOrders.map(o => o.id), agentId);
+        toast.success(`${selectedOrders.length} commandes réassignées`);
+        setSelectedOrders([]);
+        refreshData();
+    } catch (e) {
+        toast.error("Erreur lors de la mise à jour groupée");
+        console.error(e);
+    } finally {
+        setIsBulkEditing(false);
     }
   };
 
@@ -616,16 +635,18 @@ function OrdersPageContent() {
             }}
             extraSearchActions={
               <div className="flex flex-wrap items-center gap-1.5">
-                {selectedOrders.length === 1 && (
-                  <Button 
-                    variant="outline" 
-                    size="sm" 
-                    className="h-8 w-8 rounded-lg p-0 font-bold border-gray-200 hover:bg-blue-50 hover:text-[#1F30AD] transition-all flex items-center justify-center" 
-                    onClick={() => openAssignModal(selectedOrders[0])}
-                    title="Modifier"
-                  >
-                    <Edit className="h-4 w-4" />
-                  </Button>
+                {selectedOrders.length > 0 && (
+                   <Button
+                     variant="outline"
+                     size="sm"
+                     onClick={() => setBulkEditModalOpen(true)}
+                     className="h-8 rounded-lg px-2 font-bold border-gray-200 hover:bg-blue-50 hover:text-[#1F30AD] transition-all flex items-center justify-center gap-2 shadow-sm"
+                     title="Modifier la sélection"
+                   >
+                     <Edit className="h-4 w-4" />
+                     <span className="hidden sm:inline">Modifier ({selectedOrders.length})</span>
+                     <span className="sm:hidden">({selectedOrders.length})</span>
+                   </Button>
                 )}
                 {isAdmin && selectedOrders.length > 0 && (
                   <Button 
@@ -654,6 +675,15 @@ function OrdersPageContent() {
         currentAgentId={assignModal.order?.agent?.id}
         isLoading={isAssigning}
         orderNumber={assignModal.order?.orderNumber}
+      />
+
+      <BulkEditModal 
+        isOpen={bulkEditModalOpen}
+        onClose={() => setBulkEditModalOpen(false)}
+        selectedCount={selectedOrders.length}
+        agents={agents}
+        onUpdate={handleBulkUpdate}
+        isLoading={isBulkEditing}
       />
     </div>
   );

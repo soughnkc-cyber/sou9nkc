@@ -357,3 +357,45 @@ export const deleteOrders = async (orderIds: string[]) => {
     throw new Error("Impossible de supprimer les commandes");
   }
 };
+
+export const updateOrdersAgent = async (orderIds: string[], agentId: string) => {
+  await checkPermission("canEditOrders");
+  
+  const session = await getServerSession(authOptions);
+  if (!session) throw new Error("Unauthorized");
+
+  try {
+    const updated = await prisma.order.updateMany({
+      where: { id: { in: orderIds } },
+      data: { agentId: agentId === "unassigned" ? null : agentId },
+    });
+
+    revalidatePath("/");
+    return updated;
+  } catch (err) {
+    console.error("Erreur updateOrdersAgent:", err);
+    throw new Error("Impossible de modifier les agents en masse");
+  }
+};
+
+export const updateOrdersStatus = async (orderIds: string[], statusId: string | null) => {
+  await checkPermission("canEditOrders");
+  
+  try {
+    // Note: statusId is null if we want to clear status (e.g. "To Process")
+    // Use updateMany does not allow connecting relations easily if using `data: { status: ... }` direct connect syntax?
+    // Prisma updateMany cannot assign relations directly with `connect`.
+    // We must set `statusId` scalar field.
+    
+    const updated = await prisma.order.updateMany({
+      where: { id: { in: orderIds } },
+      data: { statusId: statusId },
+    });
+
+    revalidatePath("/");
+    return updated;
+  } catch (err) {
+    console.error("Erreur updateOrdersStatus:", err);
+    throw new Error("Impossible de modifier les statuts en masse");
+  }
+};
