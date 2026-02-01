@@ -50,7 +50,7 @@ export default function MenuBar() {
   const userRole = (dbUser?.role || (session?.user as any)?.role);
   let permissions = dbUser || (session?.user as any) || {};
 
-  const isReady = Boolean(userRole);
+  const isReady = status === "authenticated";
 
   // 🛡️ Fallback: If permissions are missing (first load/race condition), generate defaults based on Role
   // This prevents the "empty sidebar" issue on mobile before getMe() resolves
