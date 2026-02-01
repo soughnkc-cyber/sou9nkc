@@ -336,6 +336,7 @@ export const getColumns = (
       header: "Statut",
       sortable: false,
       isPrimary: true,
+      mobilePosition: "right",
       hideMobileLabel: true,
       filterComponent: createFacetedFilter(
         "Statut",
