@@ -24,7 +24,6 @@ export default function MenuBar() {
   const pathname = usePathname();
   const [dbUser, setDbUser] = useState<any>(null);
   const [isSheetOpen, setIsSheetOpen] = useState(false);
-  const [isLoadingUser, setIsLoadingUser] = useState(false);
 
   useEffect(() => {
     // 1. Try local storage
@@ -40,12 +39,10 @@ export default function MenuBar() {
 
   useEffect(() => {
     if (status === "authenticated") {
-      setIsLoadingUser(true);
       getMe().then(user => {
         setDbUser(user);
         localStorage.setItem("sou9nkc_user_data", JSON.stringify(user));
-        setIsLoadingUser(false);
-      }).catch(() => setIsLoadingUser(false));
+      });
     }
   }, [status, pathname]);
 
