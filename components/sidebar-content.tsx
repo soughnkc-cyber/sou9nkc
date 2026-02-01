@@ -136,7 +136,8 @@ export function SidebarContent({
     }
   }, [userRole, session]);
 
-  const effectiveRole = userRole || localRole;
+  // Priority: 1. Prop (from parent) 2. Local State (from storage) 3. Session (direct access)
+  const effectiveRole = userRole || localRole || (session?.user as any)?.role;
   const showLabels = mobile ? true : !isCollapsed;
   
   return (
