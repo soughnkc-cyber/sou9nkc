@@ -118,6 +118,7 @@ export default function UsersPage() {
       const updatedUser = await updateUserAction(selectedUser.id, updateData);
       setUsers(prev => prev.map(u => u.id === selectedUser.id ? updatedUser : u));
       editModal.closeModal();
+      setSelectedRows([]); // Clear selection after update
       toast.success("Utilisateur modifié avec succès !");
     } catch (error: any) {
       console.error("Erreur lors de la modification:", error);
@@ -224,27 +225,12 @@ export default function UsersPage() {
 
       {/* Header */}
       <div className="flex flex-col md:flex-row justify-end items-center gap-4 sm:gap-6">
-        {/* <div className="text-center md:text-left">
-          <h1 className="text-2xl sm:text-3xl font-black text-gray-900 tracking-tight leading-tight">Utilisateurs</h1>
-          <p className="text-xs sm:text-sm text-gray-500 font-medium mt-1">Gestion des utilisateurs et permissions</p>
-        </div> */}
-
         <div className="flex items-center justify-center w-full md:w-auto gap-2 sm:gap-3">
-            <Button 
-                variant="outline" 
-                size="sm" 
-                className="h-10 rounded-xl px-3 sm:px-4 font-bold border-gray-200 hover:bg-blue-50 hover:text-[#1F30AD] hover:border-blue-200 shrink-0" 
-                onClick={handleRefresh} 
-                disabled={isLoadingPage || addModal.isLoading || editModal.isLoading}
-            >
-              <RefreshCw className={cn("h-4 w-4 sm:mr-2", isLoadingPage && "animate-spin")} />
-              <span className="hidden sm:inline">Rafraîchir</span>
-            </Button>
-
+             {/* Desktop Add Button */}
             <Button 
               size="sm" 
               onClick={handleAddUser} 
-              className="h-10 rounded-xl px-4 font-bold bg-[#1F30AD] hover:bg-[#172585] text-white shrink-0 shadow-lg shadow-blue-100 transition-all"
+              className="hidden sm:flex h-10 rounded-xl px-4 font-bold bg-[#1F30AD] hover:bg-[#172585] text-white shrink-0 shadow-lg shadow-blue-100 transition-all"
               disabled={addModal.isLoading || editModal.isLoading || deleteModal.isLoading}
             >
               <Plus className="h-4 w-4 mr-2" />
@@ -255,7 +241,7 @@ export default function UsersPage() {
 
       {/* Statistiques */}
       {users.length > 0 && (
-        <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 sm:gap-3">
+        <div className="grid grid-cols-2 sm:grid-cols-2 gap-2 sm:gap-3">
           <StatCard
             title="Total Utilisateurs"
             value={stats.total}
@@ -281,7 +267,7 @@ export default function UsersPage() {
             }
           />
 
-          <StatCard
+          {/* <StatCard
             title="Utilisateurs Inactifs"
             value={stats.inactive}
             icon={UserX}
@@ -291,26 +277,28 @@ export default function UsersPage() {
                 {percent(stats.inactive, stats.total)}% du total
               </div>
             }
-          />
+          /> */}
         </div>
       )}
 
       {/* Tableau des utilisateurs */}
       <Card>
-        <CardHeader>
-          <CardTitle>Liste des utilisateurs</CardTitle>
-          <CardDescription>
-            {stats.total} utilisateurs •{" "}
-            <span className="text-green-600">{stats.active} actifs</span> •{" "}
-            <span className="text-red-600">{stats.inactive} inactifs</span>
-          </CardDescription>
-        </CardHeader>
-
         <CardContent>
           <DataTable<User, unknown>
             columns={columns}
             data={users}
             onSelectionChange={setSelectedRows}
+            rightHeaderActions={
+                <Button 
+                  size="sm" 
+                  onClick={handleAddUser} 
+                  className="sm:hidden h-8 rounded-lg px-3 font-bold bg-[#1F30AD] hover:bg-[#172585] text-white shadow-lg shadow-blue-100 transition-all text-[11px]"
+                  disabled={addModal.isLoading || editModal.isLoading || deleteModal.isLoading}
+                >
+                  <Plus className="h-3.5 w-3.5 mr-1" />
+                  Ajouter
+                </Button>
+            }
             extraSearchActions={
               <div className="flex flex-wrap items-center gap-1.5">
                 {selectedRows.length === 1 && (

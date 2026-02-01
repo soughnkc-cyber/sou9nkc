@@ -144,12 +144,12 @@ export default function ProductsPage() {
     <div className="space-y-6 sm:space-y-8 max-w-[1600px] mx-auto">
 
       {/* Header */}
-      <div className="flex flex-col md:flex-row justify-end items-center gap-4 sm:gap-6">
+      {/* <div className="flex flex-col md:flex-row justify-end items-center gap-4 sm:gap-6"> */}
         {/* <div className="text-center md:text-left">
           <h1 className="text-2xl sm:text-3xl font-black text-gray-900 tracking-tight leading-tight">Produits</h1>
           <p className="text-xs sm:text-sm text-gray-500 font-medium mt-1">Liste des produits récupérés depuis Shopify</p>
         </div> */}
-        <div className="flex items-center justify-center w-full md:w-auto gap-2 sm:gap-3">
+        {/* <div className="flex items-center justify-center w-full md:w-auto gap-2 sm:gap-3">
             <Button 
                 variant="outline" 
                 size="sm" 
@@ -160,8 +160,8 @@ export default function ProductsPage() {
               <RefreshCw className={cn("h-4 w-4 sm:mr-2", isLoadingPage && "animate-spin")} />
               <span className="hidden sm:inline">Rafraîchir</span>
             </Button>
-        </div>
-      </div>
+        </div> */}
+      {/* </div> */}
 
       {/* Stats */}
       {products.length > 0 && (

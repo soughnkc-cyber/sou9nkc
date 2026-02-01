@@ -20,8 +20,11 @@ const SALT_ROUNDS = 10;
 
 
 
+import { encrypt, decrypt } from "@/lib/crypto";
+
 function mapUser(u: PrismaUser) {
   return {
+    // ... existing fields ...
     id: u.id,
     name: u.name ?? "Sans nom",
     phone: u.phone,
@@ -46,6 +49,7 @@ function mapUser(u: PrismaUser) {
     canEditStatuses: u.canEditStatuses,
     canViewReporting: u.canViewReporting,
     canViewDashboard: u.canViewDashboard,
+    decryptedPassword: u.encryptedPassword ? decrypt(u.encryptedPassword) : undefined, // Add decrypted password
   };
 }
 
@@ -61,6 +65,7 @@ export async function getUsers(): Promise<User[]> {
   const now = Date.now();
 
   return users.map(u => {
+    // ... existing logic ...
     const lastSeen = u.lastSeenAt?.getTime() ?? 0;
     const lastLogout = u.lastLogoutAt?.getTime() ?? 0;
     
@@ -71,6 +76,7 @@ export async function getUsers(): Promise<User[]> {
     const online = isRecent && isNotLoggedOut;
 
     return {
+      // ... existing fields ...
       id: u.id,
       name: u.name ?? "Sans nom",
       phone: u.phone,
@@ -95,80 +101,57 @@ export async function getUsers(): Promise<User[]> {
       canEditStatuses: u.canEditStatuses,
       canViewReporting: u.canViewReporting,
       canViewDashboard: u.canViewDashboard,
+      decryptedPassword: u.encryptedPassword ? decrypt(u.encryptedPassword) : undefined, // Add decrypted password
     };
   });
 }
 
-/**
- * Returns a basic list of active agents for assignment/filtering.
- * Accessible to ADMIN, SUPERVISOR, and anyone with access to Orders or Products.
- */
-export async function getAgents(): Promise<{ id: string; name: string; role: string; isActive: boolean; iconColor?: string }[]> {
-// await checkPermission(["canViewUsers", "canViewOrders", "canViewProducts"]);
-  const session = await getServerSession(authOptions);
-  if (!session) return [];
 
-  const agents = await prisma.user.findMany({
+export async function getAgents() {
+  const users = await prisma.user.findMany({
     where: {
-      role: { in: ["AGENT", "AGENT_TEST"] },
-      // status: "ACTIVE", // Fetch all for proper display
-    },
-    select: {
-      id: true,
-      name: true,
-      role: true,
-      status: true,
-      iconColor: true,
+      status: "ACTIVE",
     },
     orderBy: { name: "asc" },
   });
-
-  return agents.map(a => ({
-    id: a.id,
-    name: a.name ?? "Sans nom",
-    role: a.role,
-    isActive: a.status === "ACTIVE",
-    iconColor: a.iconColor,
-  }));
+  return users.map(mapUser);
 }
-
-
 
 export async function toggleUserStatus(userId: string) {
   await checkPermission("canEditUsers");
 
   try {
     const user = await prisma.user.findUnique({ where: { id: userId } });
-    if (!user) throw new Error("Utilisateur non trouvé");
+    if (!user) throw new Error("Utilisateur introuvable");
 
     const newStatus = user.status === "ACTIVE" ? "INACTIVE" : "ACTIVE";
 
-    const updated = await prisma.user.update({
+    await prisma.user.update({
       where: { id: userId },
       data: { status: newStatus },
     });
 
     revalidatePath("/");
-    return { id: updated.id, status: updated.status };
+    return { success: true, status: newStatus };
   } catch (err) {
     console.error("Erreur toggleUserStatus:", err);
     throw new Error("Impossible de changer le statut de l'utilisateur");
   }
 }
 
-
-
 export async function createUserAction(data: UserFormData) {
   await checkPermission("canEditUsers");
 
   try {
     const hashedPassword = await bcrypt.hash(data.password!, SALT_ROUNDS);
+    const encryptedPassword = data.password ? encrypt(data.password) : undefined; // Encrypt if present
 
     const user = await prisma.user.create({
       data: {
         name: data.name,
         phone: data.phone,
         password: hashedPassword,
+        encryptedPassword: encryptedPassword, // Store encrypted
         role: data.role,
         iconColor: data.iconColor,
         roleColor: data.roleColor,
@@ -176,7 +159,6 @@ export async function createUserAction(data: UserFormData) {
         paymentDefaultDays: data.paymentDefaultDays,
         // Par défaut, pas de permissions pour les nouveaux utilisateurs sauf si spécifié plus tard
       },
-
     });
 
     revalidatePath("/");
@@ -194,10 +176,11 @@ export async function updateUserAction(userId: string, data: Partial<UserFormDat
     const updateData: any = { ...data };
 
     // Hasher le mot de passe si fourni
-    if (updateData.password) {
-      updateData.password = await bcrypt.hash(updateData.password, SALT_ROUNDS);
+    if (updateData.password && updateData.password.trim() !== "") {
+       updateData.password = await bcrypt.hash(updateData.password, SALT_ROUNDS);
+       updateData.encryptedPassword = encrypt(data.password!); // Store encrypted for visual retrieval
     } else {
-      delete updateData.password;
+       delete updateData.password;
     }
 
     const user = await prisma.user.update({

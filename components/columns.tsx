@@ -30,6 +30,7 @@ export function createColumn<T>(config: {
   }) => React.ReactNode;
   cell?: (props: any) => React.ReactNode;
   hideSortIcon?: boolean;
+  mobilePosition?: "left" | "right";
 }): ColumnDef<T> {
 
   const column: Partial<ColumnDef<T>> = {
@@ -64,6 +65,7 @@ export function createColumn<T>(config: {
       mobileLabel: config.mobileLabel ?? config.header,
       hideMobileLabel: config.hideMobileLabel,
       filterComponent: config.filterComponent,
+      mobilePosition: (config as any).mobilePosition,
     },
   };
 
@@ -124,7 +126,6 @@ export function createActionsColumn<T>(actions: {
   };
 }
 
-
 export function createSelectFilter<T>(
   options: { value: string; label: string }[]
 ): (props: { column: Column<T, unknown>; table: Table<T>; trigger?: React.ReactNode }) => React.ReactNode {
@@ -161,10 +162,11 @@ declare module "@tanstack/react-table" {
     mobileLabel?: string;
     hideMobileLabel?: boolean;
     filterComponent?: (props: {
-      column: Column<TData, TValue>;
-      table: Table<TData>;
-      trigger?: React.ReactNode;
+        column: Column<TData, TValue>;
+        table: Table<TData>;
+        trigger?: React.ReactNode;
     }) => React.ReactNode;
+    mobilePosition?: "left" | "right";
   }
 }
 

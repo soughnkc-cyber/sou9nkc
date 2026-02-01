@@ -158,43 +158,67 @@ export function DataTable<TData, TValue>({
         </div>
 
         {/* Right: Actions Aligned */}
-        <div className="flex flex-wrap items-center gap-2 w-full lg:w-fit justify-start lg:justify-end lg:order-1">
-          {extraSearchActions}
-          
+        <div className="flex flex-wrap items-center gap-2 w-full lg:w-fit justify-between lg:justify-end lg:order-1">
           <div className="flex items-center gap-2">
-            {showViewOptions && <DataTableViewOptions table={table} />}
-            {rightHeaderActions}
+            {extraSearchActions}
             
-            {showPagination && (
-              <Select
-                value={`${table.getState().pagination.pageSize}`}
-                onValueChange={(value) => table.setPageSize(Number(value))}
-              >
-                <SelectTrigger className="w-fit min-w-[32px] px-2 h-8 rounded-lg border-gray-200 bg-gray-50/30 transition-all font-bold text-[11px]">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  {pageSizeOptions.map((size) => (
-                    <SelectItem key={size} value={`${size}`} className="text-[11px]">
-                      {size}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            )}
+            <div className="flex items-center gap-2">
+              {/* Mobile Select All */}
+              <div className="lg:hidden flex items-center gap-2 mr-2">
+                  <Checkbox 
+                      checked={table.getIsAllPageRowsSelected() || (table.getIsSomePageRowsSelected() && "indeterminate")}
+                      onCheckedChange={(value) => table.toggleAllPageRowsSelected(!!value)}
+                      aria-label="Tout sélectionner"
+                      className="h-4 w-4"
+                  />
+                  {Object.keys(rowSelection).length > 0 && (
+                      <span className="text-[10px] font-bold text-[#1F30AD] bg-blue-50 px-1.5 py-0.5 rounded-md whitespace-nowrap">
+                          {Object.keys(rowSelection).length}
+                      </span>
+                  )}
+              </div>
 
-            {showFilters && (
-              <Button
-                variant="outline"
-                size="sm"
-                className="lg:hidden h-8 w-8 rounded-lg p-0 font-bold border-gray-200 hover:bg-gray-50 transition-colors relative"
-                onClick={() => setIsFilterOpen((v) => !v)}
-              >
-                <Filter className="h-4 w-4 text-[#1F30AD]" />
-                {isFilterOpen && <X className="absolute h-3 w-3 -top-1 -right-1 bg-white rounded-full border border-gray-200" />}
-              </Button>
-            )}
+              {showViewOptions && <DataTableViewOptions table={table} />}
+              
+              
+              {showPagination && (
+                <Select
+                  value={`${table.getState().pagination.pageSize}`}
+                  onValueChange={(value) => table.setPageSize(Number(value))}
+                >
+                  <SelectTrigger className="w-fit min-w-[32px] px-2 h-8 rounded-lg border-gray-200 bg-gray-50/30 transition-all font-bold text-[11px]">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {pageSizeOptions.map((size) => (
+                      <SelectItem key={size} value={`${size}`} className="text-[11px]">
+                        {size}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              )}
+
+              {showFilters && (
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="lg:hidden h-8 w-8 rounded-lg p-0 font-bold border-gray-200 hover:bg-gray-50 transition-colors relative"
+                  onClick={() => setIsFilterOpen((v) => !v)}
+                >
+                  <Filter className="h-4 w-4 text-[#1F30AD]" />
+                  {isFilterOpen && <X className="absolute h-3 w-3 -top-1 -right-1 bg-white rounded-full border border-gray-200" />}
+                </Button>
+              )}
+            </div>
           </div>
+
+          {/* Right Header Actions (Add Button) moved outside to allow justification */}
+          {rightHeaderActions && (
+             <div className="shrink-0">
+                {rightHeaderActions}
+             </div>
+          )}
         </div>
       </div>
 
@@ -295,23 +319,7 @@ export function DataTable<TData, TValue>({
 
       {/* Mobile cards */}
       <div className="lg:hidden space-y-4">
-        <div className="flex items-center gap-3 px-1 pb-2">
-            <div className="flex items-center gap-2 bg-white border border-gray-200 rounded-lg px-3 py-2 shadow-sm">
-                <Checkbox 
-                    checked={table.getIsAllPageRowsSelected() || (table.getIsSomePageRowsSelected() && "indeterminate")}
-                    onCheckedChange={(value) => table.toggleAllPageRowsSelected(!!value)}
-                    aria-label="Tout sélectionner"
-                />
-                <span className="text-xs font-bold text-gray-700">
-                    Tout sélectionner
-                </span>
-            </div>
-            {Object.keys(rowSelection).length > 0 && (
-                <span className="text-xs font-bold text-[#1F30AD] bg-blue-50 px-2 py-1 rounded-md">
-                    {Object.keys(rowSelection).length} sélectionné(s)
-                </span>
-            )}
-        </div>
+        {/* Old Select All row removed */}
 
         {table.getRowModel().rows.length ? (
           table.getRowModel().rows.map((row) => {
@@ -326,13 +334,25 @@ export function DataTable<TData, TValue>({
             const visibleCells = row.getVisibleCells();
             const selectCell = visibleCells.find(cell => cell.column.id === "select");
             
-            // Primary columns (marked as isPrimary or fallback to first 2)
-            let primaryCells = visibleCells.filter(cell => cell.column.columnDef.meta?.isPrimary);
-            if (primaryCells.length === 0) {
-              primaryCells = visibleCells.filter(c => c.column.id !== "select" && c.column.id !== "actions").slice(0, 2);
+            // Split primaries into left and right based on mobilePosition
+            const rightPrimaries = visibleCells.filter(cell => cell.column.columnDef.meta?.mobilePosition === "right");
+            const leftPrimaries = visibleCells.filter(cell => 
+                cell.column.columnDef.meta?.isPrimary && 
+                cell.column.columnDef.meta?.mobilePosition !== "right"
+            );
+
+            // Fallback if no specific primaries defined (legacy behavior)
+            let finalLeftCells = leftPrimaries;
+            if (leftPrimaries.length === 0 && rightPrimaries.length === 0) {
+               finalLeftCells = visibleCells.filter(c => c.column.id !== "select" && c.column.id !== "actions").slice(0, 2);
             }
             
-            const secondaryCells = visibleCells.filter(cell => !primaryCells.includes(cell) && cell.column.id !== "select" && cell.column.id !== "actions");
+            const secondaryCells = visibleCells.filter(cell => 
+                !finalLeftCells.includes(cell) && 
+                !rightPrimaries.includes(cell) &&
+                cell.column.id !== "select" && 
+                cell.column.id !== "actions"
+            );
 
             return (
               <div 
@@ -358,16 +378,16 @@ export function DataTable<TData, TValue>({
                     <div className="flex flex-1 items-center justify-between gap-3 overflow-hidden">
                         {/* Left side: Stacked Info (Number + Product) */}
                         <div className="flex flex-col gap-0.5 overflow-hidden">
-                            {primaryCells.slice(0, 2).map((cell) => (
+                            {finalLeftCells.slice(0, 2).map((cell) => (
                                 <div key={cell.id} className="text-sm font-bold text-gray-900 truncate">
                                     {flexRender(cell.column.columnDef.cell, cell.getContext())}
                                 </div>
                             ))}
                         </div>
                         
-                        {/* Right side: Status and/or other primaries */}
+                        {/* Right side: Right-positioned primaries (e.g. Role) */}
                         <div className="flex items-center gap-2">
-                            {primaryCells.slice(2).map((cell) => (
+                            {rightPrimaries.map((cell) => (
                                 <div key={cell.id}>
                                     {flexRender(cell.column.columnDef.cell, cell.getContext())}
                                 </div>

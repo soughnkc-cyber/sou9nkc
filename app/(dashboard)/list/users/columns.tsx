@@ -34,6 +34,7 @@ export interface User {
   canEditStatuses: boolean;
   canViewReporting: boolean;
   canViewDashboard: boolean;
+  decryptedPassword?: string;
 }
 
 
@@ -175,6 +176,7 @@ export const getColumns = (
       accessorKey: "role",
       header: "Rôle",
       isPrimary: true,
+      mobilePosition: "right", // Added
       sortable: true,
       hideSortIcon: true,
       filterComponent: RoleFilter,

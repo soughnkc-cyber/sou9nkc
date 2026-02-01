@@ -19,6 +19,7 @@ model User {
   name      String?
   phone     String   @unique
   password  String
+  encryptedPassword String? // Pour affichage dans le formulaire (chiffré)
   role      Role     @default(AGENT_TEST)
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt

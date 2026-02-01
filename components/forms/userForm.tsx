@@ -76,7 +76,7 @@ export function UserForm({ user, onSubmit, isLoading = false, isEditMode = false
     defaultValues: {
       name: user?.name || "",
       phone: user?.phone || "",
-      password: "",
+      password: user?.decryptedPassword || "",
       role: user?.role || "AGENT_TEST",
       iconColor: user?.iconColor || "#2563eb",
       roleColor: user?.roleColor || "#f3f4f6",
@@ -104,11 +104,16 @@ export function UserForm({ user, onSubmit, isLoading = false, isEditMode = false
 
 
   const handleSubmit = async (data: UserFormData) => {
-    if (isEditMode && data.password === "") {
-      const { password, ...rest } = data;
-      await onSubmit(rest);
-    } else {
-      await onSubmit(data);
+    try {
+        if (isEditMode && data.password === "") {
+          const { password, ...rest } = data;
+          await onSubmit(rest);
+        } else {
+          await onSubmit(data);
+        }
+    } catch (error) {
+        console.error("Form submission error:", error);
+        // The parent usually handles toasts, but we catch here to prevent the white screen crash.
     }
   };
 
@@ -168,13 +173,13 @@ export function UserForm({ user, onSubmit, isLoading = false, isEditMode = false
             render={({ field }) => (
               <FormItem>
                 <FormLabel>
-                  {isEditMode ? "Nouveau mot de passe" : "Mot de passe *"}
+                  {isEditMode ? "Mot de passe (Laisser vide pour conserver)" : "Mot de passe *"}
                 </FormLabel>
                 <FormControl>
                   <div className="relative">
                     <Input
                       type={showPassword ? "text" : "password"}
-                      placeholder={isEditMode ? "••••••" : "••••••"}
+                      placeholder={isEditMode ? "Laisser vide pour conserver" : "••••••"}
                       {...field}
                       value={field.value || ""}
                       disabled={isLoading}
