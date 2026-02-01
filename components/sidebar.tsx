@@ -48,7 +48,18 @@ export default function Sidebar({
 
 
   const userRole = (dbUser?.role || (session?.user as any)?.role) as Role;
-  const permissions = dbUser || (session?.user as any) || {};
+  let permissions = dbUser || (session?.user as any) || {};
+
+  // 🛡️ Fallback for Desktop too
+  if (userRole && permissions.canViewOrders === undefined) {
+      const defaults: any = {
+        ADMIN: { canViewOrders: true, canViewUsers: true, canViewProducts: true, canViewStatuses: true, canViewReporting: true, canViewDashboard: true },
+        SUPERVISOR: { canViewOrders: true, canViewProducts: true, canViewReporting: true, canViewDashboard: true, canViewUsers: false },
+        AGENT: { canViewOrders: true, canViewDashboard: true },
+        AGENT_TEST: { canViewOrders: true, canViewDashboard: true },
+      };
+      permissions = { ...(defaults[userRole] || {}), ...permissions };
+  }
 
   const handleSignOut = () => {
     localStorage.removeItem("sou9nkc_user_data");

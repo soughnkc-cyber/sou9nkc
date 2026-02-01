@@ -50,7 +50,19 @@ export default function MenuBar() {
   }, [status, pathname]);
 
   const userRole = (dbUser?.role || (session?.user as any)?.role);
-  const permissions = dbUser || (session?.user as any) || {};
+  let permissions = dbUser || (session?.user as any) || {};
+
+  // 🛡️ Fallback: If permissions are missing (first load/race condition), generate defaults based on Role
+  // This prevents the "empty sidebar" issue on mobile before getMe() resolves
+  if (userRole && permissions.canViewOrders === undefined) {
+      const defaults: any = {
+        ADMIN: { canViewOrders: true, canViewUsers: true, canViewProducts: true, canViewStatuses: true, canViewReporting: true, canViewDashboard: true },
+        SUPERVISOR: { canViewOrders: true, canViewProducts: true, canViewReporting: true, canViewDashboard: true, canViewUsers: false },
+        AGENT: { canViewOrders: true, canViewDashboard: true },
+        AGENT_TEST: { canViewOrders: true, canViewDashboard: true },
+      };
+      permissions = { ...(defaults[userRole] || {}), ...permissions };
+  }
 
   const handleSignOut = () => {
     localStorage.removeItem("sou9nkc_user_data");
