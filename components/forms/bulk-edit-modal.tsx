@@ -26,7 +26,7 @@ export function BulkEditModal({
   isOpen: boolean;
   onClose: () => void;
   selectedCount: number;
-  agents: { id: string; name: string }[];
+  agents: { id: string; name: string; isActive: boolean }[];
   onUpdate: (agentId: string) => Promise<void>;
   isLoading?: boolean;
 }) {
@@ -72,7 +72,9 @@ export function BulkEditModal({
                     <SelectContent>
                         <SelectItem value="no_change" className="text-gray-500 italic">-- Sélectionner --</SelectItem>
                         <SelectItem value="unassigned" className="text-amber-600 font-medium">Désassigner (Pas d'agent)</SelectItem>
-                        {agents.map(a => (
+                        {agents
+                            .filter(a => a.isActive)
+                            .map(a => (
                             <SelectItem key={a.id} value={a.id}>{a.name}</SelectItem>
                         ))}
                     </SelectContent>

@@ -103,7 +103,7 @@ export async function getUsers(): Promise<User[]> {
  * Returns a basic list of active agents for assignment/filtering.
  * Accessible to ADMIN, SUPERVISOR, and anyone with access to Orders or Products.
  */
-export async function getAgents(): Promise<{ id: string; name: string; role: string }[]> {
+export async function getAgents(): Promise<{ id: string; name: string; role: string; isActive: boolean; iconColor?: string }[]> {
 // await checkPermission(["canViewUsers", "canViewOrders", "canViewProducts"]);
   const session = await getServerSession(authOptions);
   if (!session) return [];
@@ -111,12 +111,13 @@ export async function getAgents(): Promise<{ id: string; name: string; role: str
   const agents = await prisma.user.findMany({
     where: {
       role: { in: ["AGENT", "AGENT_TEST"] },
-      status: "ACTIVE",
+      // status: "ACTIVE", // Fetch all for proper display
     },
     select: {
       id: true,
       name: true,
       role: true,
+      status: true,
       iconColor: true,
     },
     orderBy: { name: "asc" },
@@ -126,6 +127,7 @@ export async function getAgents(): Promise<{ id: string; name: string; role: str
     id: a.id,
     name: a.name ?? "Sans nom",
     role: a.role,
+    isActive: a.status === "ACTIVE",
     iconColor: a.iconColor,
   }));
 }
