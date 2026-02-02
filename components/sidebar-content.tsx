@@ -254,12 +254,8 @@ export function SidebarContent({
 
       {/* System Settings & Footer */}
       <div className="mt-auto px-4 py-4 space-y-1">
-        {/* {[
-          { name: "Support", icon: HelpCircle, href: "#" },
-          { name: "Paramètres", icon: Settings, href: "#" },
-        ].map((link) => (
+        {effectiveRole === "ADMIN" ? (
           <Button
-            key={link.name}
             variant="ghost"
             asChild
             className={cn(
@@ -267,12 +263,26 @@ export function SidebarContent({
               isCollapsed && !mobile ? "px-0 justify-center" : "rounded-xl"
             )}
           >
-            <Link href={link.href}>
-              <link.icon className={cn("h-4 w-4 shrink-0", showLabels && "mr-3 text-gray-400")} />
-              {showLabels && <span className="text-sm font-medium">{link.name}</span>}
+            <Link href="/settings" onClick={() => mobile && onNavigate?.()}>
+              <Settings className={cn("h-4 w-4 shrink-0", showLabels && "mr-3 text-gray-400")} />
+              {showLabels && <span className="text-sm font-medium">Paramètres</span>}
             </Link>
           </Button>
-        ))} */}
+        ) : (
+          <Button
+            variant="ghost"
+            asChild
+            className={cn(
+              "w-full justify-start h-9 px-3 text-gray-500 hover:text-black hover:bg-gray-50/50",
+              isCollapsed && !mobile ? "px-0 justify-center" : "rounded-xl"
+            )}
+          >
+            <Link href="/profile" onClick={() => mobile && onNavigate?.()}>
+              <ShieldCheck className={cn("h-4 w-4 shrink-0", showLabels && "mr-3 text-gray-400")} />
+              {showLabels && <span className="text-sm font-medium">Profil</span>}
+            </Link>
+          </Button>
+        )}
 
         <Button
           variant="ghost"

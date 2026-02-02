@@ -15,6 +15,7 @@ interface UserFormModalProps {
   isLoading?: boolean;
   title?: string;
   description?: string;
+  isSelfEdit?: boolean;
 }
 
 export function UserFormModal({
@@ -25,6 +26,7 @@ export function UserFormModal({
   isLoading = false,
   title,
   description,
+  isSelfEdit = false,
 }: UserFormModalProps) {
   const isEditMode = !!user;
 
@@ -45,6 +47,7 @@ export function UserFormModal({
     onSubmit={onSubmit}
     isLoading={isLoading}
     isEditMode={isEditMode}
+    isSelfEdit={isSelfEdit}
   />
 </Modal>
 

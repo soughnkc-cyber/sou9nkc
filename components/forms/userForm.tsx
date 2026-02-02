@@ -39,6 +39,7 @@ interface UserFormProps {
   onSubmit: (data: UserFormData) => Promise<void>;
   isLoading?: boolean;
   isEditMode?: boolean;
+  isSelfEdit?: boolean;
 }
 
 function PermissionCheckbox({ control, name, label, disabled }: { control: any; name: string; label: string; disabled?: boolean }) {
@@ -67,9 +68,9 @@ function PermissionCheckbox({ control, name, label, disabled }: { control: any; 
 }
 
 
-export function UserForm({ user, onSubmit, isLoading = false, isEditMode = false }: UserFormProps) {
+export function UserForm({ user, onSubmit, isLoading = false, isEditMode = false, isSelfEdit = false }: UserFormProps) {
 
-  const [showPassword, setShowPassword] = useState(false);
+  const [showPassword, setShowPassword] = useState(true);
 
   const form = useForm<any>({
     resolver: zodResolver(userFormSchema),
@@ -212,92 +213,98 @@ export function UserForm({ user, onSubmit, isLoading = false, isEditMode = false
           />
 
           {/* Rôle */}
-          <FormField
-            control={form.control}
-            name="role"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>Rôle *</FormLabel>
-                <Select 
-                  onValueChange={field.onChange} 
-                  defaultValue={field.value}
-                  disabled={isLoading}
-                >
-                  <FormControl>
-                    <SelectTrigger>
-                      <SelectValue placeholder="Sélectionner un rôle" />
-                    </SelectTrigger>
-                  </FormControl>
-                  <SelectContent>
-                    <SelectItem value="ADMIN">Administrateur</SelectItem>
-                    <SelectItem value="AGENT">Agent</SelectItem>
-                    <SelectItem value="SUPERVISOR">Superviseur</SelectItem>
-                    <SelectItem value="AGENT_TEST">Agent Test</SelectItem>
-                  </SelectContent>
-                </Select>
-                <FormDescription>
-                  Définit les permissions de l'utilisateur
-                </FormDescription>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
+          {!isSelfEdit && (
+            <FormField
+              control={form.control}
+              name="role"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Rôle *</FormLabel>
+                  <Select 
+                    onValueChange={field.onChange} 
+                    defaultValue={field.value}
+                    disabled={isLoading}
+                  >
+                    <FormControl>
+                      <SelectTrigger>
+                        <SelectValue placeholder="Sélectionner un rôle" />
+                      </SelectTrigger>
+                    </FormControl>
+                    <SelectContent>
+                      <SelectItem value="ADMIN">Administrateur</SelectItem>
+                      <SelectItem value="AGENT">Agent</SelectItem>
+                      <SelectItem value="SUPERVISOR">Superviseur</SelectItem>
+                      <SelectItem value="AGENT_TEST">Agent Test</SelectItem>
+                    </SelectContent>
+                  </Select>
+                  <FormDescription>
+                    Définit les permissions de l'utilisateur
+                  </FormDescription>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+          )}
 
           {/* Couleurs */}
-          <FormField
-            control={form.control}
-            name="iconColor"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>Couleur de l'icône</FormLabel>
-                <FormControl>
-                  <div className="flex gap-2 items-center">
-                    <Input 
-                      type="color" 
-                      {...field}
-                      className="w-12 h-10 p-1 cursor-pointer"
-                      disabled={isLoading}
-                    />
-                    <Input 
-                      {...field}
-                      placeholder="#2563eb"
-                      disabled={isLoading}
-                    />
-                  </div>
-                </FormControl>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
+          {!isSelfEdit && (
+            <>
+              <FormField
+                control={form.control}
+                name="iconColor"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Couleur de l'icône</FormLabel>
+                    <FormControl>
+                      <div className="flex gap-2 items-center">
+                        <Input 
+                          type="color" 
+                          {...field}
+                          className="w-12 h-10 p-1 cursor-pointer"
+                          disabled={isLoading}
+                        />
+                        <Input 
+                          {...field}
+                          placeholder="#2563eb"
+                          disabled={isLoading}
+                        />
+                      </div>
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
 
-          <FormField
-            control={form.control}
-            name="roleColor"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>Couleur du rôle (Badge)</FormLabel>
-                <FormControl>
-                  <div className="flex gap-2 items-center">
-                    <Input 
-                      type="color" 
-                      {...field}
-                      className="w-12 h-10 p-1 cursor-pointer"
-                      disabled={isLoading}
-                    />
-                    <Input 
-                      {...field}
-                      placeholder="#f3f4f6"
-                      disabled={isLoading}
-                    />
-                  </div>
-                </FormControl>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
+              <FormField
+                control={form.control}
+                name="roleColor"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Couleur du rôle (Badge)</FormLabel>
+                    <FormControl>
+                      <div className="flex gap-2 items-center">
+                        <Input 
+                          type="color" 
+                          {...field}
+                          className="w-12 h-10 p-1 cursor-pointer"
+                          disabled={isLoading}
+                        />
+                        <Input 
+                          {...field}
+                          placeholder="#f3f4f6"
+                          disabled={isLoading}
+                        />
+                      </div>
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+            </>
+          )}
 
           {/* Champs admin seulement: Paiement */}
-          {isAdmin && (
+          {isAdmin && !isSelfEdit && (
 
             <>
               <FormField
@@ -347,7 +354,7 @@ export function UserForm({ user, onSubmit, isLoading = false, isEditMode = false
 
 
         {/* Permissions Section (Admin only) */}
-        {isAdmin && (
+        {isAdmin && !isSelfEdit && (
           <div className="space-y-4 pt-4 border-t">
             <div className="flex items-center gap-2 text-blue-600">
               <ShieldCheck className="h-5 w-5" />

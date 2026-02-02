@@ -55,6 +55,7 @@ export const authOptions = {
           canEditStatuses: user.canEditStatuses,
           canViewReporting: user.canViewReporting,
           canViewDashboard: user.canViewDashboard,
+          iconColor: user.iconColor,
         };
       },
     }),
@@ -81,6 +82,7 @@ export const authOptions = {
         token.canEditStatuses = user.canEditStatuses;
         token.canViewReporting = user.canViewReporting;
         token.canViewDashboard = user.canViewDashboard;
+        token.iconColor = user.iconColor;
       }
       return token;
     },
@@ -101,6 +103,7 @@ export const authOptions = {
         session.user.canEditStatuses = token.canEditStatuses;
         session.user.canViewReporting = token.canViewReporting;
         session.user.canViewDashboard = token.canViewDashboard;
+        session.user.iconColor = token.iconColor;
       }
       return session;
     },

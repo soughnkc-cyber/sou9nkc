@@ -58,6 +58,11 @@ export async function getUsers(): Promise<User[]> {
   await checkPermission("canViewUsers");
 
   const users = await prisma.user.findMany({
+    where: {
+      role: {
+        not: "ADMIN"
+      }
+    },
     orderBy: { createdAt: "desc" },
   });
 
@@ -218,45 +223,31 @@ export interface MeUser {
   id: string;
   name: string | null;
   role: string;
-  canViewOrders: boolean;
-  canEditOrders: boolean;
-  canViewUsers: boolean;
-  canEditUsers: boolean;
-  canViewProducts: boolean;
-  canEditProducts: boolean;
-  canViewStatuses: boolean;
-  canEditStatuses: boolean;
   canViewReporting: boolean;
   canViewDashboard: boolean;
+  phone: string;
+  iconColor: string;
+  decryptedPassword: string;
 }
 
-export async function getMe(): Promise<MeUser | null> {
+export async function getMe(): Promise<any | null> {
   const session = await getServerSession(authOptions);
   if (!session?.user) return null;
+  const userId = (session.user as any).id;
 
-  const user = session.user as any;
-  // Update lastSeenAt as heartbeat
-  const dbUser = await prisma.user.update({
-    where: { id: user.id },
-    data: { lastSeenAt: new Date() },
-    select: {
-      id: true,
-      name: true,
-      role: true,
-      canViewOrders: true,
-      canEditOrders: true,
-      canViewUsers: true,
-      canEditUsers: true,
-      canViewProducts: true,
-      canEditProducts: true,
-      canViewStatuses: true,
-      canEditStatuses: true,
-      canViewReporting: true,
-      canViewDashboard: true,
-    }
+  const dbUser = await prisma.user.findUnique({
+    where: { id: userId },
   });
 
-  return dbUser as unknown as MeUser;
+  if (!dbUser) return null;
+
+  // Pulse heartbeat in background
+  prisma.user.update({
+    where: { id: dbUser.id },
+    data: { lastSeenAt: new Date() },
+  }).catch(() => {});
+
+  return mapUser(dbUser);
 }
 
 export async function deleteUserAction(userId: string) {
@@ -270,6 +261,51 @@ export async function deleteUserAction(userId: string) {
   } catch (err) {
     console.error("Erreur deleteUserAction:", err);
     throw new Error("Impossible de supprimer l'utilisateur");
+  }
+}
+
+export async function updateMeAction(data: Partial<UserFormData>) {
+  const session = await getServerSession(authOptions);
+  if (!session?.user) throw new Error("Non autorisé");
+  const userId = (session.user as any).id;
+
+  try {
+    const updateData: any = { ...data };
+
+    // Hasher le mot de passe si fourni
+    if (updateData.password && updateData.password.trim() !== "") {
+       updateData.password = await bcrypt.hash(updateData.password, SALT_ROUNDS);
+       updateData.encryptedPassword = encrypt(data.password!); 
+    } else {
+       delete updateData.password;
+    }
+
+    // Prevent role/permission updates via this action
+    delete updateData.role;
+    delete updateData.canViewOrders;
+    delete updateData.canEditOrders;
+    delete updateData.canViewUsers;
+    delete updateData.canEditUsers;
+    delete updateData.canViewProducts;
+    delete updateData.canEditProducts;
+    delete updateData.canViewStatuses;
+    delete updateData.canEditStatuses;
+    delete updateData.canViewReporting;
+    delete updateData.canViewDashboard;
+    delete updateData.paymentRemainingDays;
+    delete updateData.paymentDefaultDays;
+    delete updateData.roleColor;
+
+    const user = await prisma.user.update({
+      where: { id: userId },
+      data: updateData,
+    });
+
+    revalidatePath("/");
+    return mapUser(user);
+  } catch (err) {
+    console.error("Erreur updateMeAction:", err);
+    throw new Error("Impossible de mettre à jour le profil");
   }
 }
 

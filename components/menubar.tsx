@@ -18,6 +18,7 @@ import { SidebarContent } from "./sidebar-content";
 import React, { useState, useEffect } from "react";
 import { getMe } from "@/lib/actions/users";
 import { cn } from "@/lib/utils";
+import Link from "next/link";
 
 export default function MenuBar({ onOpenMobile }: { onOpenMobile: () => void }) {
   const { data: session, status } = useSession();
@@ -102,7 +103,10 @@ export default function MenuBar({ onOpenMobile }: { onOpenMobile: () => void }) 
                         <span className="text-[10px] text-gray-400 font-medium uppercase tracking-wider">{userRole}</span>
                     </div>
                     <Avatar className="h-7 w-7 sm:h-8 sm:w-8 border-2 border-white ring-2 ring-gray-100 shadow-sm group-hover:ring-blue-200 transition-all">
-                        <AvatarFallback className="bg-[#1F30AD] text-white font-bold text-xs uppercase">
+                        <AvatarFallback 
+                            className="text-white font-bold text-xs uppercase"
+                            style={{ backgroundColor: dbUser?.iconColor || (session?.user as any)?.iconColor || "#1F30AD" }}
+                        >
                             {session?.user?.name?.substring(0, 2)}
                         </AvatarFallback>
                     </Avatar>
@@ -110,12 +114,19 @@ export default function MenuBar({ onOpenMobile }: { onOpenMobile: () => void }) 
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end" className="w-56 p-2 rounded-2xl border-gray-100 shadow-xl mt-2">
                 <DropdownMenuLabel className="font-black text-xs uppercase tracking-widest text-gray-400 px-3 py-2">Mon Compte</DropdownMenuLabel>
-                <DropdownMenuItem className="rounded-xl px-3 py-2 cursor-pointer font-bold focus:bg-blue-50 focus:text-[#1F30AD]">
-                    <User className="h-4 w-4 mr-2" /> Profil
-                </DropdownMenuItem>
-                <DropdownMenuItem className="rounded-xl px-3 py-2 cursor-pointer font-bold focus:bg-blue-50 focus:text-[#1F30AD]">
-                    <Settings className="h-4 w-4 mr-2" /> Paramètres
-                </DropdownMenuItem>
+                {userRole === "ADMIN" ? (
+                    <Link href="/settings">
+                        <DropdownMenuItem className="rounded-xl px-3 py-2 cursor-pointer font-bold focus:bg-blue-50 focus:text-[#1F30AD]">
+                            <Settings className="h-4 w-4 mr-2" /> Paramètres
+                        </DropdownMenuItem>
+                    </Link>
+                ) : (
+                    <Link href="/profile">
+                        <DropdownMenuItem className="rounded-xl px-3 py-2 cursor-pointer font-bold focus:bg-blue-50 focus:text-[#1F30AD]">
+                            <User className="h-4 w-4 mr-2" /> Profil
+                        </DropdownMenuItem>
+                    </Link>
+                )}
                 <DropdownMenuSeparator className="bg-gray-50 mx-2 my-1" />
                 <DropdownMenuItem 
                     className="rounded-xl px-3 py-2 cursor-pointer font-bold text-red-600 focus:bg-red-50 focus:text-red-700"
