@@ -98,6 +98,27 @@ export const insertNewOrders = async (shopifyOrders: ShopifyOrder[]) => {
       ? products.map(p => p.title).join(", ")
       : order.line_items?.map(li => li.title).join(", ") || "Produit inconnu";
 
+    // 🔍 [DOUBLON CHECK] Vérification si une commande identique existe dans l'heure
+    if (customerPhone) {
+        const orderTime = new Date(order.created_at);
+        const oneHourMillis = 60 * 60 * 1000;
+        const potentialDuplicate = await prisma.order.findFirst({
+            where: {
+                customerPhone: customerPhone,
+                productNote: productNote,
+                orderDate: {
+                    gte: new Date(orderTime.getTime() - oneHourMillis),
+                    lte: new Date(orderTime.getTime() + oneHourMillis),
+                }
+            }
+        });
+
+        if (potentialDuplicate) {
+            console.log(`🚫 [Webhook] Doublon détecté pour #${order.order_number} (Même téléphone/produits dans l'heure). Commande ignorée.`);
+            continue;
+        }
+    }
+
     const created = await prisma.order.create({
       data: {
         orderNumber: order.order_number,
