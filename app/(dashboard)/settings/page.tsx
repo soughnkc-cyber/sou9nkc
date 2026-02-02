@@ -22,8 +22,10 @@ export default function SettingsPage() {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [systemSettings, setSystemSettings] = useState<any>(null);
-  const [isSavingSystem, setIsSavingSystem] = useState(false);
+  const [isSavingBatch, setIsSavingBatch] = useState(false);
+  const [isSavingRecall, setIsSavingRecall] = useState(false);
   const [batchSize, setBatchSize] = useState<number>(1);
+  const [maxRecallAttempts, setMaxRecallAttempts] = useState<number>(3);
 
   const fetchData = useCallback(async () => {
     setIsLoading(true);
@@ -36,6 +38,7 @@ export default function SettingsPage() {
       if (settings) {
         setSystemSettings(settings);
         setBatchSize(settings.assignmentBatchSize);
+        setMaxRecallAttempts(settings.maxRecallAttempts);
       }
     } catch (error) {
       toast.error("Erreur de chargement des paramètres");
@@ -63,18 +66,6 @@ export default function SettingsPage() {
     }
   };
 
-  const handleSaveSystem = async () => {
-    setIsSavingSystem(true);
-    try {
-      await updateSystemSettings({ assignmentBatchSize: batchSize });
-      toast.success("Paramètres système mis à jour");
-      await fetchData();
-    } catch (error: any) {
-      toast.error("Erreur lors de la mise à jour système");
-    } finally {
-      setIsSavingSystem(false);
-    }
-  };
 
   const user = dbUser || (session?.user as any);
   const iconColor = user?.iconColor || "#1F30AD";
@@ -142,15 +133,16 @@ export default function SettingsPage() {
 
             {/* System Settings Section (Admin only) */}
             {user?.role === "ADMIN" && (
-                <div className="pt-6 border-t border-gray-100 space-y-6 w-full">
+                <div className="pt-4 border-t border-gray-100 space-y-4 w-full">
                     <div className="text-center space-y-1">
-                        <p className="text-[10px] font-black text-gray-400 uppercase tracking-[0.2em]">Attribution des commandes</p>
-                        <h2 className="text-lg font-black text-gray-900 tracking-tight">PARAMÈTRES SYSTÈME</h2>
+                        <p className="text-[10px] font-black text-gray-400 uppercase tracking-[0.2em]">Configuration</p>
+                        <h2 className="text-sm font-black text-gray-900 tracking-tight uppercase">SYSTÈME</h2>
                     </div>
 
-                    <div className="bg-gray-50/50 p-6 rounded-3xl border border-gray-100 space-y-4">
-                        <div className="space-y-2">
-                            <Label htmlFor="batchSize" className="text-xs font-bold text-gray-500 uppercase ml-1">Commandes par Agent (Batch)</Label>
+                    <div className="bg-white p-4 rounded-3xl border border-gray-100 shadow-sm space-y-4">
+                        {/* Batch Size Setting */}
+                        <div className="space-y-1.5">
+                            <Label htmlFor="batchSize" className="text-[10px] font-black text-gray-400 uppercase tracking-wider ml-1">Orders par Agent</Label>
                             <div className="flex gap-2">
                                 <Input 
                                     id="batchSize"
@@ -159,19 +151,57 @@ export default function SettingsPage() {
                                     max={100}
                                     value={batchSize}
                                     onChange={(e) => setBatchSize(parseInt(e.target.value) || 1)}
-                                    className="h-12 rounded-xl border-gray-200 font-bold focus:ring-[#1F30AD]"
+                                    className="h-10 w-20 rounded-xl border-gray-100 bg-gray-50/50 text-sm font-bold focus:ring-[#1F30AD] focus:border-[#1F30AD]"
                                 />
                                 <Button 
-                                    onClick={handleSaveSystem}
-                                    disabled={isSavingSystem}
-                                    className="h-12 px-6 rounded-xl bg-gray-900 hover:bg-black text-white font-bold transition-all"
+                                    onClick={async () => {
+                                        setIsSavingBatch(true);
+                                        try {
+                                            await updateSystemSettings({ assignmentBatchSize: batchSize, maxRecallAttempts });
+                                            toast.success("Batch size mis à jour");
+                                            await fetchData();
+                                        } finally {
+                                            setIsSavingBatch(false);
+                                        }
+                                    }}
+                                    disabled={isSavingBatch}
+                                    className="h-10 flex-1 rounded-xl bg-[#1F30AD] hover:bg-[#172585] text-white text-[10px] font-black uppercase tracking-widest transition-all"
                                 >
-                                    {isSavingSystem ? <RefreshCw className="h-4 w-4 animate-spin" /> : "OK"}
+                                    {isSavingBatch ? <RefreshCw className="h-3 w-3 animate-spin" /> : "Appliquer"}
                                 </Button>
                             </div>
-                            <p className="text-[10px] text-gray-400 font-medium px-1">
-                                Définit combien de commandes consécutives reçoit un agent avant de passer au suivant.
-                            </p>
+                        </div>
+
+                        {/* Max Recall Setting */}
+                        <div className="space-y-1.5 pt-3 border-t border-gray-50">
+                            <Label htmlFor="maxRecall" className="text-[10px] font-black text-gray-400 uppercase tracking-wider ml-1">Max Tentatives de Rappel</Label>
+                            <div className="flex gap-2">
+                                <Input 
+                                    id="maxRecall"
+                                    type="number" 
+                                    min={1} 
+                                    max={20}
+                                    value={maxRecallAttempts}
+                                    onChange={(e) => setMaxRecallAttempts(parseInt(e.target.value) || 3)}
+                                    className="h-10 w-20 rounded-xl border-gray-100 bg-gray-50/50 text-sm font-bold focus:ring-[#1F30AD] focus:border-[#1F30AD]"
+                                />
+                                <Button 
+                                    onClick={async () => {
+                                        setIsSavingRecall(true);
+                                        try {
+                                            await updateSystemSettings({ assignmentBatchSize: batchSize, maxRecallAttempts });
+                                            toast.success("Limite de rappels mise à jour");
+                                            await fetchData();
+                                        } finally {
+                                            setIsSavingRecall(false);
+                                        }
+                                    }}
+                                    disabled={isSavingRecall}
+                                    className="h-10 flex-1 rounded-xl bg-[#1F30AD] hover:bg-[#172585] text-white text-[10px] font-black uppercase tracking-widest transition-all"
+                                >
+                                    {isSavingRecall ? <RefreshCw className="h-3 w-3 animate-spin" /> : "Appliquer"}
+                                </Button>
+                            </div>
                         </div>
                     </div>
                 </div>

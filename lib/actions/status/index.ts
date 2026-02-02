@@ -10,6 +10,7 @@ import { authOptions } from "@/app/api/auth/[...nextauth]/route";
 import { hasPermission } from "@/lib/auth-utils";
 import { checkPermission } from "../auth-helper";
 import { revalidatePath } from "next/cache";
+import { getSystemSettings } from "../settings";
 
 
 
@@ -172,8 +173,11 @@ export const updateOrderStatus = async (
 
     // 🔹 Seulement si recallAfterH existe
     if (status?.recallAfterH != null) {
-      if ((currentOrder?.recallAttempts || 0) >= 3) {
-        throw new Error("Nombre maximum de rappels (3) atteint pour cette commande");
+      const settings = await getSystemSettings();
+      const maxAttempts = (settings as any).maxRecallAttempts ?? 3;
+
+      if ((currentOrder?.recallAttempts || 0) >= maxAttempts) {
+        throw new Error(`Nombre maximum de rappels (${maxAttempts}) atteint pour cette commande`);
       }
       
       const recallAt = new Date();

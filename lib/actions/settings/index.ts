@@ -21,13 +21,20 @@ export async function getSystemSettings() {
   return settings;
 }
 
-export async function updateSystemSettings(data: { assignmentBatchSize: number }) {
-  await checkPermission("canEditUsers"); // Only admins usually manage users/system
+export async function updateSystemSettings(data: { assignmentBatchSize: number, maxRecallAttempts?: number }) {
+  await checkPermission("canEditUsers"); 
 
-  const settings = await prisma.systemSettings.upsert({
+  const settings = await (prisma.systemSettings.upsert as any)({
     where: { id: "default" },
-    update: { assignmentBatchSize: data.assignmentBatchSize },
-    create: { id: "default", assignmentBatchSize: data.assignmentBatchSize },
+    update: { 
+      assignmentBatchSize: data.assignmentBatchSize,
+      maxRecallAttempts: data.maxRecallAttempts
+    },
+    create: { 
+      id: "default", 
+      assignmentBatchSize: data.assignmentBatchSize,
+      maxRecallAttempts: data.maxRecallAttempts ?? 3
+    },
   });
 
   revalidatePath("/");
