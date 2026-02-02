@@ -10,6 +10,10 @@ import { getMe, updateMeAction } from "@/lib/actions/users";
 import { UserFormModal } from "@/components/forms/user-form-modal";
 import { toast } from "sonner";
 import { UserFormData } from "@/lib/schema";
+import { getSystemSettings, updateSystemSettings } from "@/lib/actions/settings";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { RefreshCw } from "lucide-react";
 
 export default function SettingsPage() {
   const { data: session, update: updateSession } = useSession();
@@ -17,13 +21,21 @@ export default function SettingsPage() {
   const [isLoading, setIsLoading] = useState(true);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [systemSettings, setSystemSettings] = useState<any>(null);
+  const [isSavingSystem, setIsSavingSystem] = useState(false);
+  const [batchSize, setBatchSize] = useState<number>(1);
 
   const fetchData = useCallback(async () => {
     setIsLoading(true);
     try {
-      const me = await getMe();
-      if (me) {
-        setDbUser(me);
+      const [me, settings] = await Promise.all([
+        getMe(),
+        getSystemSettings()
+      ]);
+      if (me) setDbUser(me);
+      if (settings) {
+        setSystemSettings(settings);
+        setBatchSize(settings.assignmentBatchSize);
       }
     } catch (error) {
       toast.error("Erreur de chargement des paramètres");
@@ -48,6 +60,19 @@ export default function SettingsPage() {
       toast.error(error.message || "Erreur lors de la mise à jour");
     } finally {
       setIsSubmitting(false);
+    }
+  };
+
+  const handleSaveSystem = async () => {
+    setIsSavingSystem(true);
+    try {
+      await updateSystemSettings({ assignmentBatchSize: batchSize });
+      toast.success("Paramètres système mis à jour");
+      await fetchData();
+    } catch (error: any) {
+      toast.error("Erreur lors de la mise à jour système");
+    } finally {
+      setIsSavingSystem(false);
     }
   };
 
@@ -106,7 +131,7 @@ export default function SettingsPage() {
         </div>
 
         {/* Action Button */}
-        <div className="w-full pt-4">
+        <div className="w-full pt-4 space-y-4">
             <Button 
                 onClick={() => setIsModalOpen(true)}
                 className="w-full h-14 rounded-2xl bg-[#1F30AD] hover:bg-[#172585] text-white font-black uppercase tracking-widest shadow-xl shadow-blue-100 hover:scale-[1.02] active:scale-95 transition-all"
@@ -114,6 +139,43 @@ export default function SettingsPage() {
                 <Edit2 className="h-4 w-4 mr-2" />
                 Modifier mon profil
             </Button>
+
+            {/* System Settings Section (Admin only) */}
+            {user?.role === "ADMIN" && (
+                <div className="pt-8 border-t border-gray-100 space-y-6 w-full">
+                    <div className="text-center space-y-1">
+                        <p className="text-[10px] font-black text-gray-400 uppercase tracking-[0.2em]">Attribution des commandes</p>
+                        <h2 className="text-lg font-black text-gray-900 tracking-tight">PARAMÈTRES SYSTÈME</h2>
+                    </div>
+
+                    <div className="bg-gray-50/50 p-6 rounded-3xl border border-gray-100 space-y-4">
+                        <div className="space-y-2">
+                            <Label htmlFor="batchSize" className="text-xs font-bold text-gray-500 uppercase ml-1">Commandes par Agent (Batch)</Label>
+                            <div className="flex gap-2">
+                                <Input 
+                                    id="batchSize"
+                                    type="number" 
+                                    min={1} 
+                                    max={100}
+                                    value={batchSize}
+                                    onChange={(e) => setBatchSize(parseInt(e.target.value) || 1)}
+                                    className="h-12 rounded-xl border-gray-200 font-bold focus:ring-[#1F30AD]"
+                                />
+                                <Button 
+                                    onClick={handleSaveSystem}
+                                    disabled={isSavingSystem}
+                                    className="h-12 px-6 rounded-xl bg-gray-900 hover:bg-black text-white font-bold transition-all"
+                                >
+                                    {isSavingSystem ? <RefreshCw className="h-4 w-4 animate-spin" /> : "OK"}
+                                </Button>
+                            </div>
+                            <p className="text-[10px] text-gray-400 font-medium px-1">
+                                Définit combien de commandes consécutives reçoit un agent avant de passer au suivant.
+                            </p>
+                        </div>
+                    </div>
+                </div>
+            )}
         </div>
       </div>
 

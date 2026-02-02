@@ -133,3 +133,9 @@ model Product {
 }
 
 
+
+model SystemSettings {
+  id                    String   @id @default("default")
+  assignmentBatchSize   Int      @default(1)
+  updatedAt             DateTime @updatedAt
+}

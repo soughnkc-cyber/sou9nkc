@@ -8,6 +8,8 @@ import { getServerSession } from "next-auth";
 import { hasPermission } from "@/lib/auth-utils";
 import { checkPermission } from "../auth-helper";
 import { revalidatePath } from "next/cache";
+import { getMe, getAgents } from "../users";
+import { getSystemSettings } from "../settings";
 
 
 
@@ -157,6 +159,11 @@ export const insertNewOrders = async (shopifyOrders: ShopifyOrder[]) => {
 
   console.log(`🔍 [Assignment] Orders to assign: ${ordersToAssign.length}`);
 
+  // 📦 Get Batch Size Setting
+  const settings = await getSystemSettings();
+  const batchSize = settings.assignmentBatchSize || 1;
+  console.log(`📦 [Assignment] Using Batch Size: ${batchSize}`);
+
   // Fetch TODAY's load for balancing (Reset at midnight)
   const todayStart = new Date();
   todayStart.setHours(0, 0, 0, 0);
@@ -217,14 +224,28 @@ export const insertNewOrders = async (shopifyOrders: ShopifyOrder[]) => {
         candidates = agents;
     }
 
-    // 2. Load Balancing (Least Assigned Today)
+    // 2. Load Balancing (Least Assigned Today) WITH Batch Logic
     if (candidates.length > 0) {
         // We randomize candidates with equal scores to avoid "locking" onto one agent for batch processing
         candidates.sort((a, b) => {
             const scoreA = getAgentScore(a.id);
             const scoreB = getAgentScore(b.id);
-            if (scoreA === scoreB) return Math.random() - 0.5;
-            return scoreA - scoreB;
+            
+            const remA = scoreA % batchSize;
+            const remB = scoreB % batchSize;
+
+            // Rule 1: Priority to agents currently in an incomplete batch (remainder > 0)
+            const isInBatchA = remA > 0;
+            const isInBatchB = remB > 0;
+
+            if (isInBatchA && !isInBatchB) return -1;
+            if (!isInBatchA && isInBatchB) return 1;
+
+            // Rule 2: If both are in a batch OR both are between batches, pick the one with lowest total load
+            if (scoreA !== scoreB) return scoreA - scoreB;
+            
+            // Rule 3: Tie break
+            return Math.random() - 0.5;
         });
 
         const bestAgent = candidates[0];
