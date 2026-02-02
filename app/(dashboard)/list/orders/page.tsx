@@ -46,7 +46,10 @@ function OrdersPageContent() {
   const [hasPermission, setHasPermission] = useState<boolean | null>(null);
   
   const [selectedOrders, setSelectedOrders] = useState<Order[]>([]);
-  const [dateRange, setDateRange] = useState<DateRange | undefined>();
+  const [dateRange, setDateRange] = useState<DateRange | undefined>({
+    from: new Date(),
+    to: new Date(),
+  });
   const [lastServerTime, setLastServerTime] = useState<string | null>(null);
   const [isPaused, setIsPaused] = useState(false); // New state to pause refresh
   const user = session.data?.user;
@@ -255,7 +258,7 @@ function OrdersPageContent() {
       case "toprocess":
         return dateFilteredOrders.filter(order => !order.status);
       case "torecall":
-        return dateFilteredOrders.filter(o => o.recallAt && isSameDay(new Date(o.recallAt), new Date()));
+        return orders.filter(o => o.recallAt && new Date(o.recallAt) <= new Date());
       case "new_arrivals":
         return dateFilteredOrders.filter(o => 
             !o.status && 
@@ -288,8 +291,8 @@ function OrdersPageContent() {
 
     const totalRevenue = confirmedOrders.reduce((sum, o) => sum + o.totalPrice, 0);
 
-    const recallToday = base.filter(o => 
-      o.recallAt && isSameDay(new Date(o.recallAt), new Date())
+    const recallDue = orders.filter(o => 
+      o.recallAt && new Date(o.recallAt) <= new Date()
     ).length;
     
     console.log("📊 [Stats Debug] Range:", dateRange);
@@ -326,7 +329,7 @@ function OrdersPageContent() {
     return {
       total,
       totalRevenue,
-      recallToday,
+      recallToday: recallDue,
       treatmentRate,
       avgDuration,
       newOrdersCount
