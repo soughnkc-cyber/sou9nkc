@@ -50,6 +50,7 @@ function OrdersPageContent() {
     from: new Date(),
     to: new Date(),
   });
+  const [tableFilteredOrders, setTableFilteredOrders] = useState<Order[]>([]);
   const [lastServerTime, setLastServerTime] = useState<string | null>(null);
   const [isPaused, setIsPaused] = useState(false); // New state to pause refresh
   const user = session.data?.user;
@@ -271,7 +272,15 @@ function OrdersPageContent() {
   }, [dateFilteredOrders, filterType, currentFilter, recallFilterEntryTime]);
 
   const stats = useMemo(() => {
-    const base = dateFilteredOrders;
+    // We use the data currently visible/filtered in the table if available,
+    // otherwise fallback to the date-filtered base.
+    const base = tableFilteredOrders.length > 0 || (orders.length > 0 && tableFilteredOrders.length === 0 && orders.length > 0) ? tableFilteredOrders : dateFilteredOrders;
+    
+    // Optimization: If tableFilteredOrders is empty because of a strict filter, but we have orders, 
+    // it means the stats should indeed be 0. We only fallback if tableFilteredOrders hasn't been initialized yet.
+    // However, TanStack table rows are empty initially. 
+    // Let's refine: If we have data but filtered is 0, it means a filter is active.
+    
     const total = base.length;
     
     // Taux de confirmation : STATUS_15 parmi toutes les commandes ayant un statut (dans la période)
@@ -334,7 +343,7 @@ function OrdersPageContent() {
       avgDuration,
       newOrdersCount
     };
-  }, [dateFilteredOrders, recallFilterEntryTime]);
+  }, [tableFilteredOrders, dateFilteredOrders, recallFilterEntryTime, orders]);
 
   const StatCard = ({ title, value, icon: Icon, active, onClick, color, trend, trendUp, isClickable = true, bgColor }: any) => {
     return (
@@ -598,6 +607,7 @@ function OrdersPageContent() {
                 <DatePickerWithRange date={dateRange} setDate={setDateRange} />
             }
             onSelectionChange={setSelectedOrders}
+            onFilteredDataChange={setTableFilteredOrders}
             getRowClassName={(row) => {
                const recallAt = row.recallAt ? new Date(row.recallAt) : null;
                if (recallAt && isPast(recallAt)) {

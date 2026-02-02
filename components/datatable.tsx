@@ -65,6 +65,7 @@ interface DataTableProps<TData, TValue> {
   rightHeaderActions?: React.ReactNode;
   getRowClassName?: (row: TData) => string;
   mobileRowAction?: (row: TData) => React.ReactNode;
+  onFilteredDataChange?: (data: TData[]) => void;
 }
 
 
@@ -84,6 +85,7 @@ export function DataTable<TData, TValue>({
   rightHeaderActions,
   getRowClassName,
   mobileRowAction,
+  onFilteredDataChange,
 }: DataTableProps<TData, TValue>) {
   const [sorting, setSorting] = useState<SortingState>([]);
   const [columnFilters, setColumnFilters] = React.useState<ColumnFiltersState>([]);
@@ -133,6 +135,17 @@ export function DataTable<TData, TValue>({
       onSelectionChange(selectedRows);
     }
   }, [rowSelection, table, onSelectionChange]);
+
+  const filteredData = React.useMemo(() => 
+    table.getFilteredRowModel().rows.map(row => row.original),
+    [table.getFilteredRowModel().rows]
+  );
+
+  React.useEffect(() => {
+    if (onFilteredDataChange) {
+        onFilteredDataChange(filteredData);
+    }
+  }, [filteredData, onFilteredDataChange]);
 
 
   const totalPages = table.getPageCount();
