@@ -246,9 +246,12 @@ export const insertNewOrders = async (shopifyOrders: ShopifyOrder[]) => {
         const bestAgent = candidates[0];
 
         try {
-            await prisma.order.update({
+            await (prisma.order.update as any)({
                 where: { id: order.id },
-                data: { agentId: bestAgent.id },
+                data: { 
+                    agentId: bestAgent.id,
+                    assignedAt: new Date()
+                },
             });
 
             const newScore = getAgentScore(bestAgent.id) + 1;
@@ -348,13 +351,18 @@ export const updateOrderAgent = async (orderId: string, agentId: string) => {
   await checkPermission("canEditOrders");
 
   try {
-     const order = await prisma.order.update({
+     const order = await (prisma.order.update as any)({
       where: { id: orderId },
-      data: { agentId: agentId === "unassigned" ? null : agentId },
+      data: { 
+        agentId: agentId === "unassigned" ? null : agentId,
+        assignedAt: agentId === "unassigned" ? null : new Date()
+      },
       include: { agent: true, status: true }
     });
 
     revalidatePath("/");
+    
+    const typedOrder = order as any;
     
     return {
         ...order,
@@ -362,8 +370,8 @@ export const updateOrderAgent = async (orderId: string, agentId: string) => {
         recallAt: order.recallAt ? order.recallAt.toISOString() : null,
         createdAt: order.createdAt.toISOString(),
         updatedAt: order.updatedAt.toISOString(),
-        status: order.status ? { id: order.status.id, name: order.status.name, color: order.status.color } : null,
-        agent: order.agent ? { id: order.agent.id, name: order.agent.name, phone: order.agent.phone, iconColor: order.agent.iconColor } : null
+        status: typedOrder.status ? { id: typedOrder.status.id, name: typedOrder.status.name, color: typedOrder.status.color } : null,
+        agent: typedOrder.agent ? { id: typedOrder.agent.id, name: typedOrder.agent.name, phone: typedOrder.agent.phone, iconColor: typedOrder.agent.iconColor } : null
     };
 
   } catch (err) {
@@ -397,9 +405,12 @@ export const updateOrdersAgent = async (orderIds: string[], agentId: string) => 
   await checkPermission("canEditOrders");
 
   try {
-    const updated = await prisma.order.updateMany({
+    const updated = await (prisma.order.updateMany as any)({
       where: { id: { in: orderIds } },
-      data: { agentId: agentId === "unassigned" ? null : agentId },
+      data: { 
+        agentId: agentId === "unassigned" ? null : agentId,
+        assignedAt: agentId === "unassigned" ? null : new Date()
+      },
     });
 
     revalidatePath("/");

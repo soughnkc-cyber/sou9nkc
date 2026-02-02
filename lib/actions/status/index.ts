@@ -153,16 +153,17 @@ export const updateOrderStatus = async (
       ? await prisma.status.findUnique({ where: { id: statusId } })
       : null;
 
-    const currentOrder = await prisma.order.findUnique({
+    const currentOrder = await (prisma.order.findUnique as any)({
       where: { id: orderId },
-      select: { orderDate: true, firstProcessedAt: true, recallAttempts: true }
+      select: { orderDate: true, assignedAt: true, firstProcessedAt: true, recallAttempts: true }
     });
 
     let data: any = { statusId };
 
     if (currentOrder && !currentOrder.firstProcessedAt && statusId) {
       const now = new Date();
-      const diffMs = now.getTime() - currentOrder.orderDate.getTime();
+      const calculationBase = currentOrder.assignedAt || currentOrder.orderDate;
+      const diffMs = now.getTime() - calculationBase.getTime();
       const diffMin = Math.round(diffMs / (1000 * 60));
       
       data.firstProcessedAt = now;

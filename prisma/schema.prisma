@@ -106,6 +106,7 @@ model Order {
   agentId       String?
   agent         User?    @relation(fields: [agentId], references: [id])
   recallAt      DateTime?
+  assignedAt    DateTime?
   firstProcessedAt DateTime?
   processingTimeMin Int?
   recallAttempts Int @default(0)
