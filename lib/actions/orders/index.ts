@@ -86,6 +86,15 @@ export const insertNewOrders = async (shopifyOrders: ShopifyOrder[]) => {
       : order.name;
     const customerPhone = order.customer?.phone ?? order.billing_address?.phone ?? null;
 
+    // Validation : Le numéro de téléphone doit avoir au moins 8 chiffres
+    // On ne garde que les chiffres pour vérifier la longueur
+    const phoneDigits = customerPhone ? customerPhone.replace(/\D/g, '') : "";
+    
+    if (phoneDigits.length < 8) {
+        console.log(`🚫 [Webhook] Commande #${order.order_number} ignorée : Téléphone invalide ou trop court (${customerPhone})`);
+        continue;
+    }
+
     const productIds = order.line_items?.map(li => li.product_id?.toString()).filter(Boolean) as string[] || [];
     const products = await prisma.product.findMany({
       where: { shopifyId: { in: productIds } },
