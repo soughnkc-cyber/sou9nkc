@@ -4,6 +4,12 @@ import { Badge } from "@/components/ui/badge";
 import { Edit, Trash2, Eye, User as UserIcon, Clock } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { 
+  DropdownMenu, 
+  DropdownMenuContent, 
+  DropdownMenuItem, 
+  DropdownMenuTrigger 
+} from "@/components/ui/dropdown-menu";
 import { RecallCell } from "@/components/recallAt";
 import { differenceInDays, isSameDay, isPast, parseISO } from "date-fns";
 import { Checkbox } from "@/components/ui/checkbox";
@@ -68,41 +74,38 @@ const StatusSelect = ({
 
   return (
     <div onClick={(e) => e.stopPropagation()}>
-      <Select
-        value={order.status?.id}
-        onValueChange={(value) => {
-          if (value !== order.status?.id) {
-            onChange(order.id, value);
-          }
-        }}
-      >
-        <SelectTrigger 
-          className={cn(
-            "h-7 w-[140px] text-xs font-medium transition-colors border-0 shadow-sm",
-            selectedStatus?.color ? "text-white" : "border border-input bg-background"
-          )}
-          style={{ 
-            backgroundColor: selectedStatus?.color || undefined
-          }}
-        >
-          <div className="flex items-center gap-2 truncate w-full">
-             <SelectValue placeholder="Sélectionner" />
+      <DropdownMenu>
+        <DropdownMenuTrigger asChild>
+          <div 
+            className={cn(
+              "h-7 w-[140px] text-xs font-medium flex items-center px-3 rounded-md transition-colors border-0 shadow-sm cursor-pointer",
+              selectedStatus?.color ? "text-white" : "border border-input bg-background"
+            )}
+            style={{ 
+              backgroundColor: selectedStatus?.color || undefined
+            }}
+          >
+            <span className="truncate">{selectedStatus?.name || "Sélectionner"}</span>
           </div>
-        </SelectTrigger>
+        </DropdownMenuTrigger>
 
-        <SelectContent>
+        <DropdownMenuContent align="start" className="w-[140px]">
           {statuses
             .filter(s => s.isActive || s.id === order.status?.id)
             .map((s) => (
-            <SelectItem key={s.id} value={s.id}>
+            <DropdownMenuItem 
+              key={s.id} 
+              onSelect={() => onChange(order.id, s.id)}
+              className="text-xs"
+            >
                <div className="flex items-center gap-2">
                  <span>{s.name}</span>
                  {!s.isActive && <span className="text-[10px] text-red-400">(Inactif)</span>}
                </div>
-            </SelectItem>
+            </DropdownMenuItem>
           ))}
-        </SelectContent>
-      </Select>
+        </DropdownMenuContent>
+      </DropdownMenu>
     </div>
   );
 };
