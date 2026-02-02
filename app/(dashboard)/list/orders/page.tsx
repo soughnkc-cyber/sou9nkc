@@ -179,7 +179,7 @@ function OrdersPageContent() {
     if (!user) return;
     if (!isSilent) setIsLoadingPage(true);
     try {
-      const response = await getOrders(user);
+      const response = await getOrders();
       setOrders(response.orders);
       setLastServerTime(response.serverTime);
     } catch (error) {

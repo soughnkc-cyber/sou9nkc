@@ -1,14 +1,9 @@
 "use server";
 
 
-import { User } from "@/app/(dashboard)/list/users/columns";
-import { authOptions } from "@/app/api/auth/[...nextauth]/route";
 import prisma from "@/lib/prisma";
-import { getServerSession } from "next-auth";
-import { hasPermission } from "@/lib/auth-utils";
 import { checkPermission } from "../auth-helper";
 import { revalidatePath } from "next/cache";
-import { getMe, getAgents } from "../users";
 import { getSystemSettings } from "../settings";
 
 
@@ -220,8 +215,8 @@ export const insertNewOrders = async (shopifyOrders: ShopifyOrder[]) => {
     }
 
     if (candidates.length === 0) {
-        console.warn(`🚨 [Assignment] Commande #${order.orderNumber}: Tous les agents sont exclus (Hidden/Restrictions). Attribution d'urgence à tous les agents actifs.`);
-        candidates = agents;
+        console.warn(`🚨 [Assignment] Commande #${order.orderNumber}: Tous les agents sont exclus (Hidden/Restrictions). La commande restera SANS agent.`);
+        continue; // Passer à la commande suivante, elle restera agentId: null
     }
 
     // 2. Load Balancing (Least Assigned Today) WITH Batch Logic
@@ -273,12 +268,8 @@ export const insertNewOrders = async (shopifyOrders: ShopifyOrder[]) => {
 
 
 
-type UserLite = {
-  id: string;
-  role: "ADMIN" | "AGENT" | "SUPERVISOR" | "AGENT_TEST";
-};
 
-export const getOrders = async (user: UserLite) => {
+export const getOrders = async () => {
   const session = await checkPermission("canViewOrders");
   const sessionUser = session.user as any;
 
@@ -346,13 +337,15 @@ export const updateOrderRecallAt = async (
 
   return {
     ...order,
+    orderDate: order.orderDate.toISOString(),
     recallAt: order.recallAt ? order.recallAt.toISOString() : null,
+    createdAt: order.createdAt.toISOString(),
+    updatedAt: order.updatedAt.toISOString(),
   };
 };
 
 export const updateOrderAgent = async (orderId: string, agentId: string) => {
-  const session = await getServerSession(authOptions);
-  if (!session) throw new Error("Unauthorized");
+  await checkPermission("canEditOrders");
 
   try {
      const order = await prisma.order.update({
@@ -367,6 +360,8 @@ export const updateOrderAgent = async (orderId: string, agentId: string) => {
         ...order,
         orderDate: order.orderDate.toISOString(),
         recallAt: order.recallAt ? order.recallAt.toISOString() : null,
+        createdAt: order.createdAt.toISOString(),
+        updatedAt: order.updatedAt.toISOString(),
         status: order.status ? { id: order.status.id, name: order.status.name, color: order.status.color } : null,
         agent: order.agent ? { id: order.agent.id, name: order.agent.name, phone: order.agent.phone, iconColor: order.agent.iconColor } : null
     };
@@ -377,10 +372,8 @@ export const updateOrderAgent = async (orderId: string, agentId: string) => {
   }
 };
 export const deleteOrders = async (orderIds: string[]) => {
-  await checkPermission("canEditOrders");
+  const session = await checkPermission("canEditOrders");
   
-  const session = await getServerSession(authOptions);
-  if (!session) throw new Error("Unauthorized");
   if ((session.user as any).role !== "ADMIN") throw new Error("Seul un administrateur peut supprimer des commandes");
 
   try {
@@ -402,9 +395,6 @@ export const deleteOrders = async (orderIds: string[]) => {
 
 export const updateOrdersAgent = async (orderIds: string[], agentId: string) => {
   await checkPermission("canEditOrders");
-  
-  const session = await getServerSession(authOptions);
-  if (!session) throw new Error("Unauthorized");
 
   try {
     const updated = await prisma.order.updateMany({

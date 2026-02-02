@@ -88,7 +88,7 @@ export default function SettingsPage() {
   }
 
   return (
-    <div className="min-h-[80vh] flex flex-col items-center justify-center px-4 -mt-12">
+    <div className="min-h-screen flex flex-col items-center pt-6 pb-20 px-4">
       {/* Back Button */}
       <div className="absolute top-4 left-4">
         <Button variant="ghost" size="icon" asChild className="rounded-full text-gray-400 hover:text-gray-900 transition-colors">
@@ -98,16 +98,16 @@ export default function SettingsPage() {
         </Button>
       </div>
 
-      <div className="w-full max-w-sm space-y-8 flex flex-col items-center">
+      <div className="w-full max-w-sm space-y-6 flex flex-col items-center">
         {/* Avatar Section */}
         <div className="relative group">
             <div 
                 className="absolute inset-0 rounded-full blur-2xl opacity-20 transition-all duration-500 group-hover:opacity-40"
                 style={{ backgroundColor: iconColor }}
             />
-            <Avatar className="h-32 w-32 border-4 border-white shadow-2xl relative transition-transform duration-500 group-hover:scale-105">
+            <Avatar className="h-24 w-24 border-4 border-white shadow-2xl relative transition-transform duration-500 group-hover:scale-105">
                 <AvatarFallback 
-                    className="text-white font-black text-4xl uppercase"
+                    className="text-white font-black text-2xl uppercase"
                     style={{ backgroundColor: iconColor }}
                 >
                     {user?.name?.substring(0, 2)}
@@ -119,7 +119,7 @@ export default function SettingsPage() {
         <div className="text-center space-y-3">
             <div className="space-y-1">
                 <p className="text-[10px] font-black text-gray-400 uppercase tracking-[0.2em]">Administrateur</p>
-                <h1 className="text-3xl font-black text-gray-900 tracking-tight uppercase">
+                <h1 className="text-2xl font-black text-gray-900 tracking-tight uppercase">
                     {user?.name}
                 </h1>
             </div>
@@ -134,7 +134,7 @@ export default function SettingsPage() {
         <div className="w-full pt-4 space-y-4">
             <Button 
                 onClick={() => setIsModalOpen(true)}
-                className="w-full h-14 rounded-2xl bg-[#1F30AD] hover:bg-[#172585] text-white font-black uppercase tracking-widest shadow-xl shadow-blue-100 hover:scale-[1.02] active:scale-95 transition-all"
+                className="w-full h-12 rounded-2xl bg-[#1F30AD] hover:bg-[#172585] text-white font-black uppercase tracking-widest shadow-xl shadow-blue-100 hover:scale-[1.02] active:scale-95 transition-all"
             >
                 <Edit2 className="h-4 w-4 mr-2" />
                 Modifier mon profil
@@ -142,7 +142,7 @@ export default function SettingsPage() {
 
             {/* System Settings Section (Admin only) */}
             {user?.role === "ADMIN" && (
-                <div className="pt-8 border-t border-gray-100 space-y-6 w-full">
+                <div className="pt-6 border-t border-gray-100 space-y-6 w-full">
                     <div className="text-center space-y-1">
                         <p className="text-[10px] font-black text-gray-400 uppercase tracking-[0.2em]">Attribution des commandes</p>
                         <h2 className="text-lg font-black text-gray-900 tracking-tight">PARAMÈTRES SYSTÈME</h2>

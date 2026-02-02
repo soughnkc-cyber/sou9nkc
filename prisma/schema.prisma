@@ -132,8 +132,6 @@ model Product {
   orders             Order[]
 }
 
-
-
 model SystemSettings {
   id                    String   @id @default("default")
   assignmentBatchSize   Int      @default(1)
