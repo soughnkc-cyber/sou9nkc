@@ -211,7 +211,7 @@ function OrdersPageContent() {
     
     const interval = setInterval(() => {
         refreshData(true); // Silent background refresh
-    }, 5000);
+    }, 30000);
 
     return () => clearInterval(interval);
   }, [hasPermission, user, refreshData, isPaused]);
