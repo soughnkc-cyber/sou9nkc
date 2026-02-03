@@ -116,6 +116,11 @@ export async function getAgents() {
   const users = await prisma.user.findMany({
     where: {
       status: "ACTIVE",
+      role: {
+        not: {
+          in: ["ADMIN", "SUPERVISOR"]
+        }
+      }
     },
     orderBy: { name: "asc" },
   });
