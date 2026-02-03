@@ -226,6 +226,7 @@ export const insertNewOrders = async (shopifyOrders: ShopifyOrder[]) => {
             blockedAgentIds.push(...p.hiddenForAgentIds);
         }
     });
+    
 
     let baseCandidates: typeof agents = [];
 
