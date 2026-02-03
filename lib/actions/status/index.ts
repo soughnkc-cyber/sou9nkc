@@ -175,16 +175,27 @@ export const updateOrderStatus = async (
     if (status?.recallAfterH != null) {
       const settings = await getSystemSettings();
       const maxAttempts = (settings as any).maxRecallAttempts ?? 3;
+      const currentAttempts = currentOrder?.recallAttempts || 0;
 
-      if ((currentOrder?.recallAttempts || 0) >= maxAttempts) {
+      // Vérifier si on a déjà atteint le max AVANT cet appel
+      if (currentAttempts >= maxAttempts) {
         throw new Error(`Nombre maximum de rappels (${maxAttempts}) atteint pour cette commande`);
       }
       
-      const recallAt = new Date();
-      recallAt.setHours(recallAt.getHours() + status.recallAfterH);
-
-      data.recallAt = recallAt;
+      // Incrémenter le compteur
       data.recallAttempts = { increment: 1 };
+      
+      // Si après incrémentation on atteint le max, on met recallAt à null
+      // Sinon, on planifie le rappel normalement
+      if (currentAttempts + 1 >= maxAttempts) {
+        // Dernier rappel atteint : pas de nouvelle date de rappel
+        data.recallAt = null;
+      } else {
+        // Encore des tentatives disponibles : planifier le rappel
+        const recallAt = new Date();
+        recallAt.setHours(recallAt.getHours() + status.recallAfterH);
+        data.recallAt = recallAt;
+      }
     } else {
       // Si le statut n'a pas de configuration de rappel, on vide la date de rappel
       data.recallAt = null;
