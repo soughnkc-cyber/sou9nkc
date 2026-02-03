@@ -276,51 +276,80 @@ function OrdersPageContent() {
     // otherwise fallback to the date-filtered base.
     const base = tableFilteredOrders.length > 0 || (orders.length > 0 && tableFilteredOrders.length === 0 && orders.length > 0) ? tableFilteredOrders : dateFilteredOrders;
     
-    // Optimization: If tableFilteredOrders is empty because of a strict filter, but we have orders, 
-    // it means the stats should indeed be 0. We only fallback if tableFilteredOrders hasn't been initialized yet.
-    // However, TanStack table rows are empty initially. 
-    // Let's refine: If we have data but filtered is 0, it means a filter is active.
-    
-    const total = base.length;
-    
-    // Taux de confirmation : STATUS_15 parmi toutes les commandes ayant un statut (dans la période)
-    const ordersWithStatus = base.filter(o => o.status?.id || o.status?.name);
-    const confirmedOrders = base.filter(o => {
-      const status = o.status as any;
-      if (!status) return false;
+    // Helper function to calculate stats for a given set of orders
+    const calculateStats = (orderSet: Order[]) => {
+      const total = orderSet.length;
       
-      const etatValue = status.etat?.toString() || "";
-      const nameValue = status.name?.toString() || "";
+      const ordersWithStatus = orderSet.filter(o => o.status?.id || o.status?.name);
+      const confirmedOrders = orderSet.filter(o => {
+        const status = o.status as any;
+        if (!status) return false;
+        
+        const etatValue = status.etat?.toString() || "";
+        const nameValue = status.name?.toString() || "";
+        
+        return (
+          etatValue.toUpperCase() === 'STATUS_15' || 
+          nameValue.toUpperCase().includes('STATUS_15')
+        );
+      });
+
+      const totalRevenue = confirmedOrders.reduce((sum, o) => sum + o.totalPrice, 0);
+      const treatmentRate = ordersWithStatus.length > 0 ? (confirmedOrders.length / ordersWithStatus.length) * 100 : 0;
       
-      return (
-        etatValue.toUpperCase() === 'STATUS_15' || 
-        nameValue.toUpperCase().includes('STATUS_15')
-      );
-    });
+      const ordersWithDuration = orderSet.filter(o => o.processingTimeMin != null && o.processingTimeMin > 0);
+      const avgDuration = ordersWithDuration.length > 0 
+        ? ordersWithDuration.reduce((sum, o) => sum + (o.processingTimeMin || 0), 0) / ordersWithDuration.length 
+        : 0;
 
-    const totalRevenue = confirmedOrders.reduce((sum, o) => sum + o.totalPrice, 0);
+      return { total, totalRevenue, treatmentRate, avgDuration };
+    };
 
+    // Calculate current period stats
+    const currentStats = calculateStats(base);
+    
+    // Calculate previous period stats for trend comparison
+    let previousStats = { total: 0, totalRevenue: 0, treatmentRate: 0, avgDuration: 0 };
+    
+    if (dateRange?.from) {
+      const from = startOfDay(dateRange.from);
+      const to = dateRange.to ? endOfDay(dateRange.to) : endOfDay(dateRange.from);
+      
+      // Calculate period duration in milliseconds
+      const periodDuration = to.getTime() - from.getTime();
+      
+      // Calculate previous period (same duration, just before current period)
+      const previousFrom = new Date(from.getTime() - periodDuration);
+      const previousTo = new Date(from.getTime() - 1); // 1ms before current period starts
+      
+      const previousPeriodOrders = orders.filter(order => {
+        const date = new Date(order.orderDate);
+        return isWithinInterval(date, { start: previousFrom, end: previousTo });
+      });
+      
+      previousStats = calculateStats(previousPeriodOrders);
+    }
+    
+    // Calculate trends (percentage change)
+    const calculateTrend = (current: number, previous: number) => {
+      if (previous === 0) return { trend: current > 0 ? "100%" : "0%", trendUp: current > 0 };
+      const change = ((current - previous) / previous) * 100;
+      return {
+        trend: `${Math.abs(change).toFixed(1)}%`,
+        trendUp: change >= 0
+      };
+    };
+
+    const totalTrend = calculateTrend(currentStats.total, previousStats.total);
+    const revenueTrend = calculateTrend(currentStats.totalRevenue, previousStats.totalRevenue);
+    const treatmentRateTrend = calculateTrend(currentStats.treatmentRate, previousStats.treatmentRate);
+    const avgDurationTrend = calculateTrend(currentStats.avgDuration, previousStats.avgDuration);
+    
+    // For recall count, we compare with all orders (not period-specific)
     const recallDue = orders.filter(o => 
       o.recallAt && new Date(o.recallAt) <= new Date()
     ).length;
     
-    console.log("📊 [Stats Debug] Range:", dateRange);
-    console.log("📊 [Stats Debug] Total in Period:", total);
-    console.log("📊 [Stats Debug] With Status:", ordersWithStatus.length);
-    console.log("📊 [Stats Debug] Confirmed:", confirmedOrders.length);
-    if (confirmedOrders.length > 0) {
-        console.log("📊 [Stats Debug] Example Confirmed Order:", confirmedOrders[0]);
-    } else if (ordersWithStatus.length > 0) {
-        console.log("📊 [Stats Debug] Example Non-Confirmed Order Status:", ordersWithStatus[0].status);
-    }
-
-    const treatmentRate = ordersWithStatus.length > 0 ? (confirmedOrders.length / ordersWithStatus.length) * 100 : 0;
-    
-    const ordersWithDuration = base.filter(o => o.processingTimeMin != null && o.processingTimeMin > 0);
-    const avgDuration = ordersWithDuration.length > 0 
-      ? ordersWithDuration.reduce((sum, o) => sum + (o.processingTimeMin || 0), 0) / ordersWithDuration.length 
-      : 0;
-
     // Live New Arrivals should NOT be filtered by the calendar date range
     const allUnprocessed = orders.filter(o => !o.status);
     const newOrdersCount = allUnprocessed.filter(o => {
@@ -329,21 +358,25 @@ function OrdersPageContent() {
         const eTime = recallFilterEntryTime.getTime();
         return oTime >= eTime;
     }).length;
-    
-    if (orders.length > 0) {
-        console.log("🔔 [New Arrivals Debug] Last Order createdAt:", orders[0].createdAt);
-        console.log("🔔 [New Arrivals Debug] Is Last Order New?", recallFilterEntryTime && new Date(orders[0].createdAt).getTime() >= recallFilterEntryTime.getTime());
-    }
 
     return {
-      total,
-      totalRevenue,
+      total: currentStats.total,
+      totalRevenue: currentStats.totalRevenue,
       recallToday: recallDue,
-      treatmentRate,
-      avgDuration,
-      newOrdersCount
+      treatmentRate: currentStats.treatmentRate,
+      avgDuration: currentStats.avgDuration,
+      newOrdersCount,
+      // Trends
+      totalTrend: totalTrend.trend,
+      totalTrendUp: totalTrend.trendUp,
+      revenueTrend: revenueTrend.trend,
+      revenueTrendUp: revenueTrend.trendUp,
+      treatmentRateTrend: treatmentRateTrend.trend,
+      treatmentRateTrendUp: treatmentRateTrend.trendUp,
+      avgDurationTrend: avgDurationTrend.trend,
+      avgDurationTrendUp: !avgDurationTrend.trendUp, // Inverted: lower duration is better
     };
-  }, [tableFilteredOrders, dateFilteredOrders, recallFilterEntryTime, orders]);
+  }, [tableFilteredOrders, dateFilteredOrders, recallFilterEntryTime, orders, dateRange]);
 
   const StatCard = ({ title, value, icon: Icon, active, onClick, color, trend, trendUp, isClickable = true, bgColor }: any) => {
     return (
@@ -528,8 +561,6 @@ function OrdersPageContent() {
                 onClick={() => toggleFilter("torecall")}
                 color="bg-red-500/10 text-red-600"
                 bgColor="#ffe3e3"
-                trend="3.2%"
-                trendUp={false} // Assuming urgency is 'negative' trend or just style
               />
             )}
         </div>
@@ -544,8 +575,8 @@ function OrdersPageContent() {
               onClick={() => toggleFilter("all")}
               color="bg-blue-500/10 text-blue-600"
               bgColor="#e3f0ff"
-              trend="12.5%"
-              trendUp={true}
+              trend={stats.totalTrend}
+              trendUp={stats.totalTrendUp}
             />
 
             <StatCard
@@ -556,8 +587,8 @@ function OrdersPageContent() {
               onClick={() => {}}
               color="bg-emerald-500/10 text-emerald-600"
               bgColor="#e3ffef"
-              trend="8.1%"
-              trendUp={true}
+              trend={stats.revenueTrend}
+              trendUp={stats.revenueTrendUp}
             />
 
             <StatCard
@@ -567,8 +598,8 @@ function OrdersPageContent() {
               active={false}
               color="bg-yellow-500/10 text-yellow-600"
               bgColor="#fffbe3"
-              trend="5.4%"
-              trendUp={true}
+              trend={stats.treatmentRateTrend}
+              trendUp={stats.treatmentRateTrendUp}
             />
 
             <StatCard
@@ -579,8 +610,8 @@ function OrdersPageContent() {
               onClick={() => {}}
               color="bg-gray-500/10 text-gray-600"
               bgColor="#f6f6f6"
-              trend="2.1%"
-              trendUp={false}
+              trend={stats.avgDurationTrend}
+              trendUp={stats.avgDurationTrendUp}
             />
         </div>
       </div>
