@@ -166,12 +166,13 @@ export const insertNewOrders = async (shopifyOrders: ShopifyOrder[]) => {
   // 📦 Get Batch Size Setting
   const settings = await getSystemSettings();
   const batchSize = settings.assignmentBatchSize || 1;
-  console.log(`📦 [Assignment] Using Batch Size: ${batchSize}`);
+  console.log(`📦 [Assignment] Using Max Untreated Batch Size: ${batchSize}`);
 
   // Fetch TODAY's load for balancing (Reset at midnight)
   const todayStart = new Date();
   todayStart.setHours(0, 0, 0, 0);
 
+  // 📊 Count TOTAL assignments today (for Least Loaded logic)
   const agentOrderCountsToday = await prisma.order.groupBy({
     by: ['agentId'],
     _count: { id: true },
@@ -181,23 +182,38 @@ export const insertNewOrders = async (shopifyOrders: ShopifyOrder[]) => {
     }
   });
 
-  const localCounts = new Map<string, number>();
-  agents.forEach(a => localCounts.set(a.id, 0)); // Initialize all to 0
-  agentOrderCountsToday.forEach(c => {
-    if (c.agentId) localCounts.set(c.agentId, c._count.id);
+  // 💤 Count UNTREATED orders (assigned but status is null)
+  const agentUntreatedCounts = await prisma.order.groupBy({
+    by: ['agentId'],
+    _count: { id: true },
+    where: {
+        agentId: { not: null },
+        statusId: null // "Non traité"
+    }
   });
 
-  console.log("📊 [Assignment] Initial Load (Today):", Object.fromEntries(localCounts));
+  // Map for Total Load Today
+  const localTodayCounts = new Map<string, number>();
+  agents.forEach(a => localTodayCounts.set(a.id, 0));
+  agentOrderCountsToday.forEach(c => {
+    if (c.agentId) localTodayCounts.set(c.agentId, c._count.id);
+  });
+
+  // Map for Untreated Count (Saturation)
+  const localUntreatedCounts = new Map<string, number>();
+  agents.forEach(a => localUntreatedCounts.set(a.id, 0));
+  agentUntreatedCounts.forEach(c => {
+    if (c.agentId) localUntreatedCounts.set(c.agentId, c._count.id);
+  });
+
+  console.log("📊 [Assignment] Initial Load (Today):", Object.fromEntries(localTodayCounts));
+  console.log("💤 [Assignment] Initial Untreated:", Object.fromEntries(localUntreatedCounts));
 
   for (const order of ordersToAssign) {
-    const getAgentScore = (agentId: string) => localCounts.get(agentId) || 0;
+    const getAgentTodayScore = (agentId: string) => localTodayCounts.get(agentId) || 0;
+    const getAgentUntreatedCount = (agentId: string) => localUntreatedCounts.get(agentId) || 0;
     
-    // 1. Determine if strict assignment is needed
-    // If ANY product in the order has specific assigned agents, the order becomes "Restricted" to those agents.
-    // We take the INTERSECTION of assigned agents if multiple products have assignments (to be safe), 
-    // or UNION? Usually checking if "at least one" product requires it.
-    // Let's assume: If a product has assigned agents, only they can take it.
-    
+    // 1. Determine eligible agents based on Restricted/Hidden rules
     let requiredAgentIds: string[] = [];
     let blockedAgentIds: string[] = [];
 
@@ -211,64 +227,65 @@ export const insertNewOrders = async (shopifyOrders: ShopifyOrder[]) => {
         }
     });
 
-    let candidates: typeof agents = [];
+    let baseCandidates: typeof agents = [];
 
     if (requiredAgentIds.length > 0) {
-        // CASE A: Strict Assignment (At least one product requires specific agents)
-        // We filter agents who are in the required list AND not blocked
-        candidates = agents.filter(a => requiredAgentIds.includes(a.id) && !blockedAgentIds.includes(a.id));
+        // CASE A: Strict Assignment
+        baseCandidates = agents.filter(a => requiredAgentIds.includes(a.id) && !blockedAgentIds.includes(a.id));
     } else {
-        // CASE B: Open Assignment (No product explicitly requires an agent)
-        // Everyone is eligible EXCEPT those blocked
-        candidates = agents.filter(a => !blockedAgentIds.includes(a.id));
+        // CASE B: Open Assignment
+        baseCandidates = agents.filter(a => !blockedAgentIds.includes(a.id));
     }
+
+    if (baseCandidates.length === 0) {
+        console.warn(`🚨 [Assignment] Order #${order.orderNumber}: No eligible agents found due to restrictions.`);
+        continue; 
+    }
+
+    // 2. Capacity Filtering (Backpressure)
+    // We prefer agents who have NOT reached the batchSize limit of untreated orders.
+    let candidates = baseCandidates.filter(a => getAgentUntreatedCount(a.id) < batchSize);
 
     if (candidates.length === 0) {
-        console.warn(`🚨 [Assignment] Commande #${order.orderNumber}: Tous les agents sont exclus (Hidden/Restrictions). La commande restera SANS agent.`);
-        continue; // Passer à la commande suivante, elle restera agentId: null
+        // FALLBACK: Everyone is saturated. We must assign anyway to prevent stalling.
+        // We revert to considering ALL base candidates.
+        candidates = baseCandidates;
+        console.log(`⚠️ [Assignment] All agents saturated (Untreated >= ${batchSize}). Using saturated candidates.`);
     }
 
-    // 2. Load Balancing (Least Assigned Today) WITH Batch Logic
-    if (candidates.length > 0) {
-        // We randomize candidates with equal scores to avoid "locking" onto one agent for batch processing
-        candidates.sort((a, b) => {
-            const scoreA = getAgentScore(a.id);
-            const scoreB = getAgentScore(b.id);
-            
-            const remA = scoreA % batchSize;
-            const remB = scoreB % batchSize;
+    // 3. Load Balancing (Least Assigned Today)
+    candidates.sort((a, b) => {
+        const scoreA = getAgentTodayScore(a.id);
+        const scoreB = getAgentTodayScore(b.id);
+        
+        // Primary: Least total load today
+        if (scoreA !== scoreB) return scoreA - scoreB;
+        
+        // Secondary: Tie break random
+        return Math.random() - 0.5;
+    });
 
-            // Rule 1: Priority to agents currently in an incomplete batch (remainder > 0)
-            const isInBatchA = remA > 0;
-            const isInBatchB = remB > 0;
+    const bestAgent = candidates[0];
 
-            if (isInBatchA && !isInBatchB) return -1;
-            if (!isInBatchA && isInBatchB) return 1;
-
-            // Rule 2: If both are in a batch OR both are between batches, pick the one with lowest total load
-            if (scoreA !== scoreB) return scoreA - scoreB;
-            
-            // Rule 3: Tie break
-            return Math.random() - 0.5;
+    try {
+        await (prisma.order.update as any)({
+            where: { id: order.id },
+            data: { 
+                agentId: bestAgent.id,
+                assignedAt: new Date()
+            },
         });
 
-        const bestAgent = candidates[0];
+        // Update local memory counters
+        const newTodayScore = getAgentTodayScore(bestAgent.id) + 1;
+        const newUntreatedScore = getAgentUntreatedCount(bestAgent.id) + 1;
+        
+        localTodayCounts.set(bestAgent.id, newTodayScore);
+        localUntreatedCounts.set(bestAgent.id, newUntreatedScore);
 
-        try {
-            await (prisma.order.update as any)({
-                where: { id: order.id },
-                data: { 
-                    agentId: bestAgent.id,
-                    assignedAt: new Date()
-                },
-            });
-
-            const newScore = getAgentScore(bestAgent.id) + 1;
-            localCounts.set(bestAgent.id, newScore);
-            console.log(`✅ [Assignment] Order #${order.orderNumber} -> ${bestAgent.name} (Score Today: ${newScore})`);
-        } catch (e) {
-            console.error(`❌ [Assignment] Failed to update order #${order.orderNumber}`, e);
-        }
+        console.log(`✅ [Assignment] Order #${order.orderNumber} -> ${bestAgent.name} (Today: ${newTodayScore}, Untreated: ${newUntreatedScore})`);
+    } catch (e) {
+        console.error(`❌ [Assignment] Failed to update order #${order.orderNumber}`, e);
     }
   }
 
