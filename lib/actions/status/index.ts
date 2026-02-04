@@ -215,9 +215,9 @@ export const updateOrderStatus = async (
     };
 
 
-  } catch (err) {
+  } catch (err: any) {
     console.error(err);
-    throw new Error("Impossible de mettre à jour le statut");
+    throw new Error(err.message || "Impossible de mettre à jour le statut");
   }
 };
 

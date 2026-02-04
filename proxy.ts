@@ -8,7 +8,7 @@ import {
 } from "@/routes";
 
 import { canAccessRoute, Permissions } from "./lib/auth-utils";
-import prisma from "@/lib/prisma";
+
 
 
 export default async function middleware(req: NextRequest) {
@@ -45,38 +45,18 @@ export default async function middleware(req: NextRequest) {
   }
 
   // 🔹 Permission / RBAC checks
-  if (isLoggedIn && token?.id) {
-    // Récupère les permissions fraîches depuis la DB pour éviter de devoir se reconnecter
-    const dbUser = await prisma.user.findUnique({
-      where: { id: token.id as string },
-      select: {
-        role: true,
-        canViewOrders: true,
-        canEditOrders: true,
-        canViewUsers: true,
-        canEditUsers: true,
-        canViewProducts: true,
-        canEditProducts: true,
-        canViewStatuses: true,
-        canEditStatuses: true,
-        canViewReporting: true,
-        canViewDashboard: true,
-      }
-    });
-
-    if (!dbUser) {
-      return NextResponse.redirect(new URL("/auth/signin", nextUrl));
-    }
-
-    if (!canAccessRoute(dbUser.role, dbUser, nextUrl.pathname)) {
-      return NextResponse.redirect(new URL("/", nextUrl));
-    }
-
-    // Update lastSeenAt as heartbeat
-    await prisma.user.update({
-      where: { id: token.id as string },
-      data: { lastSeenAt: new Date() }
-    });
+  if (isLoggedIn && token) {
+     const role = token.role as string;
+     
+     // Use token for permissions (it acts as the cache)
+     // Casting token to any to matches the Permissions structure expected by canAccessRoute
+     if (!canAccessRoute(role, token as any, nextUrl.pathname)) {
+       // Avoid redirect loop if already on /
+       if (nextUrl.pathname === "/") {
+         return null;
+       }
+       return NextResponse.redirect(new URL("/", nextUrl));
+     }
   }
 
 

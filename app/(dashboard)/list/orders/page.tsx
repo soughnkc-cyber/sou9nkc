@@ -124,8 +124,8 @@ function OrdersPageContent() {
         )
       );
       toast.success("Statut mis à jour");
-    } catch {
-      toast.error("Erreur lors du changement de statut");
+    } catch (error: any) {
+      toast.error(error.message || "Erreur lors du changement de statut");
     }
   };
 
