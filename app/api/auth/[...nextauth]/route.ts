@@ -64,9 +64,11 @@ export const authOptions = {
     strategy: "jwt" as const,
     maxAge: 30 * 24 * 60 * 60, // 30 days
   },
+  // We removed explicit cookie names to let NextAuth handle the __Secure- prefix correctly in production
+  // This prevents the infinite refresh loop caused by session mismatch in the proxy/middleware.
   cookies: {
     sessionToken: {
-      name: `next-auth.session-token`,
+      name: process.env.NODE_ENV === "production" ? `__Secure-next-auth.session-token` : `next-auth.session-token`,
       options: {
         httpOnly: true,
         sameSite: "lax",
