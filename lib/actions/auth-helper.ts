@@ -46,11 +46,11 @@ export async function checkPermission(requiredPermission: keyof Permissions | (k
     throw new Error("Accès refusé : Permission insuffisante");
   }
 
-  // Update lastSeenAt as heartbeat
-  await prisma.user.update({
+  // Update lastSeenAt as heartbeat (non-blocking for performance)
+  prisma.user.update({
     where: { id: tokenUser.id },
     data: { lastSeenAt: new Date() }
-  });
+  }).catch((err) => console.error("Heartbeat update failed:", err));
 
   return session;
 }

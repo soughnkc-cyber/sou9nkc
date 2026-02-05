@@ -70,24 +70,30 @@ export const RecallCell = ({
     <div
       onClick={startEditing}
       className={cn(
-        "flex items-center h-8 px-2 rounded transition-colors text-sm",
+        "flex flex-col justify-center min-h-[32px] px-2 py-1 rounded transition-colors text-sm",
         !readOnly ? "hover:bg-muted cursor-pointer" : "opacity-50 cursor-not-allowed",
-        !order.recallAt && "text-muted-foreground italic"
+        !order.recallAt && "text-muted-foreground italic flex-row items-center gap-2"
       )}
     >
       {order.recallAt ? (
-        <span className={cn("whitespace-nowrap")}>
-          {isPast(new Date(order.recallAt)) ? (
-            <Badge variant="destructive" className="text-[10px] px-1 py-0 h-5">À rappeler</Badge>
-          ) : (
-            formatSmartDate(order.recallAt)
+        <div className="flex flex-col gap-0.5">
+          {isPast(new Date(order.recallAt)) && (
+            <Badge variant="destructive" className="text-[9px] px-1 py-0 h-4 w-fit leading-none font-bold uppercase tracking-tighter">
+              À rappeler
+            </Badge>
           )}
-        </span>
+          <span className={cn(
+            "whitespace-nowrap text-[11px] leading-tight",
+            isPast(new Date(order.recallAt)) ? "text-red-600 font-bold" : "text-gray-700 font-medium"
+          )}>
+            {formatSmartDate(order.recallAt)}
+          </span>
+        </div>
       ) : (
-        <span className="flex items-center gap-2">
-           <Calendar className="h-4 w-4" /> 
-           <span className="text-xs">Ajouter</span>
-        </span>
+        <>
+           <Calendar className="h-3.5 w-3.5" /> 
+           <span className="text-[11px]">Planifier</span>
+        </>
       )}
     </div>
   );

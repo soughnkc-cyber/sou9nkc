@@ -61,22 +61,24 @@ export function DateRangePicker({ range, onChange, className }: DateRangePickerP
             )}
           </Button>
         </PopoverTrigger>
-        <PopoverContent className="w-auto p-4 flex flex-row gap-4" align="start">
-          <div className="flex flex-col gap-2 border-r pr-4">
+        <PopoverContent className="w-auto p-0 flex flex-col md:flex-row rounded-2xl border-gray-100 shadow-xl overflow-hidden" align="start">
+          <div className="flex flex-col gap-2 border-b md:border-b-0 md:border-r p-4 bg-gray-50/50 min-w-[160px]">
             <span className="text-[10px] font-bold text-gray-400 uppercase mb-1">Raccourcis</span>
-            {presets.map((preset) => (
-              <Button
-                key={preset.label}
-                variant="ghost"
-                size="sm"
-                className="justify-start font-medium text-xs hover:bg-blue-50 hover:text-[#1F30AD]"
-                onClick={() => onChange(preset.range)}
-              >
-                {preset.label}
-              </Button>
-            ))}
+            <div className="grid grid-cols-2 md:grid-cols-1 gap-1">
+              {presets.map((preset) => (
+                <Button
+                  key={preset.label}
+                  variant="ghost"
+                  size="sm"
+                  className="justify-start font-medium text-xs hover:bg-blue-50 hover:text-[#1F30AD]"
+                  onClick={() => onChange(preset.range)}
+                >
+                  {preset.label}
+                </Button>
+              ))}
+            </div>
           </div>
-          <div className="flex flex-col gap-4">
+          <div className="flex flex-col gap-4 p-4">
             <span className="text-[10px] font-bold text-gray-400 uppercase">Personnalisé</span>
             <div className="flex flex-col gap-2">
               <div className="flex flex-col gap-1">
@@ -100,7 +102,7 @@ export function DateRangePicker({ range, onChange, className }: DateRangePickerP
             </div>
             <Button 
                 size="sm" 
-                className="mt-2 bg-[#1F30AD] hover:bg-[#172585]"
+                className="mt-2 bg-[#1F30AD] hover:bg-[#172585] h-8 font-bold"
                 onClick={() => {
                     if (range.from && !range.to) onChange({...range, to: range.from});
                 }}
