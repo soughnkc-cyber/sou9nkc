@@ -1,5 +1,6 @@
-import { useSession, SessionProvider } from "next-auth/react";
-import { useEffect } from "react";
+"use client";
+
+import { SessionProvider } from "next-auth/react"
 
 type Props = {
   children: React.ReactNode;

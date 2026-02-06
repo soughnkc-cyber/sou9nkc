@@ -4,14 +4,13 @@ import Sidebar from "@/components/sidebar";
 import MenuBar from "@/components/menubar";
 import React, { useState } from "react";
 import { cn } from "@/lib/utils";
-import AuthWrapper from "@/components/authwrapper";
+
 
 const DashboardLayout = ({ children }: { children: React.ReactNode }) => {
   const [isCollapsed, setIsCollapsed] = useState(true);
   const [isMobileOpen, setIsMobileOpen] = useState(false);
 
   return (
-    <AuthWrapper>
       <div className="min-h-screen bg-gray-50/30">
         <Sidebar 
           isCollapsed={isCollapsed} 
@@ -31,7 +30,6 @@ const DashboardLayout = ({ children }: { children: React.ReactNode }) => {
           </div>
         </main>
       </div>
-    </AuthWrapper>
   );
 };
 
