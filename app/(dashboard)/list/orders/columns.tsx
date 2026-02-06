@@ -352,7 +352,9 @@ export const getColumns = (
       hideMobileLabel: true,
       filterComponent: createFacetedFilter(
         "Statut",
-        statuses.map((s) => ({ label: s.name, value: s.name }))
+        statuses
+          .filter(s => s.isActive)
+          .map((s) => ({ label: s.name, value: s.name }))
       ),
       accessorFn: (row) => row.status?.name,
       cell: ({ row }: { row: Row<Order> }) => {

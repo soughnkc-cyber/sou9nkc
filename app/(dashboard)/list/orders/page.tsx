@@ -121,13 +121,25 @@ function OrdersPageContent() {
   }, []);
 
   const handleStatusChange = async (orderId: string, statusId: string | null) => {
-    if (isMobile) {
+    const status = statuses.find(s => s.id === statusId);
+    
+    // Defer ONLY for STATUS_14 on mobile
+    if (isMobile && status?.etat === 'STATUS_14') {
       setPendingUpdates(prev => ({
         ...prev,
         [orderId]: { ...prev[orderId], statusId }
       }));
       toast.info("Changement prêt (cliquez sur OK pour valider)", { duration: 2000 });
       return;
+    }
+
+    // If immediate save (Web or non-STATUS_14 on Mobile), clear any pending state first
+    if (pendingUpdates[orderId]) {
+      setPendingUpdates(prev => {
+        const next = { ...prev };
+        delete next[orderId];
+        return next;
+      });
     }
 
     try {
@@ -179,7 +191,15 @@ function OrdersPageContent() {
   };
 
   const handleRecallChange = async (orderId: string, value: string | null) => {
-    if (isMobile) {
+    const order = orders.find(o => o.id === orderId);
+    const pending = pendingUpdates[orderId];
+    
+    // Check if effective status is STATUS_14
+    const effectiveStatusEtat = pending?.statusId !== undefined 
+      ? statuses.find(s => s.id === pending.statusId)?.etat
+      : order?.status?.etat;
+
+    if (isMobile && effectiveStatusEtat === 'STATUS_14') {
       setPendingUpdates(prev => ({
         ...prev,
         [orderId]: { ...prev[orderId], recallAt: value }
@@ -723,20 +743,26 @@ function OrdersPageContent() {
             }}
             mobileExpandedAction={(row) => {
                const pending = pendingUpdates[row.id];
+               const effectiveStatusId = pending?.statusId !== undefined ? pending.statusId : row.status?.id;
+               const effectiveStatus = statuses.find(s => s.id === effectiveStatusId);
+               const isStatus14 = effectiveStatus?.etat === 'STATUS_14';
+               
+               const canClick = !!pending && isStatus14;
+
                return (
                   <Button
                     size="sm"
                     className={cn(
                       "h-8 px-4 font-bold rounded-lg shadow-sm transition-all",
-                      pending 
+                      canClick 
                         ? "bg-green-600 hover:bg-green-700 text-white" 
                         : "bg-gray-100 text-gray-400 border border-gray-200"
                     )}
                     onClick={(e) => {
                       e.stopPropagation();
-                      if (pending) handleSaveMobileUpdates(row.id);
+                      if (canClick) handleSaveMobileUpdates(row.id);
                     }}
-                    disabled={!pending || isLoadingPage}
+                    disabled={!canClick || isLoadingPage}
                   >
                     OK
                   </Button>
