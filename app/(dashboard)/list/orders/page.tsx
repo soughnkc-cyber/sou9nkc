@@ -272,9 +272,15 @@ function OrdersPageContent() {
   }, [dateFilteredOrders, filterType, currentFilter, recallFilterEntryTime]);
 
   const stats = useMemo(() => {
-    // We use the data currently visible/filtered in the table if available,
-    // otherwise fallback to the date-filtered base.
-    const base = tableFilteredOrders.length > 0 || (orders.length > 0 && tableFilteredOrders.length === 0 && orders.length > 0) ? tableFilteredOrders : dateFilteredOrders;
+    // We use the data currently filtered in the table (by search, columns, etc)
+    // if there are no table filters, tableFilteredOrders might be empty or full.
+    // However, the DataTable component sets tableFilteredOrders which already 
+    // accounts for search and column filters.
+    // Our 'filteredOrders' (from currentFilter/filterType) is what's passed TO the table.
+    
+    // The user wants stats to apply to ALL cards based on filters.
+    // We should use tableFilteredOrders because it represents the final visible set.
+    const base = tableFilteredOrders;
     
     // Helper function to calculate stats for a given set of orders
     const calculateStats = (orderSet: Order[]) => {
@@ -302,35 +308,45 @@ function OrdersPageContent() {
         ? ordersWithDuration.reduce((sum, o) => sum + (o.processingTimeMin || 0), 0) / ordersWithDuration.length 
         : 0;
 
-      return { total, totalRevenue, treatmentRate, avgDuration };
+      // New: Period-aware recall and arrivals calculation within the filtered set
+      const recallDue = orderSet.filter(o => 
+        o.recallAt && new Date(o.recallAt) <= new Date()
+      ).length;
+
+      const newOrdersCount = orderSet.filter(o => {
+          if (!recallFilterEntryTime || o.status) return false;
+          const oTime = new Date(o.createdAt).getTime();
+          const eTime = recallFilterEntryTime.getTime();
+          return oTime >= eTime;
+      }).length;
+
+      return { total, totalRevenue, treatmentRate, avgDuration, recallDue, newOrdersCount };
     };
 
-    // Calculate current period stats
+    // Calculate current period stats from filtered data
     const currentStats = calculateStats(base);
     
     // Calculate previous period stats for trend comparison
+    // This part remains based on the dateRange relative to the FULL orders list 
+    // to give a meaningful comparison of "this period vs last period"
     let previousStats = { total: 0, totalRevenue: 0, treatmentRate: 0, avgDuration: 0 };
     
     if (dateRange?.from) {
       const from = startOfDay(dateRange.from);
       const to = dateRange.to ? endOfDay(dateRange.to) : endOfDay(dateRange.from);
-      
-      // Calculate period duration in milliseconds
       const periodDuration = to.getTime() - from.getTime();
-      
-      // Calculate previous period (same duration, just before current period)
       const previousFrom = new Date(from.getTime() - periodDuration);
-      const previousTo = new Date(from.getTime() - 1); // 1ms before current period starts
+      const previousTo = new Date(from.getTime() - 1);
       
       const previousPeriodOrders = orders.filter(order => {
         const date = new Date(order.orderDate);
         return isWithinInterval(date, { start: previousFrom, end: previousTo });
       });
       
-      previousStats = calculateStats(previousPeriodOrders);
+      const p = calculateStats(previousPeriodOrders);
+      previousStats = { ...p };
     }
     
-    // Calculate trends (percentage change)
     const calculateTrend = (current: number, previous: number) => {
       if (previous === 0) return { trend: current > 0 ? "100%" : "0%", trendUp: current > 0 };
       const change = ((current - previous) / previous) * 100;
@@ -345,27 +361,13 @@ function OrdersPageContent() {
     const treatmentRateTrend = calculateTrend(currentStats.treatmentRate, previousStats.treatmentRate);
     const avgDurationTrend = calculateTrend(currentStats.avgDuration, previousStats.avgDuration);
     
-    // For recall count, we compare with all orders (not period-specific)
-    const recallDue = orders.filter(o => 
-      o.recallAt && new Date(o.recallAt) <= new Date()
-    ).length;
-    
-    // Live New Arrivals should NOT be filtered by the calendar date range
-    const allUnprocessed = orders.filter(o => !o.status);
-    const newOrdersCount = allUnprocessed.filter(o => {
-        if (!recallFilterEntryTime) return false;
-        const oTime = new Date(o.createdAt).getTime();
-        const eTime = recallFilterEntryTime.getTime();
-        return oTime >= eTime;
-    }).length;
-
     return {
       total: currentStats.total,
       totalRevenue: currentStats.totalRevenue,
-      recallToday: recallDue,
+      recallToday: currentStats.recallDue,
       treatmentRate: currentStats.treatmentRate,
       avgDuration: currentStats.avgDuration,
-      newOrdersCount,
+      newOrdersCount: currentStats.newOrdersCount,
       // Trends
       totalTrend: totalTrend.trend,
       totalTrendUp: totalTrend.trendUp,
@@ -374,9 +376,9 @@ function OrdersPageContent() {
       treatmentRateTrend: treatmentRateTrend.trend,
       treatmentRateTrendUp: treatmentRateTrend.trendUp,
       avgDurationTrend: avgDurationTrend.trend,
-      avgDurationTrendUp: !avgDurationTrend.trendUp, // Inverted: lower duration is better
+      avgDurationTrendUp: !avgDurationTrend.trendUp, 
     };
-  }, [tableFilteredOrders, dateFilteredOrders, recallFilterEntryTime, orders, dateRange]);
+  }, [tableFilteredOrders, recallFilterEntryTime, orders, dateRange]);
 
   const StatCard = ({ title, value, icon: Icon, active, onClick, color, trend, trendUp, isClickable = true, bgColor }: any) => {
     return (

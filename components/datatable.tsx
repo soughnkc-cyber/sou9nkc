@@ -348,10 +348,14 @@ export function DataTable<TData, TValue>({
             const selectCell = visibleCells.find(cell => cell.column.id === "select");
             
             // Split primaries into left and right based on mobilePosition
-            const rightPrimaries = visibleCells.filter(cell => cell.column.columnDef.meta?.mobilePosition === "right");
+            const rightPrimaries = visibleCells.filter(cell => 
+                cell.column.columnDef.meta?.mobilePosition === "right" && 
+                !cell.column.columnDef.meta?.hideOnMobile
+            );
             const leftPrimaries = visibleCells.filter(cell => 
                 cell.column.columnDef.meta?.isPrimary && 
-                cell.column.columnDef.meta?.mobilePosition !== "right"
+                cell.column.columnDef.meta?.mobilePosition !== "right" &&
+                !cell.column.columnDef.meta?.hideOnMobile
             );
 
             // Fallback if no specific primaries defined (legacy behavior)
@@ -364,7 +368,8 @@ export function DataTable<TData, TValue>({
                 !finalLeftCells.includes(cell) && 
                 !rightPrimaries.includes(cell) &&
                 cell.column.id !== "select" && 
-                cell.column.id !== "actions"
+                cell.column.id !== "actions" &&
+                !cell.column.columnDef.meta?.hideOnMobile
             );
 
             return (

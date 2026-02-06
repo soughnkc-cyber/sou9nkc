@@ -77,11 +77,6 @@ export const RecallCell = ({
     >
       {order.recallAt ? (
         <div className="flex flex-col gap-0.5">
-          {isPast(new Date(order.recallAt)) && (
-            <Badge variant="destructive" className="text-[9px] px-1 py-0 h-4 w-fit leading-none font-bold uppercase tracking-tighter">
-              À rappeler
-            </Badge>
-          )}
           <span className={cn(
             "whitespace-nowrap text-[11px] leading-tight",
             isPast(new Date(order.recallAt)) ? "text-red-600 font-bold" : "text-gray-700 font-medium"

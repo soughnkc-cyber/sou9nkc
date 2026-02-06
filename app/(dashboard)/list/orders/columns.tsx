@@ -217,8 +217,10 @@ export const getColumns = (
     actions.push({ icon: Trash2, onClick: onDelete, className: "text-red-600 hover:text-red-800" });
 
 
-  return [
-    {
+  const isAgent = role === "AGENT" || role === "AGENT_TEST";
+
+  const columnDefs: (ColumnDef<Order> | null)[] = [
+    !isAgent ? {
       id: "select",
       header: ({ table }: { table: Table<Order> }) => (
         <Checkbox
@@ -236,7 +238,7 @@ export const getColumns = (
       ),
       enableSorting: false,
       enableHiding: false,
-    },
+    } : null,
     
     createColumn<Order>({
       accessorKey: "orderNumber",
@@ -359,6 +361,22 @@ export const getColumns = (
     }),
 
 
+    createColumn<Order>({
+      id: "recallStatus",
+      header: "État Rappel",
+      sortable: false,
+      hideOnMobile: true,
+      cell: ({ row }: { row: Row<Order> }) => {
+        const recallAt = row.original.recallAt;
+        if (!recallAt || !isPast(new Date(recallAt))) return null;
+        return (
+          <Badge variant="destructive" className="text-[9px] px-1 py-0 h-4 w-fit leading-none font-bold uppercase tracking-tighter">
+            À rappeler
+          </Badge>
+        );
+      },
+    }),
+
    createColumn<Order>({
       id: "recallAtValue",
       header: "Date Rappel",
@@ -404,6 +422,8 @@ export const getColumns = (
     
 
     createActionsColumn(actions),
-  ].filter(Boolean) as ColumnDef<Order>[];
+  ];
+
+  return columnDefs.filter(Boolean) as ColumnDef<Order>[];
   
 };
