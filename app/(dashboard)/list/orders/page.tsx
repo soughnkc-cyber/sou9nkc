@@ -344,7 +344,30 @@ function OrdersPageContent() {
       default:
         return dateFilteredOrders;
     }
-  }, [dateFilteredOrders, filterType, currentFilter, recallFilterEntryTime]);
+  }, [dateFilteredOrders, filterType, currentFilter, recallFilterEntryTime, orders]);
+  
+  // 3. Orders filtered ONLY by category (no date filter) - for recall card
+  const categoryOnlyFilteredOrders = useMemo(() => {
+    const activeFilter = currentFilter || filterType;
+    if (!activeFilter || activeFilter === "all") return orders;
+    
+    switch (activeFilter) {
+      case "processed":
+        return orders.filter(order => order.status !== null && order.status !== undefined);
+      case "toprocess":
+        return orders.filter(order => !order.status);
+      case "torecall":
+        return orders.filter(o => o.recallAt && new Date(o.recallAt) <= new Date());
+      case "new_arrivals":
+        return orders.filter(o => 
+            !o.status && 
+            recallFilterEntryTime && 
+            new Date(o.createdAt) >= recallFilterEntryTime
+        );
+      default:
+        return orders;
+    }
+  }, [orders, filterType, currentFilter, recallFilterEntryTime]);
 
   const stats = useMemo(() => {
     // We use the data currently filtered in the table (by search, columns, etc)
@@ -383,11 +406,6 @@ function OrdersPageContent() {
         ? ordersWithDuration.reduce((sum, o) => sum + (o.processingTimeMin || 0), 0) / ordersWithDuration.length 
         : 0;
 
-      // New: Period-aware recall and arrivals calculation within the filtered set
-      const recallDue = orderSet.filter(o => 
-        o.recallAt && new Date(o.recallAt) <= new Date()
-      ).length;
-
       const newOrdersCount = orderSet.filter(o => {
           if (!recallFilterEntryTime || o.status) return false;
           const oTime = new Date(o.createdAt).getTime();
@@ -395,11 +413,16 @@ function OrdersPageContent() {
           return oTime >= eTime;
       }).length;
 
-      return { total, totalRevenue, treatmentRate, avgDuration, recallDue, newOrdersCount };
+      return { total, totalRevenue, treatmentRate, avgDuration, newOrdersCount };
     };
 
     // Calculate current period stats from filtered data
     const currentStats = calculateStats(base);
+    
+    // Calculate recall count using category filter only (NO date filter)
+    const recallDue = categoryOnlyFilteredOrders.filter(o => 
+      o.recallAt && new Date(o.recallAt) <= new Date()
+    ).length;
     
     // Calculate previous period stats for trend comparison
     // This part remains based on the dateRange relative to the FULL orders list 
@@ -439,7 +462,7 @@ function OrdersPageContent() {
     return {
       total: currentStats.total,
       totalRevenue: currentStats.totalRevenue,
-      recallToday: currentStats.recallDue,
+      recallToday: recallDue, // Now uses orders without date filter
       treatmentRate: currentStats.treatmentRate,
       avgDuration: currentStats.avgDuration,
       newOrdersCount: currentStats.newOrdersCount,
@@ -453,7 +476,7 @@ function OrdersPageContent() {
       avgDurationTrend: avgDurationTrend.trend,
       avgDurationTrendUp: !avgDurationTrend.trendUp, 
     };
-  }, [tableFilteredOrders, recallFilterEntryTime, orders, dateRange]);
+  }, [tableFilteredOrders, recallFilterEntryTime, orders, dateRange, currentFilter, filterType, categoryOnlyFilteredOrders]);
 
   const StatCard = ({ title, value, icon: Icon, active, onClick, color, trend, trendUp, isClickable = true, bgColor }: any) => {
     return (
