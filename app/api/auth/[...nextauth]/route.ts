@@ -63,6 +63,7 @@ export const authOptions = {
   session: {
     strategy: "jwt" as const,
     maxAge: 30 * 24 * 60 * 60, // 30 days
+    updateAge: 60 * 60, // 1 hour
   },
   // We removed explicit cookie names to let NextAuth handle the __Secure- prefix correctly in production
   // This prevents the infinite refresh loop caused by session mismatch in the proxy/middleware.

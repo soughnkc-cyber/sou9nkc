@@ -39,6 +39,13 @@ export default function MenuBar({ onOpenMobile }: { onOpenMobile: () => void }) 
   }, []);
 
   useEffect(() => {
+    if (status === "unauthenticated") {
+      localStorage.removeItem("sou9nkc_user_data");
+      setDbUser(null);
+    }
+  }, [status]);
+
+  useEffect(() => {
     if (status === "authenticated") {
       getMe().then(user => {
         setDbUser(user);

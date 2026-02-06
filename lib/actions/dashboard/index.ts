@@ -82,10 +82,12 @@ export async function getAdminStats(
   // To Process = orders without a status
   const toProcessOrders = ordersInRange.filter(order => order.statusId === null).length;
   
-  // To Recall = orders with recallAt defined
-  const toRecallOrders = ordersInRange.filter(
-    order => order.recallAt !== null
-  ).length;
+  // To Recall = orders with recallAt defined (GLOBAL - ignore date range filter as requested)
+  const toRecallOrders = await prisma.order.count({
+    where: {
+      recallAt: { not: null }
+    }
+  });
 
   // Status distribution for pie chart
   const statusMap = new Map<string, { name: string; count: number; color: string }>();
@@ -392,7 +394,6 @@ export async function getAdminStats(
     const avgTime = ordersWithTime.length > 0
       ? Math.round(ordersWithTime.reduce((sum, o) => sum + (o.processingTimeMin || 0), 0) / ordersWithTime.length)
       : 0;
-    
     const toRecall = agent.orders.filter(o => o.recallAt !== null).length;
     
     return {
