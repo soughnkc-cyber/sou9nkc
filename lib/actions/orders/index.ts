@@ -483,6 +483,27 @@ export const bulkUpdateOrders = async (
   try {
     const { agentId, statusId, recallAt } = updates;
     
+    // If statusId is being updated, check if we need to auto-clear recallAt
+    let shouldClearRecallAt = false;
+    if (statusId !== undefined && recallAt === undefined) {
+      // Only check if recallAt wasn't explicitly provided
+      if (statusId === null) {
+        // Clearing status (back to "To Process") should clear recall
+        shouldClearRecallAt = true;
+      } else {
+        // Check if the selected status has recallAfterH
+        const status = await prisma.status.findUnique({
+          where: { id: statusId },
+          select: { recallAfterH: true }
+        });
+        
+        // If status doesn't have automatic recall, clear any existing recall date
+        if (status && status.recallAfterH == null) {
+          shouldClearRecallAt = true;
+        }
+      }
+    }
+    
     // We'll use a transaction to ensure all orders are updated or none
     const results = await prisma.$transaction(
       orderIds.map(id => {
@@ -492,7 +513,13 @@ export const bulkUpdateOrders = async (
           if (agentId !== "unassigned") data.assignedAt = new Date();
         }
         if (statusId !== undefined) data.statusId = statusId;
-        if (recallAt !== undefined) data.recallAt = recallAt;
+        
+        // Handle recallAt based on explicit value or auto-clear logic
+        if (recallAt !== undefined) {
+          data.recallAt = recallAt;
+        } else if (shouldClearRecallAt) {
+          data.recallAt = null;
+        }
         
         return prisma.order.update({
           where: { id },

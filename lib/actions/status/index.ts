@@ -200,10 +200,9 @@ export const updateOrderStatus = async (
         }
       }
     } 
-    // 3️⃣ DO NOT WIPE RECALL DATE if status has no recallAfterH
-    // The previous logic 'data.recallAt = null' was destructive.
-    // We only clear it if explicitly asked or if it's "To Process" (statusId == null)
-    else if (statusId === null) {
+    // 3️⃣ Clear recall date if status has no recallAfterH OR if status is null ("To Process")
+    // When a status doesn't support recalls, any existing recall date should be cleared
+    else {
        data.recallAt = null;
     }
 
