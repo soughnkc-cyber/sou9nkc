@@ -109,6 +109,7 @@ model Order {
   assignedAt    DateTime?
   firstProcessedAt DateTime?
   processingTimeMin Int?
+  absoluteDelayMin  Int?
   recallAttempts Int @default(0)
   createdAt     DateTime @default(now())
   updatedAt     DateTime @updatedAt
@@ -137,5 +138,15 @@ model SystemSettings {
   id                    String   @id @default("default")
   assignmentBatchSize   Int      @default(1)
   maxRecallAttempts     Int      @default(3)
+  
+  // Horaires de travail
+  workStart             String   @default("10:00")
+  workEnd               String   @default("22:00")
+  workDays              Int[]    @default([1, 2, 3, 4, 5, 6, 0]) // 0=Dimanche, 1=Lundi...
+  
+  // Pauses
+  breakStart            String?  @default("13:30")
+  breakEnd              String?  @default("14:30")
+
   updatedAt             DateTime @updatedAt
 }

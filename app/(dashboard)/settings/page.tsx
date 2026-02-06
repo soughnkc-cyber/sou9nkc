@@ -2,7 +2,7 @@
 
 import { useSession } from "next-auth/react";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
-import { Phone, ChevronLeft, Edit2, User as UserIcon } from "lucide-react";
+import { Phone, ChevronLeft, Edit2, User as UserIcon, RefreshCw } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import Link from "next/link";
 import { useEffect, useState, useCallback } from "react";
@@ -13,7 +13,7 @@ import { UserFormData } from "@/lib/schema";
 import { getSystemSettings, updateSystemSettings } from "@/lib/actions/settings";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { RefreshCw } from "lucide-react";
+import { cn } from "@/lib/utils";
 
 export default function SettingsPage() {
   const { data: session, update: updateSession } = useSession();
@@ -26,6 +26,14 @@ export default function SettingsPage() {
   const [isSavingRecall, setIsSavingRecall] = useState(false);
   const [batchSize, setBatchSize] = useState<number>(1);
   const [maxRecallAttempts, setMaxRecallAttempts] = useState<number>(3);
+  const [isSavingSchedule, setIsSavingSchedule] = useState(false);
+  
+  // Work Schedule State
+  const [workStart, setWorkStart] = useState("10:00");
+  const [workEnd, setWorkEnd] = useState("22:00");
+  const [workDays, setWorkDays] = useState<number[]>([1, 2, 3, 4, 5, 6, 0]);
+  const [breakStart, setBreakStart] = useState("13:30");
+  const [breakEnd, setBreakEnd] = useState("14:30");
 
   const fetchData = useCallback(async () => {
     setIsLoading(true);
@@ -39,6 +47,11 @@ export default function SettingsPage() {
         setSystemSettings(settings);
         setBatchSize(settings.assignmentBatchSize);
         setMaxRecallAttempts(settings.maxRecallAttempts);
+        setWorkStart(settings.workStart);
+        setWorkEnd(settings.workEnd);
+        setWorkDays(settings.workDays);
+        setBreakStart(settings.breakStart || "");
+        setBreakEnd(settings.breakEnd || "");
       }
     } catch (error) {
       toast.error("Erreur de chargement des paramètres");
@@ -204,6 +217,109 @@ export default function SettingsPage() {
                             </div>
                         </div>
                     </div>
+
+                    <div className="text-center space-y-1 pt-4">
+                        <p className="text-[10px] font-black text-gray-400 uppercase tracking-[0.2em]">Horaires</p>
+                        <h2 className="text-sm font-black text-gray-900 tracking-tight uppercase">TRAVAIL & PAUSES</h2>
+                    </div>
+
+                    <div className="bg-white p-4 rounded-3xl border border-gray-100 shadow-sm space-y-4 w-full">
+                        {/* Working Hours */}
+                        <div className="grid grid-cols-2 gap-4">
+                            <div className="space-y-1.5">
+                                <Label className="text-[10px] font-black text-gray-400 uppercase tracking-wider ml-1">Début Travail</Label>
+                                <Input 
+                                    type="time" 
+                                    value={workStart}
+                                    onChange={(e) => setWorkStart(e.target.value)}
+                                    className="h-10 rounded-xl border-gray-100 bg-gray-50/50 text-sm font-bold"
+                                />
+                            </div>
+                            <div className="space-y-1.5">
+                                <Label className="text-[10px] font-black text-gray-400 uppercase tracking-wider ml-1">Fin Travail</Label>
+                                <Input 
+                                    type="time" 
+                                    value={workEnd}
+                                    onChange={(e) => setWorkEnd(e.target.value)}
+                                    className="h-10 rounded-xl border-gray-100 bg-gray-50/50 text-sm font-bold"
+                                />
+                            </div>
+                        </div>
+
+                        {/* Breaks */}
+                        <div className="grid grid-cols-2 gap-4 pt-3 border-t border-gray-50">
+                            <div className="space-y-1.5">
+                                <Label className="text-[10px] font-black text-gray-400 uppercase tracking-wider ml-1">Début Pause</Label>
+                                <Input 
+                                    type="time" 
+                                    value={breakStart}
+                                    onChange={(e) => setBreakStart(e.target.value)}
+                                    className="h-10 rounded-xl border-gray-100 bg-gray-50/50 text-sm font-bold"
+                                />
+                            </div>
+                            <div className="space-y-1.5">
+                                <Label className="text-[10px] font-black text-gray-400 uppercase tracking-wider ml-1">Fin Pause</Label>
+                                <Input 
+                                    type="time" 
+                                    value={breakEnd}
+                                    onChange={(e) => setBreakEnd(e.target.value)}
+                                    className="h-10 rounded-xl border-gray-100 bg-gray-50/50 text-sm font-bold"
+                                />
+                            </div>
+                        </div>
+
+                        {/* Working Days */}
+                        <div className="pt-3 border-t border-gray-50 space-y-2">
+                             <Label className="text-[10px] font-black text-gray-400 uppercase tracking-wider ml-1">Jours de travail</Label>
+                             <div className="flex flex-wrap gap-2">
+                                 {['Dim', 'Lun', 'Mar', 'Mer', 'Jeu', 'Ven', 'Sam'].map((day, idx) => (
+                                     <button
+                                        key={day}
+                                        onClick={() => {
+                                            setWorkDays(prev => 
+                                                prev.includes(idx) ? prev.filter(d => d !== idx) : [...prev, idx]
+                                            );
+                                        }}
+                                        className={cn(
+                                            "px-3 py-1.5 rounded-xl text-[10px] font-black uppercase transition-all border",
+                                            workDays.includes(idx) 
+                                                ? "bg-[#1F30AD] text-white border-[#1F30AD]" 
+                                                : "bg-gray-50 text-gray-400 border-gray-100"
+                                        )}
+                                     >
+                                         {day}
+                                     </button>
+                                 ))}
+                             </div>
+                        </div>
+
+                        <Button 
+                            onClick={async () => {
+                                setIsSavingSchedule(true);
+                                try {
+                                    await updateSystemSettings({ 
+                                        assignmentBatchSize: batchSize, 
+                                        maxRecallAttempts,
+                                        workStart,
+                                        workEnd,
+                                        workDays,
+                                        breakStart: breakStart || null,
+                                        breakEnd: breakEnd || null
+                                    });
+                                    toast.success("Horaires mis à jour");
+                                    await fetchData();
+                                } catch (error) {
+                                    toast.error("Erreur lors de la sauvegarde");
+                                } finally {
+                                    setIsSavingSchedule(false);
+                                }
+                            }}
+                            disabled={isSavingSchedule}
+                            className="w-full h-11 rounded-xl bg-[#1F30AD] hover:bg-[#172585] text-white text-[11px] font-black uppercase tracking-widest shadow-lg shadow-blue-50 transition-all mt-2"
+                        >
+                            {isSavingSchedule ? <RefreshCw className="h-4 w-4 animate-spin" /> : "Sauvegarder les horaires"}
+                        </Button>
+                    </div>
                 </div>
             )}
         </div>
@@ -228,3 +344,4 @@ export default function SettingsPage() {
     </div>
   );
 }
+

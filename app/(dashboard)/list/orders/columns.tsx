@@ -33,6 +33,7 @@ export interface Order {
     etat?: string; // e.g. STATUS_15
   } | null;
   processingTimeMin?: number | null;
+  absoluteDelayMin?: number | null; // Added field
   recallAttempts?: number; // Added field
   createdAt: string;
   agent?: {
@@ -411,11 +412,23 @@ export const getColumns = (
       accessorKey: "processingTimeMin",
       header: "Délai",
       sortable: false,
-      cell: ({ row }: { row: Row<Order> }) => (
-        <p className="whitespace-nowrap">
-          {formatDuration(row.original.processingTimeMin)}
-        </p>
-      ),
+      cell: ({ row }: { row: Row<Order> }) => {
+        const { processingTimeMin, absoluteDelayMin } = row.original;
+        if (!processingTimeMin && !absoluteDelayMin) return <p className="text-gray-400 italic">N/A</p>;
+        
+        return (
+          <div className="flex flex-col">
+            <p className="whitespace-nowrap font-bold text-[#1F30AD]">
+              {formatDuration(processingTimeMin || 0)}
+            </p>
+            {absoluteDelayMin !== undefined && absoluteDelayMin !== processingTimeMin && (
+               <p className="text-[10px] text-gray-400 whitespace-nowrap">
+                  Total: {formatDuration(absoluteDelayMin)}
+               </p>
+            )}
+          </div>
+        );
+      },
     }),
 
      createColumn<Order>({

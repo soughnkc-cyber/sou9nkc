@@ -341,6 +341,7 @@ export const getOrders = async () => {
       totalPrice: o.totalPrice,
       recallAt: o.recallAt?.toISOString() || null,
       processingTimeMin: o.processingTimeMin,
+      absoluteDelayMin: o.absoluteDelayMin,
       recallAttempts: o.recallAttempts,
       status: o.status ? { id: o.status.id, name: o.status.name, color: o.status.color, etat: o.status.etat } : null,
       agent: o.agent

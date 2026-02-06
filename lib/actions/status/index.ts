@@ -151,9 +151,10 @@ export const updateOrderStatus = async (
   
   try {
 
-    const status = statusId
-      ? await prisma.status.findUnique({ where: { id: statusId } })
-      : null;
+    const [status, settings] = await Promise.all([
+      statusId ? prisma.status.findUnique({ where: { id: statusId } }) : Promise.resolve(null),
+      getSystemSettings()
+    ]);
 
     const currentOrder = await (prisma.order.findUnique as any)({
       where: { id: orderId },
@@ -165,11 +166,16 @@ export const updateOrderStatus = async (
     if (currentOrder && !currentOrder.firstProcessedAt && statusId) {
       const now = new Date();
       const calculationBase = currentOrder.assignedAt || currentOrder.orderDate;
-      const diffMs = now.getTime() - calculationBase.getTime();
-      const diffMin = Math.round(diffMs / (1000 * 60));
+      const absoluteDiffMs = now.getTime() - calculationBase.getTime();
+      const absoluteDiffMin = Math.round(absoluteDiffMs / (1000 * 60));
+      
+      // Adjusted work time calculation
+      const { calculateWorkMinutes } = await import("@/lib/work-time");
+      const workMin = calculateWorkMinutes(calculationBase, now, settings as any);
       
       data.firstProcessedAt = now;
-      data.processingTimeMin = diffMin;
+      data.processingTimeMin = workMin;
+      data.absoluteDelayMin = absoluteDiffMin;
     }
 
     // 1️⃣ Priority: Manual Recall Date
