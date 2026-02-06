@@ -20,7 +20,7 @@ import {
 } from "@/components/ui/card";
 
 /* Actions */
-import { getOrders, insertNewOrders, updateOrderRecallAt, updateOrderAgent, deleteOrders, updateOrdersAgent, updateOrdersStatus } from "@/lib/actions/orders";
+import { getOrders, insertNewOrders, updateOrderRecallAt, updateOrderAgent, deleteOrders, updateOrdersAgent, updateOrdersStatus, bulkUpdateOrders } from "@/lib/actions/orders";
 import { getStatus, updateOrderStatus } from "@/lib/actions/status";
 import { getMe, getAgents } from "@/lib/actions/users";
 import PermissionDenied from "@/components/permission-denied";
@@ -55,6 +55,16 @@ function OrdersPageContent() {
   const [isPaused, setIsPaused] = useState(false); // New state to pause refresh
   const user = session.data?.user;
   const isAdmin = user?.role === "ADMIN";
+  const [pendingUpdates, setPendingUpdates] = useState<Record<string, { statusId?: string | null, recallAt?: string | null }>>({});
+
+  // Helper to check if current view is mobile
+  const [isMobile, setIsMobile] = useState(false);
+  useEffect(() => {
+    const checkMobile = () => setIsMobile(window.innerWidth < 1024);
+    checkMobile();
+    window.addEventListener('resize', checkMobile);
+    return () => window.removeEventListener('resize', checkMobile);
+  }, []);
 
   // Read URL query params for filtering
   const searchParams = useSearchParams();
@@ -111,6 +121,15 @@ function OrdersPageContent() {
   }, []);
 
   const handleStatusChange = async (orderId: string, statusId: string | null) => {
+    if (isMobile) {
+      setPendingUpdates(prev => ({
+        ...prev,
+        [orderId]: { ...prev[orderId], statusId }
+      }));
+      toast.info("Changement prêt (cliquez sur OK pour valider)", { duration: 2000 });
+      return;
+    }
+
     try {
       const updated = await updateOrderStatus(orderId, statusId);
       setOrders(prev =>
@@ -155,11 +174,20 @@ function OrdersPageContent() {
       refreshData();
     } catch (error) {
       console.error(error);
-      toast.error("Erreur lors de la suppression des commandes");
+      toast.error("Erreur lors de la suppression");
     }
   };
 
   const handleRecallChange = async (orderId: string, value: string | null) => {
+    if (isMobile) {
+      setPendingUpdates(prev => ({
+        ...prev,
+        [orderId]: { ...prev[orderId], recallAt: value }
+      }));
+      toast.info("Rappel prêt (cliquez sur OK pour valider)", { duration: 2000 });
+      return;
+    }
+
     try {
       const date = value ? new Date(value) : null;
       const updated = await updateOrderRecallAt(orderId, date);
@@ -169,6 +197,33 @@ function OrdersPageContent() {
       toast.success("Date de rappel mise à jour");
     } catch {
       toast.error("Erreur lors de la mise à jour du rappel");
+    }
+  };
+
+  const handleSaveMobileUpdates = async (orderId: string) => {
+    const pending = pendingUpdates[orderId];
+    if (!pending) return;
+
+    try {
+      setIsLoadingPage(true);
+      const res = await bulkUpdateOrders([orderId], {
+        statusId: pending.statusId,
+        recallAt: pending.recallAt ? new Date(pending.recallAt) : (pending.recallAt === null ? null : undefined)
+      });
+
+      if (res.success) {
+        toast.success("Commande mise à jour");
+        setPendingUpdates(prev => {
+          const next = { ...prev };
+          delete next[orderId];
+          return next;
+        });
+        refreshData(true);
+      }
+    } catch (error: any) {
+      toast.error(error.message || "Erreur lors de la validation");
+    } finally {
+      setIsLoadingPage(false);
     }
   };
 
@@ -430,8 +485,8 @@ function OrdersPageContent() {
     order: null,
   });
   const [isAssigning, setIsAssigning] = useState(false);
-  const [isBulkEditing, setIsBulkEditing] = useState(false); // State for bulk edit
-  const [bulkEditModalOpen, setBulkEditModalOpen] = useState(false); // State for modal visibility
+  const [isBulkUpdating, setIsBulkUpdating] = useState(false); // State for bulk edit
+  const [isBulkModalOpen, setIsBulkModalOpen] = useState(false); // State for modal visibility
 
   const openAssignModal = (order: Order) => {
     setAssignModal({ isOpen: true, order });
@@ -452,19 +507,27 @@ function OrdersPageContent() {
     }
   };
 
-  const handleBulkUpdate = async (agentId: string) => {
-    if (selectedOrders.length === 0) return;
-    setIsBulkEditing(true);
+  const handleBulkUpdate = async (updates: { agentId?: string; statusId?: string | null; recallAt?: string | null }) => {
     try {
-        await updateOrdersAgent(selectedOrders.map(o => o.id), agentId);
-        toast.success(`${selectedOrders.length} commandes réassignées`);
+      setIsBulkUpdating(true);
+      const selectedIds = selectedOrders.map(o => o.id);
+      
+      const res = await bulkUpdateOrders(selectedIds, {
+        agentId: updates.agentId,
+        statusId: updates.statusId,
+        recallAt: updates.recallAt ? new Date(updates.recallAt) : (updates.recallAt === null ? null : undefined)
+      });
+      
+      if (res.success) {
+        toast.success(`${res.count} commandes mises à jour avec succès`);
         setSelectedOrders([]);
-        refreshData();
-    } catch (e) {
-        toast.error("Erreur lors de la mise à jour groupée");
-        console.error(e);
+        // Simple refresh approach
+        window.location.reload();
+      }
+    } catch (error: any) {
+      toast.error(error.message || "Erreur lors de la mise à jour");
     } finally {
-        setIsBulkEditing(false);
+      setIsBulkUpdating(false);
     }
   };
 
@@ -486,9 +549,10 @@ function OrdersPageContent() {
         undefined, // onEdit
         undefined, // onDelete
         () => setIsPaused(true), // onInteractionStart
-        () => setIsPaused(false) // onInteractionEnd
+        () => setIsPaused(false), // onInteractionEnd
+        pendingUpdates
     );
-  }, [statuses, agents, productOptions, priceOptions, user?.role, (user as any)?.canEditOrders, handleStatusChange, handleAgentChange, handleRecallChange]);
+  }, [statuses, agents, productOptions, priceOptions, user?.role, (user as any)?.canEditOrders, handleStatusChange, handleAgentChange, handleRecallChange, pendingUpdates]);
 
   const toggleFilter = (filter: string) => {
     setCurrentFilter(prev => prev === filter ? null : filter);
@@ -649,15 +713,34 @@ function OrdersPageContent() {
                return "";
             }}
             mobileRowAction={(row) => {
-               const recallAt = row.recallAt ? new Date(row.recallAt) : null;
-               if (recallAt && isPast(recallAt)) {
-                 return (
-                   <div className="bg-red-600 rounded-full p-1.5 shadow-sm animate-pulse">
-                     <Clock className="h-3.5 w-3.5 text-white" />
-                   </div>
-                 );
-               }
-               return null;
+               const hasRecallAlert = row.recallAt && isPast(new Date(row.recallAt));
+               if (!hasRecallAlert) return null;
+               return (
+                 <div className="bg-red-600 rounded-full p-1.5 shadow-sm animate-pulse">
+                   <Clock className="h-3.5 w-3.5 text-white" />
+                 </div>
+               );
+            }}
+            mobileExpandedAction={(row) => {
+               const pending = pendingUpdates[row.id];
+               return (
+                  <Button
+                    size="sm"
+                    className={cn(
+                      "h-8 px-4 font-bold rounded-lg shadow-sm transition-all",
+                      pending 
+                        ? "bg-green-600 hover:bg-green-700 text-white" 
+                        : "bg-gray-100 text-gray-400 border border-gray-200"
+                    )}
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      if (pending) handleSaveMobileUpdates(row.id);
+                    }}
+                    disabled={!pending || isLoadingPage}
+                  >
+                    OK
+                  </Button>
+               );
             }}
             extraSearchActions={
               <div className="flex flex-wrap items-center gap-1.5">
@@ -665,7 +748,7 @@ function OrdersPageContent() {
                    <Button
                      variant="outline"
                      size="sm"
-                     onClick={() => setBulkEditModalOpen(true)}
+                     onClick={() => setIsBulkModalOpen(true)}
                      className="h-8 rounded-lg px-2 font-bold border-gray-200 hover:bg-blue-50 hover:text-[#1F30AD] transition-all flex items-center justify-center gap-2 shadow-sm"
                      title="Modifier la sélection"
                    >
@@ -704,12 +787,13 @@ function OrdersPageContent() {
       />
 
       <BulkEditModal 
-        isOpen={bulkEditModalOpen}
-        onClose={() => setBulkEditModalOpen(false)}
+        isOpen={isBulkModalOpen}
+        onClose={() => setIsBulkModalOpen(false)}
         selectedCount={selectedOrders.length}
         agents={agents}
+        statuses={statuses}
         onUpdate={handleBulkUpdate}
-        isLoading={isBulkEditing}
+        isLoading={isBulkUpdating}
       />
     </div>
   );

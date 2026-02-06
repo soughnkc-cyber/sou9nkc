@@ -48,20 +48,25 @@ const StatusSelect = ({
   statuses,
   onChange,
   readOnly,
+  pendingStatusId,
 }: {
   order: Order;
   statuses: { id: string; name: string; color?: string; isActive?: boolean; etat?: string }[];
   onChange: (orderId: string, statusId: string | null) => void;
   readOnly?: boolean;
+  pendingStatusId?: string | null;
 }) => {
-  const selectedStatus = statuses.find(s => s.id === order.status?.id);
+  const currentStatusId = pendingStatusId !== undefined ? pendingStatusId : order.status?.id;
+  const selectedStatus = statuses.find(s => s.id === currentStatusId);
+  const isPending = pendingStatusId !== undefined;
 
   if (readOnly) {
     return (
       <div 
         className={cn(
           "h-7 w-[140px] text-xs font-medium flex items-center px-3 rounded-md transition-colors border-0 shadow-sm cursor-default",
-          selectedStatus?.color ? "text-white" : "border border-input bg-background"
+          selectedStatus?.color ? "text-white" : "border border-input bg-background",
+          isPending && "opacity-70 italic"
         )}
         style={{ 
           backgroundColor: selectedStatus?.color || undefined
@@ -79,7 +84,8 @@ const StatusSelect = ({
           <div 
             className={cn(
               "h-7 w-[140px] text-xs font-medium flex items-center px-3 rounded-md transition-colors border-0 shadow-sm cursor-pointer",
-              selectedStatus?.color ? "text-white" : "border border-input bg-background"
+              selectedStatus?.color ? "text-white" : "border border-input bg-background",
+              isPending && "ring-2 ring-yellow-400 opacity-90 italic"
             )}
             style={{ 
               backgroundColor: selectedStatus?.color || undefined
@@ -202,7 +208,8 @@ export const getColumns = (
   onEdit?: (o: Order) => void,
   onDelete?: (o: Order) => void,
   onInteractionStart?: () => void,
-  onInteractionEnd?: () => void
+  onInteractionEnd?: () => void,
+  pendingUpdates?: Record<string, { statusId?: string | null, recallAt?: string | null }>
 ): ColumnDef<Order>[] => {
   const isAdminOrSupervisor = role === "ADMIN" || role === "SUPERVISOR";
   const isAdmin = role === "ADMIN";
@@ -349,12 +356,14 @@ export const getColumns = (
       ),
       accessorFn: (row) => row.status?.name,
       cell: ({ row }: { row: Row<Order> }) => {
+        const pending = pendingUpdates?.[row.original.id];
         return (
           <StatusSelect
             order={row.original}
             statuses={statuses}
             onChange={onStatusChange}
             readOnly={!canEditOrders || isAdminOrSupervisor}
+            pendingStatusId={pending?.statusId}
           />
         );
       },
@@ -376,13 +385,13 @@ export const getColumns = (
         );
       },
     }),
-
-   createColumn<Order>({
+    createColumn<Order>({
       id: "recallAtValue",
       header: "Date Rappel",
       sortable: false,
       accessorFn: (row) => row.recallAt,
       cell: ({ row }: { row: Row<Order> }) => {
+        const pending = pendingUpdates?.[row.original.id];
         return (
           <RecallCell
             order={row.original}
@@ -390,6 +399,7 @@ export const getColumns = (
             readOnly={!canEditOrders || isAdminOrSupervisor}
             onInteractionStart={onInteractionStart}
             onInteractionEnd={onInteractionEnd}
+            pendingRecallAt={pending?.recallAt}
           />
         );
       },

@@ -469,3 +469,41 @@ export const updateOrdersStatus = async (orderIds: string[], statusId: string | 
     throw new Error("Impossible de modifier les statuts en masse");
   }
 };
+export const bulkUpdateOrders = async (
+  orderIds: string[],
+  updates: {
+    agentId?: string;
+    statusId?: string | null;
+    recallAt?: Date | null;
+  }
+) => {
+  await checkPermission("canEditOrders");
+  
+  try {
+    const { agentId, statusId, recallAt } = updates;
+    
+    // We'll use a transaction to ensure all orders are updated or none
+    const results = await prisma.$transaction(
+      orderIds.map(id => {
+        let data: any = {};
+        if (agentId !== undefined) {
+          data.agentId = agentId === "unassigned" ? null : agentId;
+          if (agentId !== "unassigned") data.assignedAt = new Date();
+        }
+        if (statusId !== undefined) data.statusId = statusId;
+        if (recallAt !== undefined) data.recallAt = recallAt;
+        
+        return prisma.order.update({
+          where: { id },
+          data,
+        });
+      })
+    );
+
+    revalidatePath("/");
+    return { success: true, count: results.length };
+  } catch (err: any) {
+    console.error("Erreur bulkUpdateOrders:", err);
+    throw new Error(err.message || "Impossible de mettre à jour les commandes");
+  }
+};

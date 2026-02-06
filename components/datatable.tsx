@@ -65,6 +65,7 @@ interface DataTableProps<TData, TValue> {
   rightHeaderActions?: React.ReactNode;
   getRowClassName?: (row: TData) => string;
   mobileRowAction?: (row: TData) => React.ReactNode;
+  mobileExpandedAction?: (row: TData) => React.ReactNode;
   onFilteredDataChange?: (data: TData[]) => void;
 }
 
@@ -85,6 +86,7 @@ export function DataTable<TData, TValue>({
   rightHeaderActions,
   getRowClassName,
   mobileRowAction,
+  mobileExpandedAction,
   onFilteredDataChange,
 }: DataTableProps<TData, TValue>) {
   const [sorting, setSorting] = useState<SortingState>([]);
@@ -415,20 +417,21 @@ export function DataTable<TData, TValue>({
                   </div>
                   
                   <div className="flex items-center gap-2">
-                    {mobileRowAction && mobileRowAction(row.original) ? (
-                       mobileRowAction(row.original)
-                    ) : (
-                      <Button 
-                        variant="ghost" 
-                        size="icon" 
-                        className={cn(
-                          "h-8 w-8 rounded-full border border-gray-200 transition-all",
-                          isRowExpanded ? "bg-[#1F30AD] border-[#1F30AD] text-white rotate-180" : "text-gray-400"
-                        )}
-                      >
-                        <ChevronDown className="h-4 w-4" />
-                      </Button>
-                    )}
+                    {mobileRowAction && mobileRowAction(row.original)}
+                    <Button 
+                      variant="ghost" 
+                      size="icon" 
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        toggleRow();
+                      }}
+                      className={cn(
+                        "h-8 w-8 rounded-full border border-gray-200 transition-all",
+                        isRowExpanded ? "bg-[#1F30AD] border-[#1F30AD] text-white rotate-180" : "text-gray-400"
+                      )}
+                    >
+                      <ChevronDown className="h-4 w-4" />
+                    </Button>
                   </div>
                 </div>
 
@@ -436,22 +439,29 @@ export function DataTable<TData, TValue>({
                 {isRowExpanded && (
                   <div className="px-3 pb-3 pt-0 space-y-3 animate-in slide-in-from-top-2 duration-200">
                     <div className="h-px bg-gray-50 -mx-3 mb-3" />
-                    <div className="grid grid-cols-2 gap-4">
-                      {secondaryCells.map((cell) => (
-                        <div key={cell.id} className="flex flex-col space-y-1">
-                          {!cell.column.columnDef.meta?.hideMobileLabel && (
-                            <span className="text-[10px] font-bold text-gray-400 uppercase tracking-tighter">
-                              {cell.column.columnDef.meta?.title || cell.column.id}
-                            </span>
-                          )}
-                          <div className="text-[13px] font-bold text-slate-900">
-                            {flexRender(
-                              cell.column.columnDef.cell,
-                              cell.getContext()
+                    <div className="flex items-end justify-between gap-4">
+                      <div className="grid grid-cols-2 gap-4 flex-1">
+                        {secondaryCells.map((cell) => (
+                          <div key={cell.id} className="flex flex-col space-y-1">
+                            {!cell.column.columnDef.meta?.hideMobileLabel && (
+                              <span className="text-[10px] font-bold text-gray-400 uppercase tracking-tighter">
+                                {cell.column.columnDef.meta?.title || cell.column.id}
+                              </span>
                             )}
+                            <div className="text-[13px] font-bold text-slate-900">
+                              {flexRender(
+                                cell.column.columnDef.cell,
+                                cell.getContext()
+                              )}
+                            </div>
                           </div>
+                        ))}
+                      </div>
+                      {mobileExpandedAction && (
+                        <div className="shrink-0 mb-1">
+                          {mobileExpandedAction(row.original)}
                         </div>
-                      ))}
+                      )}
                     </div>
                   </div>
                 )}

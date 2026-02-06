@@ -11,7 +11,9 @@ import {
   SelectValue 
 } from "@/components/ui/select";
 import { Label } from "@/components/ui/label";
-import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
+import { Input } from "@/components/ui/input";
+import { format } from "date-fns";
+import { fr } from "date-fns/locale";
 
 
 
@@ -20,6 +22,7 @@ export function BulkEditModal({
   onClose,
   selectedCount,
   agents,
+  statuses,
   onUpdate,
   isLoading = false,
 }: {
@@ -27,26 +30,40 @@ export function BulkEditModal({
   onClose: () => void;
   selectedCount: number;
   agents: { id: string; name: string; isActive: boolean }[];
-  onUpdate: (agentId: string) => Promise<void>;
+  statuses: { id: string; name: string; color?: string; isActive?: boolean }[];
+  onUpdate: (updates: { agentId?: string; statusId?: string | null; recallAt?: string | null }) => Promise<void>;
   isLoading?: boolean;
 }) {
   const [selectedAgentId, setSelectedAgentId] = useState<string>("no_change");
+  const [selectedStatusId, setSelectedStatusId] = useState<string>("no_change");
+  const [selectedRecallAt, setSelectedRecallAt] = useState<string>("no_change");
+  const [manualDate, setManualDate] = useState<string>("");
 
   // Reset state when modal opens
   useEffect(() => {
     if (isOpen) {
         setSelectedAgentId("no_change");
+        setSelectedStatusId("no_change");
+        setSelectedRecallAt("no_change");
+        setManualDate("");
     }
   }, [isOpen]);
 
   const handleSubmit = async () => {
-    if (selectedAgentId !== "no_change") {
-        await onUpdate(selectedAgentId);
+    const updates: any = {};
+    if (selectedAgentId !== "no_change") updates.agentId = selectedAgentId;
+    if (selectedStatusId !== "no_change") updates.statusId = selectedStatusId === "clear" ? null : selectedStatusId;
+    if (selectedRecallAt !== "no_change") {
+        updates.recallAt = selectedRecallAt === "manual" ? (manualDate || null) : null;
+    }
+    
+    if (Object.keys(updates).length > 0) {
+        await onUpdate(updates);
     }
     onClose();
   };
 
-  const hasChanges = selectedAgentId !== "no_change";
+  const hasChanges = selectedAgentId !== "no_change" || selectedStatusId !== "no_change" || selectedRecallAt !== "no_change";
 
   return (
     <Modal
@@ -66,11 +83,11 @@ export function BulkEditModal({
             <div className="space-y-2">
                 <Label>Agent</Label>
                 <Select value={selectedAgentId} onValueChange={setSelectedAgentId}>
-                    <SelectTrigger>
+                    <SelectTrigger className="h-9">
                         <SelectValue placeholder="Sélectionner un agent..." />
                     </SelectTrigger>
                     <SelectContent>
-                        <SelectItem value="no_change" className="text-gray-500 italic">-- Sélectionner --</SelectItem>
+                        <SelectItem value="no_change" className="text-gray-500 italic">-- Aucun changement --</SelectItem>
                         <SelectItem value="unassigned" className="text-amber-600 font-medium">Désassigner (Pas d'agent)</SelectItem>
                         {agents
                             .filter(a => a.isActive)

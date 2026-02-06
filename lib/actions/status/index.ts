@@ -144,7 +144,8 @@ export async function deleteStatusesAction(statusIds: string[]) {
 
 export const updateOrderStatus = async (
   orderId: string,
-  statusId: string | null
+  statusId: string | null,
+  manualRecallAt?: Date | null
 ) => {
   await checkPermission("canEditOrders");
   
@@ -156,7 +157,7 @@ export const updateOrderStatus = async (
 
     const currentOrder = await (prisma.order.findUnique as any)({
       where: { id: orderId },
-      select: { orderDate: true, assignedAt: true, firstProcessedAt: true, recallAttempts: true }
+      select: { orderDate: true, assignedAt: true, firstProcessedAt: true, recallAttempts: true, recallAt: true }
     });
 
     let data: any = { statusId };
@@ -171,34 +172,33 @@ export const updateOrderStatus = async (
       data.processingTimeMin = diffMin;
     }
 
-    // 🔹 Seulement si recallAfterH existe
-    if (status?.recallAfterH != null) {
+    // 1️⃣ Priority: Manual Recall Date
+    if (manualRecallAt !== undefined) {
+      data.recallAt = manualRecallAt;
+    } 
+    // 2️⃣ Automatic Recall Logic (Only if status changed and HAS recallAfterH)
+    else if (status?.recallAfterH != null) {
       const settings = await getSystemSettings();
       const maxAttempts = (settings as any).maxRecallAttempts ?? 3;
       const currentAttempts = currentOrder?.recallAttempts || 0;
 
-      // Vérifier si on a déjà atteint le max AVANT cet appel
-      if (currentAttempts >= maxAttempts) {
-        throw new Error(`Nombre maximum de rappels (${maxAttempts}) atteint pour cette commande`);
+      if (currentAttempts < maxAttempts) {
+        data.recallAttempts = { increment: 1 };
+        
+        if (currentAttempts + 1 >= maxAttempts) {
+          data.recallAt = null;
+        } else {
+          const recallAt = new Date();
+          recallAt.setHours(recallAt.getHours() + status.recallAfterH);
+          data.recallAt = recallAt;
+        }
       }
-      
-      // Incrémenter le compteur
-      data.recallAttempts = { increment: 1 };
-      
-      // Si après incrémentation on atteint le max, on met recallAt à null
-      // Sinon, on planifie le rappel normalement
-      if (currentAttempts + 1 >= maxAttempts) {
-        // Dernier rappel atteint : pas de nouvelle date de rappel
-        data.recallAt = null;
-      } else {
-        // Encore des tentatives disponibles : planifier le rappel
-        const recallAt = new Date();
-        recallAt.setHours(recallAt.getHours() + status.recallAfterH);
-        data.recallAt = recallAt;
-      }
-    } else {
-      // Si le statut n'a pas de configuration de rappel, on vide la date de rappel
-      data.recallAt = null;
+    } 
+    // 3️⃣ DO NOT WIPE RECALL DATE if status has no recallAfterH
+    // The previous logic 'data.recallAt = null' was destructive.
+    // We only clear it if explicitly asked or if it's "To Process" (statusId == null)
+    else if (statusId === null) {
+       data.recallAt = null;
     }
 
     const order = await prisma.order.update({
