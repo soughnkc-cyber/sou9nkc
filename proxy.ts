@@ -12,7 +12,7 @@ import {
  * 2. Utilisation systématique de NextResponse.next()
  * 3. Logique de sécurité minimale pour une rapidité maximale
  */
-export default async function middleware(req: NextRequest) {
+export default async function proxy(req: NextRequest) {
   const { nextUrl } = req;
 
   // 1. On laisse passer tout ce qui est déjà filtré par le matcher mais par sécurité :
@@ -24,11 +24,18 @@ export default async function middleware(req: NextRequest) {
     return NextResponse.next();
   }
 
-  // 2. Récupération du token
-  const token = await getToken({ 
-    req, 
-    secret: process.env.NEXTAUTH_SECRET 
-  });
+  // 2. Récupération du token avec gestion d'erreur pour mobile
+  let token = null;
+  try {
+    token = await getToken({ 
+      req, 
+      secret: process.env.NEXTAUTH_SECRET 
+    });
+  } catch (error) {
+    // Sur mobile, getToken peut échouer après mise en veille
+    // On laisse passer pour éviter "serveur introuvable"
+    console.error("getToken failed (mobile wake-up?):", error);
+  }
   
   const isLoggedIn = !!token;
   const isPublicRoute = publicRoutes.includes(nextUrl.pathname);
