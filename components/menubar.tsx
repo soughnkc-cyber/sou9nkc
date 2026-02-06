@@ -52,7 +52,7 @@ export default function MenuBar({ onOpenMobile }: { onOpenMobile: () => void }) 
         localStorage.setItem("sou9nkc_user_data", JSON.stringify(user));
       });
     }
-  }, [status, pathname]);
+  }, [status]);
 
   const userRole = (dbUser?.role || (session?.user as any)?.role);
   const permissions = dbUser || (session?.user as any) || {};

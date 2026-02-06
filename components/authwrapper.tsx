@@ -10,7 +10,6 @@ export default function AuthWrapper({ children }: Props) {
   return (
     <SessionProvider 
       refetchOnWindowFocus={true}
-      refetchInterval={5 * 60}
     >
       {children}
     </SessionProvider>
