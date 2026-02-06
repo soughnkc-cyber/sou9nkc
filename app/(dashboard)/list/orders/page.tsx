@@ -224,11 +224,28 @@ function OrdersPageContent() {
     const pending = pendingUpdates[orderId];
     if (!pending) return;
 
+    // Check if STATUS_14 was selected
+    const selectedStatus = statuses.find(s => s.id === pending.statusId);
+    const isStatus14 = selectedStatus?.etat === 'STATUS_14';
+
+    // If STATUS_14 is selected and no explicit recall date change was made, set it to null
+    let recallAtValue;
+    if (pending.recallAt !== undefined) {
+      // Explicit recall date change was made
+      recallAtValue = pending.recallAt ? new Date(pending.recallAt) : null;
+    } else if (isStatus14) {
+      // STATUS_14 selected but no recall date change → auto-set to null
+      recallAtValue = null;
+    } else {
+      // Other status, no recall date change → don't modify
+      recallAtValue = undefined;
+    }
+
     try {
       setIsLoadingPage(true);
       const res = await bulkUpdateOrders([orderId], {
         statusId: pending.statusId,
-        recallAt: pending.recallAt ? new Date(pending.recallAt) : (pending.recallAt === null ? null : undefined)
+        recallAt: recallAtValue
       });
 
       if (res.success) {
