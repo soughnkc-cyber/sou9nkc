@@ -227,7 +227,7 @@ export const getColumns = (
     actions.push({ icon: Trash2, onClick: onDelete, className: "text-red-600 hover:text-red-800" });
 
 
-  const isAgent = role === "AGENT" || role === "AGENT_TEST";
+  const isAgent = ["AGENT", "AGENT_TEST"].includes(role?.toUpperCase() || "");
 
   const columnDefs: (ColumnDef<Order> | null)[] = [
     !isAgent ? {

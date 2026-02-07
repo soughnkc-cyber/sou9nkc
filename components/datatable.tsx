@@ -180,17 +180,24 @@ export function DataTable<TData, TValue>({
             <div className="flex items-center gap-2">
               {/* Mobile Select All */}
               <div className="lg:hidden flex items-center gap-2 mr-2">
-                  <Checkbox 
-                      checked={table.getIsAllPageRowsSelected() || (table.getIsSomePageRowsSelected() && "indeterminate")}
+                {table.getAllColumns().find((col) => col.id === "select") && (
+                  <>
+                    <Checkbox
+                      checked={
+                        table.getIsAllPageRowsSelected() ||
+                        (table.getIsSomePageRowsSelected() && "indeterminate")
+                      }
                       onCheckedChange={(value) => table.toggleAllPageRowsSelected(!!value)}
                       aria-label="Tout sélectionner"
                       className="h-4 w-4"
-                  />
-                  {Object.keys(rowSelection).length > 0 && (
+                    />
+                    {Object.keys(rowSelection).length > 0 && (
                       <span className="text-[10px] font-bold text-[#1F30AD] bg-blue-50 px-1.5 py-0.5 rounded-md whitespace-nowrap">
-                          {Object.keys(rowSelection).length}
+                        {Object.keys(rowSelection).length}
                       </span>
-                  )}
+                    )}
+                  </>
+                )}
               </div>
 
               {showViewOptions && <DataTableViewOptions table={table} />}
