@@ -5,7 +5,7 @@ import prisma from "@/lib/prisma";
 import { UserFormData } from "@/lib/schema";
 import { User as PrismaUser } from "@/app/generated/prisma";
 import bcrypt from "bcrypt";
-import { User } from "@/app/(dashboard)/list/users/columns";
+import { User } from "@/app/[locale]/(dashboard)/list/users/columns";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/app/api/auth/[...nextauth]/route";
 import { hasPermission, Permissions } from "@/lib/auth-utils";
