@@ -4,7 +4,7 @@ import prisma from "@/lib/prisma";
 
 import { StatusFormData } from "@/lib/schema";
 import { Status as PrismaStatus } from "@/app/generated/prisma";
-import { Status } from "@/app/(dashboard)/list/status/columns";
+import { Status } from "@/app/[locale]/(dashboard)/list/status/columns";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/app/api/auth/[...nextauth]/route";
 import { hasPermission } from "@/lib/auth-utils";
@@ -163,9 +163,13 @@ export const updateOrderStatus = async (
 
     let data: any = { statusId };
 
-    if (currentOrder && !currentOrder.firstProcessedAt && statusId) {
+    // ⚠️ FIX: Force calculation if firstProcessedAt is missing OR if processingTimeMin is missing (N/A fix)
+    if (statusId && (!currentOrder.firstProcessedAt || currentOrder.processingTimeMin === null)) {
       const now = new Date();
-      const calculationBase = currentOrder.assignedAt || currentOrder.orderDate;
+      
+      // Fallback: assignedAt -> updatedAt -> orderDate
+      const calculationBase = currentOrder.assignedAt || currentOrder.updatedAt || currentOrder.orderDate;
+      
       const absoluteDiffMs = now.getTime() - calculationBase.getTime();
       const absoluteDiffMin = Math.round(absoluteDiffMs / (1000 * 60));
       
@@ -173,9 +177,15 @@ export const updateOrderStatus = async (
       const { calculateWorkMinutes } = await import("@/lib/work-time");
       const workMin = calculateWorkMinutes(calculationBase, now, settings as any);
       
-      data.firstProcessedAt = now;
+      // Only update firstProcessedAt if it was missing. If it existed but time was null, keep original date.
+      if (!currentOrder.firstProcessedAt) {
+          data.firstProcessedAt = now;
+      }
+      
       data.processingTimeMin = workMin;
       data.absoluteDelayMin = absoluteDiffMin;
+      
+      console.log(`⏱️ [TimeFix] Recalculated N/A time for #${orderId}. Base: ${calculationBase.toISOString()} -> WorkMin: ${workMin}`);
     }
 
     // 1️⃣ Priority: Manual Recall Date
