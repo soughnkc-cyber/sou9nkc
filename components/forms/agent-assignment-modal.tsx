@@ -2,6 +2,7 @@
 
 import { Modal } from "../modal";
 import { AgentAssignmentForm, AgentAssignmentData } from "./agent-assignment-form";
+import { useTranslations } from "next-intl";
 
 interface AgentAssignmentModalProps {
   isOpen: boolean;
@@ -22,12 +23,14 @@ export function AgentAssignmentModal({
   isLoading = false,
   orderNumber,
 }: AgentAssignmentModalProps) {
+  const t = useTranslations('Orders.assignModal');
+
   return (
     <Modal
       isOpen={isOpen}
       onClose={onClose}
-      title={`Assigner la commande #${orderNumber || ""}`}
-      description="Sélectionnez l'agent qui sera responsable de cette commande."
+      title={t('title', { orderNumber: orderNumber || "" })}
+      description={t('description')}
       size="md"
       showCloseButton={true}
       closeOnOverlayClick={!isLoading}

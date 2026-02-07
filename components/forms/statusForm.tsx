@@ -15,7 +15,7 @@ import {
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
-import { Status } from "@/app/(dashboard)/list/status/columns";
+import { Status } from "@/app/[locale]/(dashboard)/list/status/columns";
 import { StatusFormData, statusFormSchema, Etat } from "@/lib/schema";
 import {
   Select,
@@ -35,12 +35,15 @@ interface StatusFormProps {
   isEditMode?: boolean;
 }
 
+import { useTranslations } from "next-intl";
+
 export function StatusForm({
   status,
   onSubmit,
   isLoading = false,
   isEditMode = false,
 }: StatusFormProps) {
+  const t = useTranslations("Status.form");
   const form = useForm<StatusFormData>({
     resolver: zodResolver(statusFormSchema),
     defaultValues: {
@@ -65,16 +68,16 @@ export function StatusForm({
             name="name"
             render={({ field }) => (
               <FormItem>
-                <FormLabel>Nom du statut *</FormLabel>
+                <FormLabel>{t('nameLabel')}</FormLabel>
                 <FormControl>
                   <Input
-                    placeholder="À rappeler / En attente / Clôturé..."
+                    placeholder={t('namePlaceholder')}
                     {...field}
                     disabled={isLoading}
                   />
                 </FormControl>
                 <FormDescription>
-                  Nom visible dans l’application
+                  {t('nameDesc')}
                 </FormDescription>
                 <FormMessage />
               </FormItem>
@@ -87,7 +90,7 @@ export function StatusForm({
             name="etat"
             render={({ field }) => (
               <FormItem>
-                <FormLabel>Etat Système *</FormLabel>
+                <FormLabel>{t('etatLabel')}</FormLabel>
                 <Select
                   disabled={isLoading || isEditMode}
                   onValueChange={field.onChange}
@@ -95,7 +98,7 @@ export function StatusForm({
                 >
                   <FormControl>
                     <SelectTrigger>
-                      <SelectValue placeholder="Sélectionner un état systeme" />
+                      <SelectValue placeholder={t('etatPlaceholder')} />
                     </SelectTrigger>
                   </FormControl>
                   <SelectContent>
@@ -107,7 +110,7 @@ export function StatusForm({
                   </SelectContent>
                 </Select>
                 <FormDescription>
-                  L'état technique pour les statistiques (01-15)
+                  {t('etatDesc')}
                 </FormDescription>
                 <FormMessage />
               </FormItem>
@@ -120,11 +123,11 @@ export function StatusForm({
             name="recallAfterH"
             render={({ field }) => (
               <FormItem>
-                <FormLabel>Rappel après (heures)</FormLabel>
+                <FormLabel>{t('recallLabel')}</FormLabel>
                 <FormControl>
                   <Input
                     type="number"
-                    placeholder="Ex: 1, 2, 24"
+                    placeholder={t('recallPlaceholder')}
                     value={field.value ?? ""}
                     onChange={(e) =>
                       field.onChange(
@@ -137,7 +140,7 @@ export function StatusForm({
                   />
                 </FormControl>
                 <FormDescription>
-                  Laisser vide si aucun rappel automatique
+                  {t('recallDesc')}
                 </FormDescription>
                 <FormMessage />
               </FormItem>
@@ -150,7 +153,7 @@ export function StatusForm({
             name="color"
             render={({ field }) => (
               <FormItem>
-                <FormLabel>Couleur</FormLabel>
+                <FormLabel>{t('colorLabel')}</FormLabel>
                 <FormControl>
                   <div className="flex items-center gap-3">
                     <Input
@@ -160,7 +163,7 @@ export function StatusForm({
                       disabled={isLoading}
                     />
                     <Input
-                      placeholder="#000000"
+                      placeholder={t('colorPlaceholder')}
                       className="flex-1"
                       {...field}
                       disabled={isLoading}
@@ -169,7 +172,7 @@ export function StatusForm({
                   </div>
                 </FormControl>
                 <FormDescription>
-                  Couleur affichée pour ce statut
+                  {t('colorDesc')}
                 </FormDescription>
                 <FormMessage />
               </FormItem>
@@ -183,9 +186,9 @@ export function StatusForm({
             render={({ field }) => (
               <FormItem className="flex flex-row items-center justify-between rounded-lg border p-3 shadow-xs">
                 <div className="space-y-0.5">
-                  <FormLabel>Statut Actif</FormLabel>
+                  <FormLabel>{t('activeLabel')}</FormLabel>
                   <FormDescription>
-                    Désactiver pour masquer ce statut
+                    {t('activeDesc')}
                   </FormDescription>
                 </div>
                 <FormControl>
@@ -215,10 +218,10 @@ export function StatusForm({
             {isLoading ? (
               <>
                 <div className="h-4 w-4 animate-spin rounded-full border-2 border-current border-t-transparent mr-2" />
-                {isEditMode ? "Modification..." : "Ajout..."}
+                {isEditMode ? t('editing') : t('adding')}
               </>
             ) : (
-              <>{isEditMode ? "Modifier" : "Ajouter"}</>
+              <>{isEditMode ? t('editBtn') : t('addBtn') || t('save')}</>
             )}
           </Button>
         </div>

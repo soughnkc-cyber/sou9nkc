@@ -17,6 +17,7 @@ import {
   ChartTooltip,
   ChartTooltipContent,
 } from "@/components/ui/chart"
+import { useTranslations, useLocale } from "next-intl"
 
 interface OrderEvolutionData {
   date: string;
@@ -29,26 +30,28 @@ interface OrdersTrendChartProps {
   data: OrderEvolutionData[];
 }
 
-const chartConfig = {
-  total: {
-    label: "Total",
-    color: "hsl(var(--chart-1))",
-  },
-  processed: {
-    label: "Traitées",
-    color: "hsl(var(--chart-2))",
-  },
-  pending: {
-    label: "En attente",
-    color: "hsl(var(--chart-3))",
-  },
-} satisfies ChartConfig
-
 export function OrdersTrendChart({ data }: OrdersTrendChartProps) {
-  // Format date for display
+  const t = useTranslations("Dashboard");
+  const locale = useLocale();
+
+  const chartConfig = {
+    total: {
+      label: t('total'),
+      color: "hsl(var(--chart-1))",
+    },
+    processed: {
+      label: t('processedPlot'),
+      color: "hsl(var(--chart-2))",
+    },
+    pending: {
+      label: t('pendingPlot'),
+      color: "hsl(var(--chart-3))",
+    },
+  } satisfies ChartConfig
+
   const formatDate = (dateStr: string) => {
     const date = new Date(dateStr);
-    return new Intl.DateTimeFormat("fr-FR", {
+    return new Intl.DateTimeFormat(locale === 'ar' ? "ar-EG" : "fr-FR", {
       month: "short",
       day: "numeric",
     }).format(date);
@@ -64,19 +67,19 @@ export function OrdersTrendChart({ data }: OrdersTrendChartProps) {
       <CardHeader className="border-b border-slate-50 bg-slate-50/30 pb-4">
         <div className="flex items-center justify-between">
           <div>
-            <CardTitle className="text-xl font-black text-slate-900 tracking-tight">Efficacité des Commandes</CardTitle>
+            <CardTitle className="text-xl font-black text-slate-900 tracking-tight">{t('ordersTrendTitle')}</CardTitle>
             <CardDescription className="font-medium text-slate-500">
-              Analyse comparative du flux quotidien des commandes
+              {t('ordersTrendDesc')}
             </CardDescription>
           </div>
           <div className="flex gap-4">
             <div className="flex items-center gap-1.5">
               <div className="h-3 w-3 rounded-full bg-(--color-total) shadow-xs" />
-              <span className="text-xs font-bold text-slate-600 uppercase tracking-tighter">Total</span>
+              <span className="text-xs font-bold text-slate-600 uppercase tracking-tighter">{t('total')}</span>
             </div>
             <div className="flex items-center gap-1.5">
               <div className="h-3 w-3 rounded-full bg-(--color-processed) shadow-xs" />
-              <span className="text-xs font-bold text-slate-600 uppercase tracking-tighter">Traitées</span>
+              <span className="text-xs font-bold text-slate-600 uppercase tracking-tighter">{t('processedPlot')}</span>
             </div>
           </div>
         </div>
@@ -148,10 +151,10 @@ export function OrdersTrendChart({ data }: OrdersTrendChartProps) {
       <CardFooter className="bg-slate-50/30 border-t border-slate-50 py-4">
         <div className="flex w-full items-center justify-between text-sm">
             <div className="flex items-center gap-2 font-bold text-emerald-600 transition-transform hover:translate-x-1 cursor-default">
-              Performance positive ce mois <TrendingUp className="h-4 w-4" />
+              {t('performancePositive')} <TrendingUp className="h-4 w-4" />
             </div>
             <div className="text-slate-400 font-medium italic">
-              Données actualisées en temps réel
+              {t('realTimeData')}
             </div>
         </div>
       </CardFooter>

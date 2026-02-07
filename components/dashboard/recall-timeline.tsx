@@ -5,7 +5,8 @@ import { Badge } from "@/components/ui/badge";
 import { ClockIcon, PhoneIcon } from "lucide-react";
 import Link from "next/link";
 import { formatDistanceToNow } from "date-fns";
-import { fr } from "date-fns/locale";
+import { fr, arSA } from "date-fns/locale";
+import { useTranslations, useLocale } from "next-intl";
 
 interface RecallTimelineData {
   id: string;
@@ -23,10 +24,13 @@ interface RecallTimelineProps {
 }
 
 export function RecallTimeline({ data }: RecallTimelineProps) {
+  const t = useTranslations("Dashboard");
+  const locale = useLocale();
+
   const formatRecallDate = (dateStr: string) => {
     if (!dateStr) return "";
     const date = new Date(dateStr);
-    return new Intl.DateTimeFormat("fr-FR", {
+    return new Intl.DateTimeFormat(locale === 'ar' ? "ar-EG" : "fr-FR", {
       day: "2-digit",
       month: "short",
       hour: "2-digit",
@@ -37,9 +41,10 @@ export function RecallTimeline({ data }: RecallTimelineProps) {
   const getRelativeTime = (dateStr: string) => {
     if (!dateStr) return "";
     try {
+      const dateLocale = locale === 'ar' ? arSA : fr;
       return formatDistanceToNow(new Date(dateStr), { 
         addSuffix: true,
-        locale: fr
+        locale: dateLocale
       });
     } catch {
       return "";
@@ -52,10 +57,10 @@ export function RecallTimeline({ data }: RecallTimelineProps) {
         <div>
           <CardTitle className="text-lg font-bold flex items-center gap-2">
             <PhoneIcon className="h-5 w-5 text-blue-600" />
-            Prochains Rappels
+            {t('nextRecallTitle')}
           </CardTitle>
           <p className="text-sm text-muted-foreground mt-1">
-            {data.length} rappel{data.length !== 1 ? "s" : ""} programmé{data.length !== 1 ? "s" : ""}
+            {t('recallsScheduled', { count: data.length })}
           </p>
         </div>
       </CardHeader>
@@ -63,7 +68,7 @@ export function RecallTimeline({ data }: RecallTimelineProps) {
         <div className="space-y-3 max-h-[500px] overflow-y-auto pr-2">
           {data.length === 0 ? (
             <div className="text-center text-muted-foreground py-8">
-              Aucun rappel programmé
+              {t('noRecallScheduled')}
             </div>
           ) : (
             data.map((recall, index) => (
@@ -91,7 +96,7 @@ export function RecallTimeline({ data }: RecallTimelineProps) {
                           #{recall.orderNumber} - {recall.customerName}
                         </p>
                         <p className="text-xs text-muted-foreground">
-                          Agent: {recall.agentName}
+                          {t('agent')}: {recall.agentName}
                         </p>
                       </div>
                       <Badge 

@@ -17,6 +17,7 @@ import {
   ChartTooltip,
   ChartTooltipContent,
 } from "@/components/ui/chart"
+import { useTranslations, useLocale } from "next-intl"
 
 interface ProcessingTimeTrendData {
   date: string;
@@ -27,18 +28,20 @@ interface ProcessingTimeTrendProps {
   data: ProcessingTimeTrendData[];
 }
 
-const chartConfig = {
-  avgTime: {
-    label: "Temps Moyen",
-    color: "hsl(var(--chart-4))",
-  },
-} satisfies ChartConfig
-
 export function ProcessingTimeTrend({ data }: ProcessingTimeTrendProps) {
-  // Format date for display
+  const t = useTranslations("Dashboard");
+  const locale = useLocale();
+
+  const chartConfig = {
+    avgTime: {
+      label: t('avgProcessingTimeTooltip'),
+      color: "hsl(var(--chart-4))",
+    },
+  } satisfies ChartConfig
+
   const formatDate = (dateStr: string) => {
     const date = new Date(dateStr);
-    return new Intl.DateTimeFormat("fr-FR", {
+    return new Intl.DateTimeFormat(locale === 'ar' ? "ar-EG" : "fr-FR", {
       month: "short",
       day: "numeric",
     }).format(date);
@@ -53,9 +56,9 @@ export function ProcessingTimeTrend({ data }: ProcessingTimeTrendProps) {
     <Card className="col-span-full border-none shadow-sm ring-1 ring-slate-100 overflow-hidden">
       <CardHeader className="border-b border-slate-50 bg-slate-50/30 pb-4">
         <div>
-          <CardTitle className="text-xl font-black text-slate-900 tracking-tight">Réactivité des Agents</CardTitle>
+          <CardTitle className="text-xl font-black text-slate-900 tracking-tight">{t('reactivityTitle')}</CardTitle>
           <CardDescription className="font-medium text-slate-500">
-            Temps de traitement moyen quotidien (minutes)
+            {t('reactivityDesc')}
           </CardDescription>
         </div>
       </CardHeader>
@@ -112,7 +115,7 @@ export function ProcessingTimeTrend({ data }: ProcessingTimeTrendProps) {
       <CardFooter className="bg-slate-50/30 border-t border-slate-50 py-4">
         <div className="flex w-full items-center justify-between text-sm">
             <div className="flex items-center gap-2 font-bold text-purple-600 transition-transform hover:translate-x-1 cursor-default">
-              Optimisation de la performance <TrendingDown className="h-4 w-4" />
+              {t('performanceOptimization')} <TrendingDown className="h-4 w-4" />
             </div>
             <div className="text-slate-400 font-medium italic text-[10px] uppercase tracking-widest">
               Performance Analytics

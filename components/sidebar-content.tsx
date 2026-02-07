@@ -11,10 +11,13 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { signOut, useSession } from "next-auth/react";
 import { useState, useEffect } from "react";
+import { useTranslations } from "next-intl";
+import LanguageSwitcher from "./LanguageSwitcher";
 
 type Role = "ADMIN" | "AGENT" | "SUPERVISOR" | "AGENT_TEST";
 
 interface NavItem {
+  id: string; // Added id for translation key
   name: string;
   href: string;
   icon: React.ComponentType<{ className?: string }>;
@@ -24,15 +27,18 @@ interface NavItem {
 }
 
 interface NavSection {
+  id: string; // Added id for translation key
   title: string;
   items: NavItem[];
 }
 
 const navigationSections: NavSection[] = [
   {
+    id: "main",
     title: "MENU PRINCIPAL",
     items: [
       {
+        id: "dashboard",
         name: "Tableau de Bord",
         href: "/admin",
         icon: LayoutDashboard,
@@ -40,6 +46,7 @@ const navigationSections: NavSection[] = [
         permission: "canViewDashboard",
       },
       {
+        id: "agentSpace",
         name: "Espace Agent",
         href: "/agent",
         icon: LayoutDashboard,
@@ -47,6 +54,7 @@ const navigationSections: NavSection[] = [
         permission: "canViewDashboard",
       },
       {
+        id: "supervisorSpace",
         name: "Espace Superviseur",
         href: "/supervisor",
         icon: LayoutDashboard,
@@ -54,6 +62,7 @@ const navigationSections: NavSection[] = [
         permission: "canViewDashboard",
       },
       {
+        id: "orders",
         name: "Commandes",
         href: "/list/orders",
         icon: ShoppingCart,
@@ -61,6 +70,7 @@ const navigationSections: NavSection[] = [
         permission: "canViewOrders",
       },
       {
+        id: "products",
         name: "Produits",
         href: "/list/products",
         icon: Package,
@@ -70,9 +80,11 @@ const navigationSections: NavSection[] = [
     ],
   },
   {
+    id: "tools",
     title: "OUTILS",
     items: [
       {
+        id: "users",
         name: "Utilisateurs",
         href: "/list/users",
         icon: Users,
@@ -80,6 +92,7 @@ const navigationSections: NavSection[] = [
         permission: "canViewUsers",
       },
       {
+        id: "analytics",
         name: "Analytiques",
         href: "/list/reporting",
         icon: BarChart3,
@@ -87,6 +100,7 @@ const navigationSections: NavSection[] = [
         permission: "canViewReporting",
       },
       {
+        id: "status",
         name: "Statuts",
         href: "/list/status",
         icon: ShieldCheck,
@@ -115,6 +129,7 @@ export function SidebarContent({
   const pathname = usePathname();
   const { data: session } = useSession();
   const [forceUpdate, setForceUpdate] = useState(0);
+  const t = useTranslations("Navigation");
 
   // Force a re-render 100ms after mount to capture any late local storage or session hydration
   // This is critical for mobile production environments where hydration can be tricky.
@@ -170,19 +185,10 @@ export function SidebarContent({
         </div>
       </div>
 
-      {/* Global Search in Sidebar */}
-      {/* <div className={cn("px-4 pb-4", isCollapsed && !mobile && "hidden")}>
-        <div className="relative group">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400 group-hover:text-black transition-colors" />
-          <Input 
-            placeholder="Search..." 
-            className="pl-9 h-10 bg-gray-50 border-gray-100 hover:bg-gray-100/50 focus:bg-white transition-all text-sm rounded-xl"
-          />
-          <div className="absolute right-2 top-1/2 -translate-y-1/2 flex gap-0.5">
-              <kbd className="h-5 px-1 rounded border bg-white flex items-center justify-center text-[10px] font-sans text-gray-400"><Command className="h-2 w-2 mr-0.5" />K</kbd>
-          </div>
-        </div>
-      </div> */}
+      {/* Language Switcher - Moved for prominence */}
+      <div className={cn("px-4 pb-4 border-b mx-2", isCollapsed && !mobile && "hidden")}>
+        <LanguageSwitcher />
+      </div>
 
       {/* Navigation Sections */}
       <div className="flex-1 overflow-auto px-4 py-2 space-y-6 scrollbar-hide">
@@ -194,9 +200,6 @@ export function SidebarContent({
             const hasRole = item.roles.includes(roleToCheck);
             if (!hasRole) return false;
             
-            // 🛡️ Logic: If specific permission flag is missing (undefined), 
-            // we assume it's the first connection and trust the Role check.
-            // If it's explicitly false, we hide it.
             if (item.permission && permissions[item.permission] === false) {
                 return false;
             }
@@ -206,10 +209,10 @@ export function SidebarContent({
           if (visibleItems.length === 0) return null;
 
           return (
-            <div key={section.title} className="space-y-1">
+            <div key={section.id} className="space-y-1">
               {showLabels && (
                 <h3 className="px-3 text-[10px] font-extrabold text-gray-400 uppercase tracking-widest mb-2">
-                  {section.title}
+                  {t(`sections.${section.id}`)}
                 </h3>
               )}
               <div className="space-y-0.5">
@@ -225,7 +228,7 @@ export function SidebarContent({
                         isActive ? "bg-gray-50 text-black font-semibold shadow-sm" : "text-gray-500 hover:text-black hover:bg-gray-50/50",
                         isCollapsed && !mobile ? "px-0 justify-center" : "rounded-xl"
                       )}
-                      title={isCollapsed && !mobile ? item.name : undefined}
+                      title={isCollapsed && !mobile ? t(`items.${item.id}`) : undefined}
                     >
                       <Link href={item.href} onClick={() => mobile && onNavigate?.()}>
                         {isActive && (
@@ -236,7 +239,7 @@ export function SidebarContent({
                           isActive ? "text-black" : "text-gray-400 group-hover:text-black",
                           showLabels && "mr-3"
                         )} />
-                        {showLabels && <span className="text-sm">{item.name}</span>}
+                        {showLabels && <span className="text-sm">{t(`items.${item.id}`)}</span>}
                         {showLabels && item.badge && (
                           <span className="ml-auto text-[10px] bg-gray-100 text-gray-500 px-1.5 py-0.5 rounded-full font-bold min-w-[18px] text-center">
                             {item.badge}
@@ -252,8 +255,9 @@ export function SidebarContent({
         })}
       </div>
 
+
       {/* System Settings & Footer */}
-      <div className="mt-auto px-4 py-4 space-y-1">
+      <div className="px-4 py-4 space-y-1 border-t">
         {effectiveRole === "ADMIN" ? (
           <Button
             variant="ghost"
@@ -265,7 +269,7 @@ export function SidebarContent({
           >
             <Link href="/settings" onClick={() => mobile && onNavigate?.()}>
               <Settings className={cn("h-4 w-4 shrink-0", showLabels && "mr-3 text-gray-400")} />
-              {showLabels && <span className="text-sm font-medium">Paramètres</span>}
+              {showLabels && <span className="text-sm font-medium">{t("items.settings")}</span>}
             </Link>
           </Button>
         ) : (
@@ -279,7 +283,7 @@ export function SidebarContent({
           >
             <Link href="/profile" onClick={() => mobile && onNavigate?.()}>
               <ShieldCheck className={cn("h-4 w-4 shrink-0", showLabels && "mr-3 text-gray-400")} />
-              {showLabels && <span className="text-sm font-medium">Profil</span>}
+              {showLabels && <span className="text-sm font-medium">{t("items.profile")}</span>}
             </Link>
           </Button>
         )}
@@ -293,7 +297,7 @@ export function SidebarContent({
           onClick={handleSignOut}
         >
           <LogOut className={cn("h-4 w-4 shrink-0", showLabels && "mr-3")} />
-          {showLabels && <span className="text-sm border-none shadow-none">Déconnexion</span>}
+          {showLabels && <span className="text-sm border-none shadow-none">{t("items.signOut")}</span>}
         </Button>
       </div>
     </div>

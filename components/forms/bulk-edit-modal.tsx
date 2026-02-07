@@ -11,11 +11,7 @@ import {
   SelectValue 
 } from "@/components/ui/select";
 import { Label } from "@/components/ui/label";
-import { Input } from "@/components/ui/input";
-import { format } from "date-fns";
-import { fr } from "date-fns/locale";
-
-
+import { useTranslations } from "next-intl";
 
 export function BulkEditModal({
   isOpen,
@@ -34,6 +30,7 @@ export function BulkEditModal({
   onUpdate: (updates: { agentId?: string; statusId?: string | null; recallAt?: string | null }) => Promise<void>;
   isLoading?: boolean;
 }) {
+  const t = useTranslations('Orders.bulkEditModal');
   const [selectedAgentId, setSelectedAgentId] = useState<string>("no_change");
   const [selectedStatusId, setSelectedStatusId] = useState<string>("no_change");
   const [selectedRecallAt, setSelectedRecallAt] = useState<string>("no_change");
@@ -69,8 +66,8 @@ export function BulkEditModal({
     <Modal
       isOpen={isOpen}
       onClose={onClose}
-      title={`Modifier ${selectedCount} commandes`}
-      description="Assigner un nouvel agent aux commandes sélectionnées."
+      title={t('title', { count: selectedCount })}
+      description={t('description')}
       size="sm"
       showCloseButton={true}
       closeOnOverlayClick={!isLoading}
@@ -81,14 +78,14 @@ export function BulkEditModal({
         {/* Champs de Sélection */}
         <div className="space-y-4">
             <div className="space-y-2">
-                <Label>Agent</Label>
+                <Label>{t('agentLabel')}</Label>
                 <Select value={selectedAgentId} onValueChange={setSelectedAgentId}>
                     <SelectTrigger className="h-9">
-                        <SelectValue placeholder="Sélectionner un agent..." />
+                        <SelectValue placeholder={t('agentPlaceholder')} />
                     </SelectTrigger>
                     <SelectContent>
-                        <SelectItem value="no_change" className="text-gray-500 italic">-- Aucun changement --</SelectItem>
-                        <SelectItem value="unassigned" className="text-amber-600 font-medium">Désassigner (Pas d'agent)</SelectItem>
+                        <SelectItem value="no_change" className="text-gray-500 italic">{t('noChange')}</SelectItem>
+                        <SelectItem value="unassigned" className="text-amber-600 font-medium">{t('unassigned')}</SelectItem>
                         {agents
                             .filter(a => a.isActive)
                             .map(a => (
@@ -102,14 +99,14 @@ export function BulkEditModal({
         {/* Actions */}
         <div className="flex justify-end gap-2 pt-2">
             <Button variant="outline" onClick={onClose} disabled={isLoading}>
-                Annuler
+                {t('cancel')}
             </Button>
             <Button 
                 onClick={handleSubmit} 
                 disabled={isLoading || !hasChanges}
-                className="bg-[#1F30AD] hover:bg-[#1F30AD]/90"
+                className="bg-[#1F30AD] hover:bg-[#1F30AD]/90 text-white"
             >
-                {isLoading ? "Traitement..." : "Appliquer"}
+                {isLoading ? t('processing') : t('apply')}
             </Button>
         </div>
 

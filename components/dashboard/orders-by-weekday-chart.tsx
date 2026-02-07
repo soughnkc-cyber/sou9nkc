@@ -15,6 +15,7 @@ import {
   ChartTooltip,
   ChartTooltipContent,
 } from "@/components/ui/chart"
+import { useTranslations } from "next-intl"
 
 interface OrdersByWeekdayData {
   day: string;
@@ -25,19 +26,21 @@ interface OrdersByWeekdayChartProps {
   data: OrdersByWeekdayData[];
 }
 
-const chartConfig = {
-  orders: {
-    label: "Commandes",
-    color: "hsl(var(--chart-1))",
-  },
-} satisfies ChartConfig
-
 export function OrdersByWeekdayChart({ data }: OrdersByWeekdayChartProps) {
+  const t = useTranslations("Dashboard");
+
+  const chartConfig = {
+    orders: {
+      label: t('commandes'),
+      color: "hsl(var(--chart-1))",
+    },
+  } satisfies ChartConfig
+
   return (
     <Card>
       <CardHeader>
-        <CardTitle>Commandes par Jour</CardTitle>
-        <CardDescription>Distribution hebdomadaire des commandes</CardDescription>
+        <CardTitle>{t('ordersByWeekdayTitle')}</CardTitle>
+        <CardDescription>{t('ordersByWeekdayDesc')}</CardDescription>
       </CardHeader>
       <CardContent>
         <ChartContainer config={chartConfig}>

@@ -1,12 +1,11 @@
-"use client";
-
 import { Calendar } from "lucide-react";
 import { useState } from "react";
 import { Input } from "@/components/ui/input";
-import { Order } from "@/app/(dashboard)/list/orders/columns";
+import { Order } from "@/app/[locale]/(dashboard)/list/orders/columns";
 import { cn, formatSmartDate } from "@/lib/utils";
 import { Badge } from "@/components/ui/badge";
 import { isPast } from "date-fns";
+import { useTranslations } from "next-intl";
 
 export const RecallCell = ({
   order,
@@ -23,8 +22,10 @@ export const RecallCell = ({
   onInteractionEnd?: () => void;
   pendingRecallAt?: string | null;
 }) => {
+  const t = useTranslations('Orders.recall');
   const currentRecallAt = pendingRecallAt !== undefined ? pendingRecallAt : order.recallAt;
   const isPending = pendingRecallAt !== undefined;
+// ... (omitting state/handlers as they haven't changed much)
   const [open, setOpen] = useState(false);
   const [tempValue, setTempValue] = useState<string>("");
 
@@ -36,8 +37,6 @@ export const RecallCell = ({
   };
 
   const commitChange = () => {
-    // Only call onChange if the value actually changed
-    // (Optional optimization, but good for reducing network calls)
     const current = currentRecallAt?.slice(0, 16) ?? "";
     if (tempValue !== current) {
        onChange(order.id, tempValue || null);
@@ -50,7 +49,7 @@ export const RecallCell = ({
     if (e.key === 'Enter') {
       commitChange();
     } else if (e.key === 'Escape') {
-      setOpen(false); // Cancel
+      setOpen(false);
       onInteractionEnd?.();
     }
   };
@@ -86,13 +85,13 @@ export const RecallCell = ({
             isPast(new Date(currentRecallAt)) ? "text-red-600 font-bold" : "text-gray-700 font-medium",
             isPending && "text-yellow-600"
           )}>
-            {formatSmartDate(currentRecallAt)}
+            {formatSmartDate(currentRecallAt, t)}
           </span>
         </div>
       ) : (
         <>
            <Calendar className="h-3.5 w-3.5" /> 
-           <span className="text-[11px]">Planifier</span>
+           <span className="text-[11px]">{t('plan')}</span>
         </>
       )}
     </div>

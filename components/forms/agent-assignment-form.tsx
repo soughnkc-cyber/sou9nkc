@@ -15,12 +15,13 @@ import {
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
+import { useTranslations } from "next-intl";
 
-const agentAssignmentSchema = z.object({
-  agentId: z.string().min(1, "Veuillez sélectionner un agent"),
+const agentAssignmentSchema = (t: any) => z.object({
+  agentId: z.string().min(1, t('error')),
 });
 
-export type AgentAssignmentData = z.infer<typeof agentAssignmentSchema>;
+export type AgentAssignmentData = z.infer<ReturnType<typeof agentAssignmentSchema>>;
 
 interface AgentAssignmentFormProps {
   currentAgentId?: string | null;
@@ -35,8 +36,10 @@ export function AgentAssignmentForm({
   onSubmit,
   isLoading = false,
 }: AgentAssignmentFormProps) {
+  const t = useTranslations('Orders.assignModal');
+
   const form = useForm<AgentAssignmentData>({
-    resolver: zodResolver(agentAssignmentSchema),
+    resolver: zodResolver(agentAssignmentSchema(t)),
     defaultValues: {
       agentId: currentAgentId || "",
     },
@@ -50,11 +53,11 @@ export function AgentAssignmentForm({
           name="agentId"
           render={({ field }) => (
             <FormItem>
-              <FormLabel>Agent</FormLabel>
+              <FormLabel>{t('label')}</FormLabel>
               <Select onValueChange={field.onChange} defaultValue={field.value}>
                 <FormControl>
                   <SelectTrigger>
-                    <SelectValue placeholder="Sélectionner un agent" />
+                    <SelectValue placeholder={t('placeholder')} />
                   </SelectTrigger>
                 </FormControl>
                 <SelectContent>
@@ -79,7 +82,7 @@ export function AgentAssignmentForm({
               isLoading && "opacity-50 cursor-not-allowed"
             )}
           >
-            {isLoading ? "Enregistrement..." : "Enregistrer"}
+            {isLoading ? t('saving') : t('submit')}
           </Button>
         </div>
       </form>

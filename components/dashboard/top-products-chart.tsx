@@ -15,6 +15,7 @@ import {
   ChartTooltip,
   ChartTooltipContent,
 } from "@/components/ui/chart"
+import { useTranslations } from "next-intl"
 
 interface TopProductData {
   name: string;
@@ -25,15 +26,16 @@ interface TopProductsChartProps {
   data: TopProductData[];
 }
 
-const chartConfig = {
-  count: {
-    label: "Commandes",
-    color: "hsl(var(--chart-2))",
-  },
-} satisfies ChartConfig
-
 export function TopProductsChart({ data }: TopProductsChartProps) {
-  // Truncate long names for display
+  const t = useTranslations("Dashboard");
+
+  const chartConfig = {
+    count: {
+      label: t('commandes'),
+      color: "hsl(var(--chart-2))",
+    },
+  } satisfies ChartConfig
+
   const chartData = data.map((item) => ({
     ...item,
     displayName: item.name.length > 20 ? item.name.slice(0, 17) + "..." : item.name,
@@ -42,8 +44,8 @@ export function TopProductsChart({ data }: TopProductsChartProps) {
   return (
     <Card>
       <CardHeader>
-        <CardTitle>Top 10 Produits</CardTitle>
-        <CardDescription>Produits les plus commandés</CardDescription>
+        <CardTitle>{t('topProductsTitle')}</CardTitle>
+        <CardDescription>{t('topProductsDesc')}</CardDescription>
       </CardHeader>
       <CardContent>
         <ChartContainer config={chartConfig}>

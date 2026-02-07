@@ -3,6 +3,7 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { PieChart, Pie, Cell, ResponsiveContainer, Legend, Tooltip } from "recharts";
 import { PieChartIcon } from "lucide-react";
+import { useTranslations } from "next-intl";
 
 interface StatusStat {
   name: string;
@@ -14,7 +15,6 @@ interface StatusDistributionPieProps {
   stats: StatusStat[];
 }
 
-// Default colors if not provided
 const COLORS = [
   "#3b82f6", // blue
   "#10b981", // green
@@ -27,9 +27,9 @@ const COLORS = [
 ];
 
 export function StatusDistributionPie({ stats }: StatusDistributionPieProps) {
+  const t = useTranslations("Dashboard");
   const total = stats.reduce((acc, curr) => acc + curr.count, 0);
 
-  // Prepare data for pie chart
   const data = stats.map((stat, index) => ({
     name: stat.name,
     value: stat.count,
@@ -42,7 +42,7 @@ export function StatusDistributionPie({ stats }: StatusDistributionPieProps) {
     const x = cx + radius * Math.cos(-midAngle * Math.PI / 180);
     const y = cy + radius * Math.sin(-midAngle * Math.PI / 180);
 
-    if (percent < 0.05) return null; // Don't show label for very small slices
+    if (percent < 0.05) return null;
 
     return (
       <text
@@ -63,13 +63,13 @@ export function StatusDistributionPie({ stats }: StatusDistributionPieProps) {
       <CardHeader>
         <CardTitle className="text-xl font-bold flex items-center text-blue-900">
           <PieChartIcon className="mr-2 h-5 w-5 text-blue-600" />
-          Répartition des Statuts
+          {t('statusDistributionTitle')}
         </CardTitle>
       </CardHeader>
       <CardContent>
         {stats.length === 0 || total === 0 ? (
           <p className="text-center py-12 text-muted-foreground italic text-sm">
-            Aucune donnée de statut disponible.
+            {t('noStatusData')}
           </p>
         ) : (
           <ResponsiveContainer width="100%" height={350}>
@@ -89,7 +89,7 @@ export function StatusDistributionPie({ stats }: StatusDistributionPieProps) {
                 ))}
               </Pie>
               <Tooltip
-                formatter={(value: any) => [`${value} commandes`, ""]}
+                formatter={(value: any) => [`${value} ${t('commandes')}`, ""]}
                 contentStyle={{
                   backgroundColor: "white",
                   border: "1px solid #e5e7eb",

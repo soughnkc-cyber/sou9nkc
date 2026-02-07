@@ -168,20 +168,6 @@ export const insertNewOrders = async (shopifyOrders: ShopifyOrder[]) => {
   const batchSize = settings.assignmentBatchSize || 1;
   console.log(`📦 [Assignment] Using Max Untreated Batch Size: ${batchSize}`);
 
-  // Fetch TODAY's load for balancing (Reset at midnight)
-  const todayStart = new Date();
-  todayStart.setHours(0, 0, 0, 0);
-
-  // 📊 Count TOTAL assignments today (for Least Loaded logic)
-  const agentOrderCountsToday = await prisma.order.groupBy({
-    by: ['agentId'],
-    _count: { id: true },
-    where: { 
-        agentId: { not: null },
-        createdAt: { gte: todayStart }
-    }
-  });
-
   // 💤 Count UNTREATED orders (assigned but status is null)
   const agentUntreatedCounts = await prisma.order.groupBy({
     by: ['agentId'],
@@ -192,25 +178,16 @@ export const insertNewOrders = async (shopifyOrders: ShopifyOrder[]) => {
     }
   });
 
-  // Map for Total Load Today
-  const localTodayCounts = new Map<string, number>();
-  agents.forEach(a => localTodayCounts.set(a.id, 0));
-  agentOrderCountsToday.forEach(c => {
-    if (c.agentId) localTodayCounts.set(c.agentId, c._count.id);
-  });
-
-  // Map for Untreated Count (Saturation)
+  // Map for Untreated Count (Saturation & Balancing)
   const localUntreatedCounts = new Map<string, number>();
   agents.forEach(a => localUntreatedCounts.set(a.id, 0));
   agentUntreatedCounts.forEach(c => {
     if (c.agentId) localUntreatedCounts.set(c.agentId, c._count.id);
   });
 
-  console.log("📊 [Assignment] Initial Load (Today):", Object.fromEntries(localTodayCounts));
-  console.log("💤 [Assignment] Initial Untreated:", Object.fromEntries(localUntreatedCounts));
+  console.log("💤 [Assignment] Initial Untreated Load:", Object.fromEntries(localUntreatedCounts));
 
   for (const order of ordersToAssign) {
-    const getAgentTodayScore = (agentId: string) => localTodayCounts.get(agentId) || 0;
     const getAgentUntreatedCount = (agentId: string) => localUntreatedCounts.get(agentId) || 0;
     
     // 1. Determine eligible agents based on Restricted/Hidden rules
@@ -226,7 +203,6 @@ export const insertNewOrders = async (shopifyOrders: ShopifyOrder[]) => {
             blockedAgentIds.push(...p.hiddenForAgentIds);
         }
     });
-    
 
     let baseCandidates: typeof agents = [];
 
@@ -249,17 +225,16 @@ export const insertNewOrders = async (shopifyOrders: ShopifyOrder[]) => {
 
     if (candidates.length === 0) {
         // FALLBACK: Everyone is saturated. We must assign anyway to prevent stalling.
-        // We revert to considering ALL base candidates.
         candidates = baseCandidates;
         console.log(`⚠️ [Assignment] All agents saturated (Untreated >= ${batchSize}). Using saturated candidates.`);
     }
 
-    // 3. Load Balancing (Least Assigned Today)
+    // 3. Load Balancing (Least Untreated Orders)
     candidates.sort((a, b) => {
-        const scoreA = getAgentTodayScore(a.id);
-        const scoreB = getAgentTodayScore(b.id);
+        const scoreA = getAgentUntreatedCount(a.id);
+        const scoreB = getAgentUntreatedCount(b.id);
         
-        // Primary: Least total load today
+        // Primary: Least untreated orders currently
         if (scoreA !== scoreB) return scoreA - scoreB;
         
         // Secondary: Tie break random
@@ -278,13 +253,10 @@ export const insertNewOrders = async (shopifyOrders: ShopifyOrder[]) => {
         });
 
         // Update local memory counters
-        const newTodayScore = getAgentTodayScore(bestAgent.id) + 1;
         const newUntreatedScore = getAgentUntreatedCount(bestAgent.id) + 1;
-        
-        localTodayCounts.set(bestAgent.id, newTodayScore);
         localUntreatedCounts.set(bestAgent.id, newUntreatedScore);
 
-        console.log(`✅ [Assignment] Order #${order.orderNumber} -> ${bestAgent.name} (Today: ${newTodayScore}, Untreated: ${newUntreatedScore})`);
+        console.log(`✅ [Assignment] Order #${order.orderNumber} -> ${bestAgent.name} (Untreated: ${newUntreatedScore})`);
     } catch (e) {
         console.error(`❌ [Assignment] Failed to update order #${order.orderNumber}`, e);
     }

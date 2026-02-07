@@ -2,9 +2,9 @@
 "use client";
 
 
-import { User } from "@/app/(dashboard)/list/users/columns";
+import { User } from "@/app/[locale]/(dashboard)/list/users/columns";
 import { ConfirmModal } from "./confirm-modal";
-import { Status } from "@/app/(dashboard)/list/status/columns";
+import { Status } from "@/app/[locale]/(dashboard)/list/status/columns";
 
 interface DeleteUserModalProps {
   isOpen: boolean;
@@ -15,6 +15,8 @@ interface DeleteUserModalProps {
   title?: string;
 }
 
+import { useTranslations } from "next-intl";
+
 interface DeleteStatusModalProps {
   isOpen: boolean;  
   onClose: () => void;
@@ -22,6 +24,7 @@ interface DeleteStatusModalProps {
   status?: Status | null;
   itemName?: string;
   isLoading?: boolean;
+  count?: number;
 }
 
 export function DeleteUserModal({
@@ -32,6 +35,7 @@ export function DeleteUserModal({
   isLoading = false,
   title,
 }: DeleteUserModalProps) {
+  const t = useTranslations("Users.modal");
   if (!user && !title) return null;
 
   return (
@@ -39,13 +43,13 @@ export function DeleteUserModal({
       isOpen={isOpen}
       onClose={onClose}
       onConfirm={onConfirm}
-      title={title || "Supprimer l'utilisateur"}
+      title={title || t('deleteUser') || "Supprimer l'utilisateur"}
       message={user 
-        ? `Êtes-vous sûr de vouloir supprimer l'utilisateur "${user.name}" ? Cette action est irréversible.`
-        : "Êtes-vous sûr de vouloir supprimer les utilisateurs sélectionnés ? Cette action est irréversible."
+        ? t('confirmDelete', { name: user.name })
+        : t('confirmBulkDelete')
       }
-      confirmText="Supprimer"
-      cancelText="Annuler"
+      confirmText={t('deleteBtn', { defaultValue: "Supprimer" })}
+      cancelText={t('cancelBtn', { defaultValue: "Annuler" })}
       variant="danger"
       isLoading={isLoading}
     />
@@ -59,8 +63,10 @@ export function DeleteStatusModal({
   status,
   itemName,
   isLoading = false,
+  count = 0,
 }: DeleteStatusModalProps) {
-  const name = status?.name || itemName;
+  const t = useTranslations("Status.modal");
+  const name = status?.name || itemName || "";
   
   if (!name && !status) return null;
 
@@ -69,10 +75,12 @@ export function DeleteStatusModal({
       isOpen={isOpen}
       onClose={onClose}
       onConfirm={onConfirm}
-      title="Supprimer le statut"
-      message={`Êtes-vous sûr de vouloir supprimer le statut "${name}" ? Cette action est irréversible.`}
-      confirmText="Supprimer"
-      cancelText="Annuler"
+      title={t('deleteTitle')}
+      message={count > 0 
+        ? t('confirmBulkDeleteMsg', { count }) 
+        : t('confirmDeleteMsg', { name })}
+      confirmText={t('deleteBtn')}
+      cancelText={t('cancelBtn')}
       variant="danger"
       isLoading={isLoading}
     />

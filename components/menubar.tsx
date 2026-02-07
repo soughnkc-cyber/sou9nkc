@@ -19,11 +19,13 @@ import React, { useState, useEffect } from "react";
 import { getMe } from "@/lib/actions/users";
 import { cn } from "@/lib/utils";
 import Link from "next/link";
+import { useTranslations } from "next-intl";
 
 export default function MenuBar({ onOpenMobile }: { onOpenMobile: () => void }) {
   const { data: session, status } = useSession();
   const pathname = usePathname();
   const [dbUser, setDbUser] = useState<any>(null);
+  const t = useTranslations("Navigation");
 
 
   useEffect(() => {
@@ -64,15 +66,17 @@ export default function MenuBar({ onOpenMobile }: { onOpenMobile: () => void }) 
 
   // Get dynamic title based on pathname
   const getPageTitle = () => {
-    if (pathname?.includes("/list/orders")) return "Commandes";
-    if (pathname?.includes("/list/users")) return "Utilisateurs";
-    if (pathname?.includes("/list/status")) return "Status";
-    if (pathname?.includes("/list/products")) return "Produits";
-    if (pathname?.includes("/list/reporting")) return "Reporting";
-    if (pathname?.includes("/admin")) return "Tableau de Bord";
-    if (pathname?.includes("/agent")) return "Espace Agent";
-    if (pathname?.includes("/supervisor")) return "Espace Superviseur";
-    return "Dashboard";
+    if (pathname?.includes("/list/orders")) return t("items.orders");
+    if (pathname?.includes("/list/users")) return t("items.users");
+    if (pathname?.includes("/list/status")) return t("items.status");
+    if (pathname?.includes("/list/products")) return t("items.products");
+    if (pathname?.includes("/list/reporting")) return t("items.analytics");
+    if (pathname?.includes("/admin")) return t("items.dashboard");
+    if (pathname?.includes("/agent")) return t("items.agentSpace");
+    if (pathname?.includes("/supervisor")) return t("items.supervisorSpace");
+    if (pathname?.includes("/settings")) return t("items.settings");
+    if (pathname?.includes("/profile")) return t("items.profile");
+    return t("items.dashboard");
   };
 
   return (
@@ -120,17 +124,17 @@ export default function MenuBar({ onOpenMobile }: { onOpenMobile: () => void }) 
                 </div>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end" className="w-56 p-2 rounded-2xl border-gray-100 shadow-xl mt-2">
-                <DropdownMenuLabel className="font-black text-xs uppercase tracking-widest text-gray-400 px-3 py-2">Mon Compte</DropdownMenuLabel>
+                <DropdownMenuLabel className="font-black text-xs uppercase tracking-widest text-gray-400 px-3 py-2">{t("items.account")}</DropdownMenuLabel>
                 {userRole === "ADMIN" ? (
                     <Link href="/settings">
                         <DropdownMenuItem className="rounded-xl px-3 py-2 cursor-pointer font-bold focus:bg-blue-50 focus:text-[#1F30AD]">
-                            <Settings className="h-4 w-4 mr-2" /> Paramètres
+                            <Settings className="h-4 w-4 mr-2" /> {t("items.settings")}
                         </DropdownMenuItem>
                     </Link>
                 ) : (
                     <Link href="/profile">
                         <DropdownMenuItem className="rounded-xl px-3 py-2 cursor-pointer font-bold focus:bg-blue-50 focus:text-[#1F30AD]">
-                            <User className="h-4 w-4 mr-2" /> Profil
+                            <User className="h-4 w-4 mr-2" /> {t("items.profile")}
                         </DropdownMenuItem>
                     </Link>
                 )}
@@ -139,7 +143,7 @@ export default function MenuBar({ onOpenMobile }: { onOpenMobile: () => void }) 
                     className="rounded-xl px-3 py-2 cursor-pointer font-bold text-red-600 focus:bg-red-50 focus:text-red-700"
                     onClick={handleSignOut}
                 >
-                    <LogOut className="h-4 w-4 mr-2" /> Déconnexion
+                    <LogOut className="h-4 w-4 mr-2" /> {t("items.signOut")}
                 </DropdownMenuItem>
             </DropdownMenuContent>
         </DropdownMenu>

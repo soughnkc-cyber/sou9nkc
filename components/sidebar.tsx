@@ -8,6 +8,7 @@ import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { getMe } from "@/lib/actions/users";
 import { SidebarContent } from "./sidebar-content";
+import { useLocale } from "next-intl";
 
 import { Sheet, SheetContent } from "@/components/ui/sheet";
 
@@ -26,6 +27,7 @@ export default function Sidebar({
 }) {
   const { data: session, status } = useSession();
   const pathname = usePathname();
+  const locale = useLocale();
   const [mounted, setMounted] = useState(false);
   // 1. Initialize synchronously to avoid first-render flicker
   const [dbUser, setDbUser] = useState<any>(() => {
@@ -80,7 +82,7 @@ export default function Sidebar({
     <>
       {/* Mobile Sidebar (Sheet) */}
       <Sheet open={isMobileOpen} onOpenChange={setIsMobileOpen}>
-        <SheetContent side="left" className="p-0 w-72" showCloseButton={false}>
+        <SheetContent side={locale === 'ar' ? "right" : "left"} className="p-0 w-72" showCloseButton={false}>
           <SidebarContent 
             isCollapsed={false} 
             mobile={true} 
@@ -94,7 +96,7 @@ export default function Sidebar({
 
       {/* Desktop Sidebar */}
       <div className={cn(
-          "hidden lg:block fixed inset-y-0 left-0 z-30 bg-white border-r transition-all duration-500 ease-in-out shadow-sm",
+          "hidden lg:block fixed inset-y-0 start-0 z-40 bg-white border-e transition-all duration-500 ease-in-out shadow-sm",
           isCollapsed ? "w-[80px]" : "w-64"
         )}>
         <div className="relative h-full flex flex-col">
@@ -108,10 +110,16 @@ export default function Sidebar({
             <Button
                 variant="ghost"
                 size="icon"
-                className="absolute -right-4 top-1/2 -translate-y-1/2 h-8 w-8 rounded-full border bg-white shadow-sm transition-transform hover:scale-110 z-50 flex items-center justify-center"
+                className={cn(
+                  "absolute top-1/2 -translate-y-1/2 h-8 w-8 rounded-full border bg-white shadow-sm transition-transform hover:scale-110 z-50 flex items-center justify-center",
+                  locale === 'ar' ? "-left-4" : "-right-4"
+                )}
                 onClick={() => setIsCollapsed(!isCollapsed)}
             >
-                {isCollapsed ? <ChevronRight className="h-4 w-4" /> : <ChevronLeft className="h-4 w-4" />}
+                {isCollapsed ? 
+                   (locale === 'ar' ? <ChevronLeft className="h-4 w-4" /> : <ChevronRight className="h-4 w-4" />) : 
+                   (locale === 'ar' ? <ChevronRight className="h-4 w-4" /> : <ChevronLeft className="h-4 w-4" />)
+                }
             </Button>
         </div>
       </div>

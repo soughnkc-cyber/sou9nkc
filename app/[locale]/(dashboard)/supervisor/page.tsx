@@ -1,0 +1,118 @@
+"use client";
+
+import React, { useEffect, useState } from "react";
+import { getAdminStats } from "@/lib/actions/dashboard";
+import { StatsCard } from "@/components/dashboard/stats-card";
+import { RecentOrders } from "@/components/dashboard/recent-orders";
+import { StatusDistribution } from "@/components/dashboard/status-distribution";
+import { 
+  TrendingUpIcon, 
+  UsersIcon, 
+  RefreshCwIcon
+} from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { cn } from "@/lib/utils";
+import { getMe } from "@/lib/actions/users";
+import PermissionDenied from "@/components/permission-denied";
+import { useTranslations } from "next-intl";
+
+
+export default function SupervisorDashboardPage() {
+  const t = useTranslations("Dashboard");
+  const [stats, setStats] = useState<any>(null);
+  const [loading, setLoading] = useState(true);
+  const [hasPermission, setHasPermission] = useState<boolean | null>(null);
+
+
+  const fetchStats = async (isSilent = false) => {
+    if (!isSilent) setLoading(true);
+    try {
+      const data = await getAdminStats();
+      setStats(data);
+    } catch (error) {
+      console.error("Failed to fetch supervisor stats:", error);
+    } finally {
+      if (!isSilent) setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    getMe().then(user => {
+      if (user?.canViewDashboard) {
+        setHasPermission(true);
+        fetchStats();
+      } else {
+        setHasPermission(false);
+        setLoading(false);
+      }
+    });
+  }, []);
+
+  // 🔄 Auto-Refresh Polling (Every 60 seconds for Supervisor Dashboard)
+  useEffect(() => {
+    if (!hasPermission) return;
+    
+    const interval = setInterval(() => {
+        fetchStats(true); // Silent background refresh
+    }, 60000);
+
+    return () => clearInterval(interval);
+  }, [hasPermission]);
+
+
+  if (hasPermission === false) return <PermissionDenied />;
+  if (hasPermission === null || (loading && !stats)) {
+    return (
+      <div className="flex flex-col gap-6 animate-pulse">
+        <div className="h-10 w-48 bg-gray-200 rounded-md mb-2"></div>
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+          {[1, 2, 3, 4].map((i) => (
+            <div key={i} className="h-32 bg-gray-100 rounded-xl"></div>
+          ))}
+        </div>
+        <div className="grid grid-cols-1 lg:grid-cols-7 gap-6 mt-6">
+          <div className="col-span-4 h-96 bg-gray-100 rounded-xl"></div>
+          <div className="col-span-3 h-96 bg-gray-100 rounded-xl"></div>
+        </div>
+      </div>
+    );
+  }
+
+
+  return (
+    <div className="flex flex-col gap-4">
+      <div className="flex items-center justify-end pb-2 border-b border-gray-100">
+        <Button 
+          variant="outline" 
+          size="sm" 
+          onClick={() => fetchStats()} 
+          disabled={loading}
+          className="bg-white border-blue-200 text-blue-700 hover:bg-blue-50"
+        >
+          <RefreshCwIcon className={cn("mr-2 h-4 w-4", loading && "animate-spin")} />
+          {t('refresh')}
+        </Button>
+      </div>
+
+      <div className="grid grid-cols-2 md:grid-cols-2 lg:grid-cols-2 gap-6">
+        <StatsCard
+          title={t('totalOrders')}
+          value={stats.totalOrders}
+          description={t('historicalVolume')}
+          icon={<TrendingUpIcon className="h-5 w-5" />}
+        />
+        <StatsCard
+          title={t('activeAgents')}
+          value={stats.agentCount}
+          description={t('online')}
+          icon={<UsersIcon className="h-5 w-5" />}
+        />
+      </div>
+
+      <div className="grid grid-cols-1 lg:grid-cols-7 gap-6">
+        <RecentOrders orders={stats.recentOrders} showAgent={true} />
+        <StatusDistribution stats={stats.statusDistribution} />
+      </div>
+    </div>
+  );
+}

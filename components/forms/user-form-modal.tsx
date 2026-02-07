@@ -1,10 +1,11 @@
 // app/admin/users/components/user-form-modal.tsx
 "use client";
 
-import { User } from "@/app/(dashboard)/list/users/columns";
+import { User } from "@/app/[locale]/(dashboard)/list/users/columns";
 import { UserFormData } from "@/lib/schema";
 import { Modal } from "../modal";
 import { UserForm } from "./userForm";
+import { useTranslations } from "next-intl";
 
 
 interface UserFormModalProps {
@@ -28,14 +29,15 @@ export function UserFormModal({
   description,
   isSelfEdit = false,
 }: UserFormModalProps) {
+  const t = useTranslations("Users.modal");
   const isEditMode = !!user;
 
   return (
    <Modal
   isOpen={isOpen}
   onClose={onClose}
-  title={title || (isEditMode ? "Modifier l'utilisateur" : "Créer un nouvel utilisateur")}
-  description={description || (isEditMode ? "Modifiez les informations..." : "Remplissez le formulaire...")}
+  title={title || (isEditMode ? t('editTitle') : t('createTitle'))}
+  description={description || (isEditMode ? t('editDesc') : t('createDesc'))}
   size="lg"
   showCloseButton={false}
   closeOnOverlayClick={!isLoading}

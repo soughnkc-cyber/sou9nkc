@@ -5,6 +5,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Badge } from "@/components/ui/badge";
 import { UsersIcon } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { useTranslations, useLocale } from "next-intl";
 
 interface AgentDetailedData {
   id: string;
@@ -22,6 +23,9 @@ interface AgentsDetailedTableProps {
 }
 
 export function AgentsDetailedTable({ data }: AgentsDetailedTableProps) {
+  const t = useTranslations("Dashboard");
+  const locale = useLocale();
+
   const getRateColor = (rate: number) => {
     if (rate >= 80) return "text-green-600 bg-green-50";
     if (rate >= 60) return "text-blue-600 bg-blue-50";
@@ -41,10 +45,10 @@ export function AgentsDetailedTable({ data }: AgentsDetailedTableProps) {
         <div>
           <CardTitle className="text-lg font-bold flex items-center gap-2">
             <UsersIcon className="h-5 w-5 text-blue-600" />
-            Statistiques Détaillées des Agents
+            {t('detailedStatsTitle')}
           </CardTitle>
           <p className="text-sm text-muted-foreground mt-1">
-            Vue complète des performances
+            {t('detailedStatsDesc')}
           </p>
         </div>
       </CardHeader>
@@ -53,20 +57,20 @@ export function AgentsDetailedTable({ data }: AgentsDetailedTableProps) {
           <Table>
             <TableHeader>
               <TableRow>
-                <TableHead className="font-bold">Agent</TableHead>
-                <TableHead className="font-bold">Rôle</TableHead>
-                <TableHead className="text-right font-bold">Assignées</TableHead>
-                <TableHead className="text-right font-bold">Traitées</TableHead>
-                <TableHead className="text-right font-bold">Taux</TableHead>
-                <TableHead className="text-right font-bold">Temps Moy.</TableHead>
-                <TableHead className="text-right font-bold">À Rappeler</TableHead>
+                <TableHead className="font-bold">{t('colAgent')}</TableHead>
+                <TableHead className="font-bold">{t('colRole')}</TableHead>
+                <TableHead className="text-right font-bold">{t('colAssigned')}</TableHead>
+                <TableHead className="text-right font-bold">{t('colProcessed')}</TableHead>
+                <TableHead className="text-right font-bold">{t('colRate')}</TableHead>
+                <TableHead className="text-right font-bold">{t('colAvgTime')}</TableHead>
+                <TableHead className="text-right font-bold">{t('colToRecall')}</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
               {data.length === 0 ? (
                 <TableRow>
                   <TableCell colSpan={7} className="text-center text-muted-foreground py-8">
-                    Aucun agent actif
+                    {t('noActiveAgent')}
                   </TableCell>
                 </TableRow>
               ) : (
@@ -78,20 +82,20 @@ export function AgentsDetailedTable({ data }: AgentsDetailedTableProps) {
                         {agent.role}
                       </Badge>
                     </TableCell>
-                    <TableCell className="text-right">{agent.totalAssigned}</TableCell>
-                    <TableCell className="text-right">{agent.processed}</TableCell>
+                    <TableCell className="text-right">{agent.totalAssigned.toLocaleString(locale === 'ar' ? "ar-EG" : "fr-FR")}</TableCell>
+                    <TableCell className="text-right">{agent.processed.toLocaleString(locale === 'ar' ? "ar-EG" : "fr-FR")}</TableCell>
                     <TableCell className="text-right">
                       <span className={cn("px-2 py-1 rounded-md font-semibold text-sm", getRateColor(agent.processingRate))}>
-                        {agent.processingRate}%
+                        {agent.processingRate.toLocaleString(locale === 'ar' ? "ar-EG" : "fr-FR")}%
                       </span>
                     </TableCell>
                     <TableCell className="text-right">
-                      {agent.avgProcessingTime > 0 ? `${agent.avgProcessingTime} min` : "-"}
+                      {agent.avgProcessingTime > 0 ? `${agent.avgProcessingTime.toLocaleString(locale === 'ar' ? "ar-EG" : "fr-FR")} min` : "-"}
                     </TableCell>
                     <TableCell className="text-right">
                       {agent.toRecall > 0 ? (
                         <Badge variant="outline" className="bg-blue-50 text-blue-700">
-                          {agent.toRecall}
+                          {agent.toRecall.toLocaleString(locale === 'ar' ? "ar-EG" : "fr-FR")}
                         </Badge>
                       ) : (
                         <span className="text-muted-foreground">-</span>

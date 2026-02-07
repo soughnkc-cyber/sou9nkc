@@ -4,7 +4,8 @@
 import { StatusFormData } from "@/lib/schema";
 import { Modal } from "../modal";
 import { StatusForm } from "./statusForm";
-import { Status } from "@/app/(dashboard)/list/status/columns";
+import { Status } from "@/app/[locale]/(dashboard)/list/status/columns";
+import { useTranslations } from "next-intl";
 
 
 interface StatusFormModalProps {
@@ -26,14 +27,15 @@ export function StatusFormModal({
   title,
   description,
 }: StatusFormModalProps) {
+  const t = useTranslations("Status.modal");
   const isEditMode = !!status;
 
   return (
    <Modal
   isOpen={isOpen}
   onClose={onClose}
-  title={title || (isEditMode ? "Modifier l'utilisateur" : "Créer un nouvel utilisateur")}
-  description={description || (isEditMode ? "Modifiez les informations..." : "Remplissez le formulaire...")}
+  title={title || (isEditMode ? t('editTitle') : t('createTitle'))}
+  description={description || (isEditMode ? t('editDesc') : t('createDesc'))}
   size="lg"
   showCloseButton={false}
   closeOnOverlayClick={!isLoading}

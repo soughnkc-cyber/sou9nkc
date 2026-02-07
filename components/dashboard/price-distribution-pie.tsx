@@ -16,6 +16,7 @@ import {
   ChartTooltip,
   ChartTooltipContent,
 } from "@/components/ui/chart"
+import { useTranslations } from "next-intl"
 
 interface PriceDistributionData {
   range: string;
@@ -26,29 +27,31 @@ interface PriceDistributionPieProps {
   data: PriceDistributionData[];
 }
 
-const chartConfig = {
-  count: {
-    label: "Commandes",
-  },
-  range1: {
-    label: "< 100 DH",
-    color: "hsl(var(--chart-1))",
-  },
-  range2: {
-    label: "100-500 DH",
-    color: "hsl(var(--chart-2))",
-  },
-  range3: {
-    label: "500-1000 DH",
-    color: "hsl(var(--chart-3))",
-  },
-  range4: {
-    label: "> 1000 DH",
-    color: "hsl(var(--chart-4))",
-  },
-} satisfies ChartConfig
-
 export function PriceDistributionPie({ data }: PriceDistributionPieProps) {
+  const t = useTranslations("Dashboard");
+
+  const chartConfig = {
+    count: {
+      label: t('commandes'),
+    },
+    range1: {
+      label: t('priceRangeLess100'),
+      color: "hsl(var(--chart-1))",
+    },
+    range2: {
+      label: t('priceRange100_500'),
+      color: "hsl(var(--chart-2))",
+    },
+    range3: {
+      label: t('priceRange500_1000'),
+      color: "hsl(var(--chart-3))",
+    },
+    range4: {
+      label: t('priceRangeMore1000'),
+      color: "hsl(var(--chart-4))",
+    },
+  } satisfies ChartConfig
+
   const chartData = React.useMemo(() => {
     return data.map((item, index) => ({
       ...item,
@@ -63,8 +66,8 @@ export function PriceDistributionPie({ data }: PriceDistributionPieProps) {
   return (
     <Card className="flex flex-col">
       <CardHeader className="items-center pb-0">
-        <CardTitle>Distribution des Prix</CardTitle>
-        <CardDescription>Répartition par tranche de prix</CardDescription>
+        <CardTitle>{t('priceDistributionTitle')}</CardTitle>
+        <CardDescription>{t('priceDistributionDesc')}</CardDescription>
       </CardHeader>
       <CardContent className="flex-1 pb-0">
         <ChartContainer
@@ -105,7 +108,7 @@ export function PriceDistributionPie({ data }: PriceDistributionPieProps) {
                           y={(viewBox.cy || 0) + 24}
                           className="fill-muted-foreground"
                         >
-                          Commandes
+                          {t('commandes')}
                         </tspan>
                       </text>
                     )

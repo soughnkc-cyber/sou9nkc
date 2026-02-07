@@ -3,9 +3,10 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { format } from "date-fns";
-import { fr } from "date-fns/locale";
+import { fr, arSA } from "date-fns/locale";
 import { ShoppingBagIcon } from "lucide-react";
 import Link from "next/link";
+import { useTranslations, useLocale } from "next-intl";
 
 interface Order {
   id: string;
@@ -23,14 +24,19 @@ interface RecentOrdersProps {
 }
 
 export function RecentOrders({ orders = [], showAgent = false }: RecentOrdersProps) {
+  const t = useTranslations("Dashboard");
+  const locale = useLocale();
+
   const safeFormatDate = (dateInput: any) => {
     try {
-      if (!dateInput) return "Date inconnue";
+      if (!dateInput) return t('unknownDate');
       const date = new Date(dateInput);
-      if (isNaN(date.getTime())) return "Date invalide";
-      return format(date, "dd MMM yyyy HH:mm", { locale: fr });
+      if (isNaN(date.getTime())) return t('invalidDate');
+      
+      const dateLocale = locale === 'ar' ? arSA : fr;
+      return format(date, "dd MMM yyyy HH:mm", { locale: dateLocale });
     } catch (e) {
-      return "Format erreur";
+      return t('formatError');
     }
   };
 
@@ -39,20 +45,20 @@ export function RecentOrders({ orders = [], showAgent = false }: RecentOrdersPro
       <CardHeader className="flex flex-row items-center justify-between bg-gray-50/50 border-b border-gray-100">
         <CardTitle className="text-[10px] font-black text-gray-400 uppercase tracking-widest flex items-center">
           <ShoppingBagIcon className="mr-2 h-4 w-4 text-[#1F30AD]" />
-          Commandes Récentes
+          {t('recentOrders')}
         </CardTitle>
         <Link 
           href="/list/orders" 
           className="text-[10px] font-black uppercase tracking-widest text-[#1F30AD] hover:text-[#172585] transition-colors"
         >
-          Voir tout
+          {t('viewAll')}
         </Link>
       </CardHeader>
       <CardContent className="pt-6">
         <div className="space-y-4">
           {!orders || orders.length === 0 ? (
             <p className="text-center py-8 text-muted-foreground italic text-sm">
-              Aucune commande récente.
+              {t('noRecentOrders')}
             </p>
           ) : (
             orders.map((order) => (
@@ -66,7 +72,7 @@ export function RecentOrders({ orders = [], showAgent = false }: RecentOrdersPro
                   </div>
                   <div>
                     <p className="text-sm font-bold text-slate-900 group-hover:text-blue-900 transition-colors truncate max-w-[150px]">
-                      {order.customerName || "Client inconnu"}
+                      {order.customerName || t('unknownClient')}
                     </p>
                     <p className="text-[10px] text-slate-400 font-bold uppercase tracking-wider">
                       {safeFormatDate(order.createdAt)}
@@ -75,7 +81,7 @@ export function RecentOrders({ orders = [], showAgent = false }: RecentOrdersPro
                 </div>
                 <div className="flex flex-col items-end gap-1.5">
                   <span className="text-sm font-black text-slate-900 group-hover:text-[#1F30AD] transition-colors">
-                    {order.totalPrice.toLocaleString("fr-FR", { style: "currency", currency: "MRU" })}
+                    {order.totalPrice.toLocaleString(locale === 'ar' ? "ar-EG" : "fr-FR", { style: "currency", currency: "MRU" })}
                   </span>
                   <div className="flex gap-2 items-center">
                     {showAgent && order.agent?.name && (
@@ -84,7 +90,7 @@ export function RecentOrders({ orders = [], showAgent = false }: RecentOrdersPro
                       </span>
                     )}
                     <Badge variant="outline" className="text-[9px] px-1.5 py-0 h-4 uppercase font-black bg-blue-50 text-[#172585] border-blue-100 shadow-xs">
-                      {order.status?.name || "Sans statut"}
+                      {order.status?.name || t('noStatus')}
                     </Badge>
                   </div>
                 </div>

@@ -3,6 +3,7 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { TrophyIcon } from "lucide-react";
 import { Crown, Medal } from "lucide-react";
+import { useTranslations } from "next-intl";
 
 interface AgentPerformance {
   name: string;
@@ -29,7 +30,8 @@ const getRankColor = (rank: number) => {
 };
 
 export function TopAgentsLeaderboard({ data }: TopAgentsLeaderboardProps) {
-  // Sort by orders processed and take top 5
+  const t = useTranslations("Dashboard");
+  
   const topAgents = [...data]
     .sort((a, b) => b.ordersProcessed - a.ordersProcessed)
     .slice(0, 5);
@@ -39,13 +41,13 @@ export function TopAgentsLeaderboard({ data }: TopAgentsLeaderboardProps) {
       <CardHeader>
         <CardTitle className="text-xl font-bold flex items-center text-blue-900">
           <TrophyIcon className="mr-2 h-5 w-5 text-blue-600" />
-          Top Agents - Plus de Commandes Traitées
+          {t('topAgentsTitle')}
         </CardTitle>
       </CardHeader>
       <CardContent>
         {topAgents.length === 0 ? (
           <p className="text-center py-12 text-muted-foreground italic text-sm">
-            Aucune donnée disponible.
+            {t('noData')}
           </p>
         ) : (
           <div className="space-y-3">
@@ -65,7 +67,7 @@ export function TopAgentsLeaderboard({ data }: TopAgentsLeaderboardProps) {
                     <div>
                       <div className="font-semibold text-gray-900">{agent.name}</div>
                       <div className="text-xs text-muted-foreground">
-                        Temps moy: {agent.avgProcessingTime} min
+                        {t('avgTimeShort')}: {agent.avgProcessingTime} min
                       </div>
                     </div>
                   </div>
@@ -74,7 +76,7 @@ export function TopAgentsLeaderboard({ data }: TopAgentsLeaderboardProps) {
                       {agent.ordersProcessed}
                     </div>
                     <div className="text-xs text-muted-foreground uppercase tracking-wide">
-                      Commandes
+                      {t('commandes')}
                     </div>
                   </div>
                 </div>

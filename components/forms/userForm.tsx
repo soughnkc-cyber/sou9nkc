@@ -27,7 +27,8 @@ import { Eye, EyeOff, ShieldCheck } from "lucide-react";
 import { useState } from "react";
 import { cn } from "@/lib/utils";
 import { UserFormData, userFormSchema } from "@/lib/schema";
-import { User } from "@/app/(dashboard)/list/users/columns";
+import { User } from "@/app/[locale]/(dashboard)/list/users/columns";
+import { useTranslations } from "next-intl";
 import { useSession } from "next-auth/react";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Separator } from "@/components/ui/separator";
@@ -104,6 +105,9 @@ export function UserForm({ user, onSubmit, isLoading = false, isEditMode = false
   const isAdmin = session?.user?.role === "ADMIN";
 
 
+  const t = useTranslations("Users.form");
+  const tp = useTranslations("Users.permissionsList");
+
   const handleSubmit = async (data: UserFormData) => {
     try {
         if (isEditMode && data.password === "") {
@@ -114,7 +118,6 @@ export function UserForm({ user, onSubmit, isLoading = false, isEditMode = false
         }
     } catch (error) {
         console.error("Form submission error:", error);
-        // The parent usually handles toasts, but we catch here to prevent the white screen crash.
     }
   };
 
@@ -128,17 +131,17 @@ export function UserForm({ user, onSubmit, isLoading = false, isEditMode = false
             name="name"
             render={({ field }) => (
               <FormItem>
-                <FormLabel>Nom complet</FormLabel>
+                <FormLabel>{t('nameLabel')}</FormLabel>
                 <FormControl>
                   <Input 
-                    placeholder="John Doe" 
+                    placeholder={t('namePlaceholder')} 
                     {...field} 
                     value={field.value || ""}
                     disabled={isLoading}
                   />
                 </FormControl>
                 <FormDescription>
-                  Optionnel
+                  {t('nameDesc')}
                 </FormDescription>
                 <FormMessage />
               </FormItem>
@@ -151,16 +154,16 @@ export function UserForm({ user, onSubmit, isLoading = false, isEditMode = false
             name="phone"
             render={({ field }) => (
               <FormItem>
-                <FormLabel>Téléphone *</FormLabel>
+                <FormLabel>{t('phoneLabel')}</FormLabel>
                 <FormControl>
                   <Input 
-                    placeholder="+212 6 12 34 56 78" 
+                    placeholder={t('phonePlaceholder')}
                     {...field}
                     disabled={isLoading}
                   />
                 </FormControl>
                 <FormDescription>
-                  Numéro unique pour chaque utilisateur
+                  {t('phoneDesc')}
                 </FormDescription>
                 <FormMessage />
               </FormItem>
@@ -174,13 +177,13 @@ export function UserForm({ user, onSubmit, isLoading = false, isEditMode = false
             render={({ field }) => (
               <FormItem>
                 <FormLabel>
-                  {isEditMode ? "Mot de passe (Laisser vide pour conserver)" : "Mot de passe *"}
+                  {isEditMode ? t('passwordLabelEdit') : t('passwordLabelCreate')}
                 </FormLabel>
                 <FormControl>
                   <div className="relative">
                     <Input
                       type={showPassword ? "text" : "password"}
-                      placeholder={isEditMode ? "Laisser vide pour conserver" : "••••••"}
+                      placeholder={isEditMode ? t('passwordPlaceholderEdit') : t('passwordPlaceholderCreate')}
                       {...field}
                       value={field.value || ""}
                       disabled={isLoading}
@@ -202,10 +205,7 @@ export function UserForm({ user, onSubmit, isLoading = false, isEditMode = false
                   </div>
                 </FormControl>
                 <FormDescription>
-                  {isEditMode 
-                    ? "Remplir seulement si vous souhaitez changer le mot de passe"
-                    : "Minimum 6 caractères"
-                  }
+                  {isEditMode ? t('passwordDescEdit') : t('passwordDescCreate')}
                 </FormDescription>
                 <FormMessage />
               </FormItem>
@@ -219,7 +219,7 @@ export function UserForm({ user, onSubmit, isLoading = false, isEditMode = false
               name="role"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Rôle *</FormLabel>
+                  <FormLabel>{t('roleLabel')}</FormLabel>
                   <Select 
                     onValueChange={field.onChange} 
                     defaultValue={field.value}
@@ -227,18 +227,18 @@ export function UserForm({ user, onSubmit, isLoading = false, isEditMode = false
                   >
                     <FormControl>
                       <SelectTrigger>
-                        <SelectValue placeholder="Sélectionner un rôle" />
+                        <SelectValue placeholder={t('rolePlaceholder')} />
                       </SelectTrigger>
                     </FormControl>
                     <SelectContent>
-                      <SelectItem value="ADMIN">Administrateur</SelectItem>
-                      <SelectItem value="AGENT">Agent</SelectItem>
-                      <SelectItem value="SUPERVISOR">Superviseur</SelectItem>
-                      <SelectItem value="AGENT_TEST">Agent Test</SelectItem>
+                      <SelectItem value="ADMIN">{t('roles.ADMIN')}</SelectItem>
+                      <SelectItem value="AGENT">{t('roles.AGENT')}</SelectItem>
+                      <SelectItem value="SUPERVISOR">{t('roles.SUPERVISOR')}</SelectItem>
+                      <SelectItem value="AGENT_TEST">{t('roles.AGENT_TEST')}</SelectItem>
                     </SelectContent>
                   </Select>
                   <FormDescription>
-                    Définit les permissions de l'utilisateur
+                    {t('roleDesc')}
                   </FormDescription>
                   <FormMessage />
                 </FormItem>
@@ -246,7 +246,6 @@ export function UserForm({ user, onSubmit, isLoading = false, isEditMode = false
             />
           )}
 
-          {/* Couleurs */}
           {!isSelfEdit && (
             <>
               <FormField
@@ -254,7 +253,7 @@ export function UserForm({ user, onSubmit, isLoading = false, isEditMode = false
                 name="iconColor"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Couleur de l'icône</FormLabel>
+                    <FormLabel>{t('iconColorLabel')}</FormLabel>
                     <FormControl>
                       <div className="flex gap-2 items-center">
                         <Input 
@@ -280,7 +279,7 @@ export function UserForm({ user, onSubmit, isLoading = false, isEditMode = false
                 name="roleColor"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Couleur du rôle (Badge)</FormLabel>
+                    <FormLabel>{t('roleColorLabel')}</FormLabel>
                     <FormControl>
                       <div className="flex gap-2 items-center">
                         <Input 
@@ -305,14 +304,13 @@ export function UserForm({ user, onSubmit, isLoading = false, isEditMode = false
 
           {/* Champs admin seulement: Paiement */}
           {isAdmin && !isSelfEdit && (
-
             <>
               <FormField
                 control={form.control}
                 name="paymentDefaultDays"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Nombre de jours par défaut (Paiement)</FormLabel>
+                    <FormLabel>{t('paymentDefaultDaysLabel')}</FormLabel>
                     <FormControl>
                       <Input 
                         type="number"
@@ -321,7 +319,7 @@ export function UserForm({ user, onSubmit, isLoading = false, isEditMode = false
                       />
                     </FormControl>
                     <FormDescription>
-                      Le cycle total (ex: 30 jours)
+                      {t('paymentCycleDesc')}
                     </FormDescription>
                     <FormMessage />
                   </FormItem>
@@ -333,7 +331,7 @@ export function UserForm({ user, onSubmit, isLoading = false, isEditMode = false
                 name="paymentRemainingDays"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Jours restants avant paiement</FormLabel>
+                    <FormLabel>{t('paymentRemainingDaysLabel')}</FormLabel>
                     <FormControl>
                       <Input 
                         type="number"
@@ -342,7 +340,7 @@ export function UserForm({ user, onSubmit, isLoading = false, isEditMode = false
                       />
                     </FormControl>
                     <FormDescription>
-                      Ce nombre se décrémentera (0 = jour de paie)
+                      {t('paymentRemainingDesc')}
                     </FormDescription>
                     <FormMessage />
                   </FormItem>
@@ -358,21 +356,21 @@ export function UserForm({ user, onSubmit, isLoading = false, isEditMode = false
           <div className="space-y-4 pt-4 border-t">
             <div className="flex items-center gap-2 text-blue-600">
               <ShieldCheck className="h-5 w-5" />
-              <h3 className="text-lg font-semibold">Permissions pour le rôle {form.watch("role")}</h3>
+              <h3 className="text-lg font-semibold">{tp('title', { role: t(`roles.${form.watch("role")}`) })}</h3>
             </div>
             
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-y-4 gap-x-8 p-4 bg-gray-50 rounded-lg border">
               {/* Ces permissions sont visibles pour TOUS les rôles */}
-              <PermissionCheckbox control={form.control} name="canViewDashboard" label="Voir le Dashboard" />
+              <PermissionCheckbox control={form.control} name="canViewDashboard" label={tp('dashboard')} />
               <PermissionCheckbox 
                 control={form.control} 
                 name="canViewOrders" 
-                label="Voir Commandes" 
+                label={tp('viewOrders')} 
               />
               <PermissionCheckbox 
                 control={form.control} 
                 name="canEditOrders" 
-                label="Modifier Commandes" 
+                label={tp('editOrders')} 
                 disabled={form.watch("role") === "ADMIN" || form.watch("role") === "SUPERVISOR"}
               />
 
@@ -380,8 +378,8 @@ export function UserForm({ user, onSubmit, isLoading = false, isEditMode = false
               {form.watch("role") === "ADMIN" && (
                 <>
                   <div className="col-span-full h-px bg-gray-200 my-1" />
-                  <PermissionCheckbox control={form.control} name="canViewUsers" label="Voir Utilisateurs" />
-                  <PermissionCheckbox control={form.control} name="canEditUsers" label="Modifier Utilisateurs" />
+                  <PermissionCheckbox control={form.control} name="canViewUsers" label={tp('viewUsers')} />
+                  <PermissionCheckbox control={form.control} name="canEditUsers" label={tp('editUsers')} />
                 </>
               )}
 
@@ -389,8 +387,8 @@ export function UserForm({ user, onSubmit, isLoading = false, isEditMode = false
               {(form.watch("role") === "ADMIN" || form.watch("role") === "SUPERVISOR") && (
                 <>
                   <div className="col-span-full h-px bg-gray-200 my-1" />
-                  <PermissionCheckbox control={form.control} name="canViewProducts" label="Voir Produits" />
-                  <PermissionCheckbox control={form.control} name="canEditProducts" label="Modifier Produits" />
+                  <PermissionCheckbox control={form.control} name="canViewProducts" label={tp('viewProducts')} />
+                  <PermissionCheckbox control={form.control} name="canEditProducts" label={tp('editProducts')} />
                 </>
               )}
 
@@ -398,8 +396,8 @@ export function UserForm({ user, onSubmit, isLoading = false, isEditMode = false
               {form.watch("role") === "ADMIN" && (
                 <>
                   <div className="col-span-full h-px bg-gray-200 my-1" />
-                  <PermissionCheckbox control={form.control} name="canViewStatuses" label="Voir Status" />
-                  <PermissionCheckbox control={form.control} name="canEditStatuses" label="Modifier Status" />
+                  <PermissionCheckbox control={form.control} name="canViewStatuses" label={tp('viewStatus')} />
+                  <PermissionCheckbox control={form.control} name="canEditStatuses" label={tp('editStatus')} />
                 </>
               )}
 
@@ -407,12 +405,12 @@ export function UserForm({ user, onSubmit, isLoading = false, isEditMode = false
               {(form.watch("role") === "ADMIN" || form.watch("role") === "SUPERVISOR") && (
                 <>
                   <div className="col-span-full h-px bg-gray-200 my-1" />
-                  <PermissionCheckbox control={form.control} name="canViewReporting" label="Voir le Reporting" />
+                  <PermissionCheckbox control={form.control} name="canViewReporting" label={tp('viewReporting')} />
                 </>
               )}
             </div>
             <p className="text-xs text-gray-400 italic">
-              * Note: Certaines permissions sont automatiquement masquées car elles ne s'appliquent pas au rôle sélectionné.
+              {tp('note')}
             </p>
           </div>
         )}
@@ -429,11 +427,11 @@ export function UserForm({ user, onSubmit, isLoading = false, isEditMode = false
             {isLoading ? (
               <>
                 <div className="h-4 w-4 animate-spin rounded-full border-2 border-current border-t-transparent mr-2" />
-                {isEditMode ? "Modification..." : "Ajout..."}
+                {isEditMode ? t('editing') : t('adding')}
               </>
             ) : (
               <>
-                {isEditMode ? "Modifier" : "Ajouter"}
+                {isEditMode ? t('editBtn') : t('addBtn')}
               </>
             )}
           </Button>
