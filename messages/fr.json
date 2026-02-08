@@ -6,6 +6,21 @@
     "save": "Enregistrer",
     "cancel": "Annuler"
   },
+  "DateFilter": {
+    "filterByDate": "Filtrer par date",
+    "shortcuts": "Raccourcis",
+    "today": "Aujourd'hui",
+    "yesterday": "Hier",
+    "last7days": "7 derniers jours",
+    "thisMonth": "Ce mois-ci",
+    "thisYear": "Cette année",
+    "clearFilter": "Effacer le filtre",
+    "thisWeek": "Cette semaine",
+    "customPeriod": "Période personnalisée",
+    "startDate": "Début",
+    "endDate": "Fin",
+    "apply": "Appliquer"
+  },
   "Auth": {
     "signIn": "Se connecter",
     "signOut": "Se déconnecter",

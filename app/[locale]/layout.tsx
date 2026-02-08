@@ -1,4 +1,4 @@
-import { Montserrat } from "next/font/google";
+import { Montserrat, IBM_Plex_Sans_Arabic } from "next/font/google";
 import "../globals.css";
 import AuthWrapper from "@/components/authwrapper";
 import { Toaster } from "sonner";
@@ -8,8 +8,14 @@ import {notFound} from 'next/navigation';
 import {routing} from '@/i18n/routing';
 
 const montserrat = Montserrat({
-  variable: "--font-montserrat",
+  variable: "--font-app",
   subsets: ["latin"],
+  weight: ["300", "400", "500", "600", "700"],
+});
+
+const ibmPlexSansArabic = IBM_Plex_Sans_Arabic({
+  variable: "--font-app",
+  subsets: ["arabic"],
   weight: ["300", "400", "500", "600", "700"],
 });
 
@@ -40,10 +46,12 @@ export default async function LocaleLayout({
   // side is the easiest way to get started
   const messages = await getMessages();
 
+  const fontVariable = locale === 'ar' ? ibmPlexSansArabic.variable : montserrat.variable;
+
   return (
     <html lang={locale} dir={locale === 'ar' ? 'rtl' : 'ltr'}>
       <body
-        className={`${montserrat.variable} font-sans antialiased overflow-x-hidden`}
+        className={`${fontVariable} font-sans antialiased overflow-x-hidden`}
       >
         <NextIntlClientProvider messages={messages}>
           <AuthWrapper>

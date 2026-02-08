@@ -14,19 +14,22 @@ interface DateFilterProps {
   onChange: (type: DateFilterType, customRange?: { start: string; end: string }) => void;
 }
 
-const filterOptions = [
-  { value: "today" as const, label: "Aujourd'hui" },
-  { value: "week" as const, label: "Cette semaine" },
-  { value: "month" as const, label: "Ce mois" },
-  { value: "custom" as const, label: "Période personnalisée" },
-];
+import { useTranslations } from "next-intl";
 
 export function DateFilter({ value, onChange }: DateFilterProps) {
+  const t = useTranslations("DateFilter");
   const [showCustom, setShowCustom] = useState(false);
   const [customStart, setCustomStart] = useState("");
   const [customEnd, setCustomEnd] = useState("");
 
-  const currentLabel = filterOptions.find(opt => opt.value === value)?.label || "Ce mois";
+  const filterOptions = [
+    { value: "today" as const, label: t('today') },
+    { value: "week" as const, label: t('thisWeek') },
+    { value: "month" as const, label: t('thisMonth') },
+    { value: "custom" as const, label: t('customPeriod') },
+  ];
+
+  const currentLabel = filterOptions.find(opt => opt.value === value)?.label || t('thisMonth');
 
   const handleSelect = (newValue: DateFilterType) => {
     if (newValue === "custom") {
@@ -54,7 +57,7 @@ export function DateFilter({ value, onChange }: DateFilterProps) {
       </PopoverTrigger>
       <PopoverContent className="w-64 p-4" align="end">
         <div className="space-y-3">
-          <h4 className="font-semibold text-sm">Période</h4>
+          <h4 className="font-semibold text-sm">{t('filterByDate')}</h4>
           <div className="grid gap-2">
             {filterOptions.map(option => (
               <Button
@@ -72,7 +75,7 @@ export function DateFilter({ value, onChange }: DateFilterProps) {
           {showCustom && (
             <div className="space-y-3 pt-3 border-t">
               <div>
-                <label className="text-xs text-muted-foreground">Début</label>
+                <label className="text-xs text-muted-foreground">{t('startDate')}</label>
                 <input
                   type="date"
                   value={customStart}
@@ -81,7 +84,7 @@ export function DateFilter({ value, onChange }: DateFilterProps) {
                 />
               </div>
               <div>
-                <label className="text-xs text-muted-foreground">Fin</label>
+                <label className="text-xs text-muted-foreground">{t('endDate')}</label>
                 <input
                   type="date"
                   value={customEnd}
@@ -95,7 +98,7 @@ export function DateFilter({ value, onChange }: DateFilterProps) {
                 size="sm"
                 className="w-full"
               >
-                Appliquer
+                {t('apply')}
               </Button>
             </div>
           )}

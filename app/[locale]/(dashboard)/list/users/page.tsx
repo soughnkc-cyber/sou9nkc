@@ -174,15 +174,7 @@ export default function UsersPage() {
                         {t('editBtn')}
                     </Button>
                  )}
-                 <Button 
-                    variant="outline" 
-                    size="sm" 
-                    className="h-9 rounded-xl font-bold border-gray-200"
-                    onClick={fetchUsers}
-                 >
-                    <RefreshCw className={cn("h-4 w-4 mr-2", isLoadingPage && "animate-spin")} />
-                    {t('refresh')}
-                 </Button>
+
                  <Button 
                     size="sm" 
                     className="h-9 rounded-xl font-bold bg-[#1F30AD] hover:bg-[#1F30AD]/90 text-white shadow-lg shadow-blue-100"

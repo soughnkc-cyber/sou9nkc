@@ -2,9 +2,10 @@
 
 import * as React from "react";
 import { format, startOfDay, endOfDay, startOfMonth, endOfMonth, startOfYear, endOfYear, subDays } from "date-fns";
-import { fr } from "date-fns/locale";
+import { fr, ar } from "date-fns/locale";
 import { Calendar as CalendarIcon, ChevronDown } from "lucide-react";
 import { DateRange } from "react-day-picker";
+import { useTranslations, useLocale } from "next-intl";
 
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
@@ -25,6 +26,10 @@ export function DatePickerWithRange({
   date: DateRange | undefined;
   setDate: (date: DateRange | undefined) => void;
 }) {
+  const t = useTranslations("DateFilter");
+  const locale = useLocale();
+  const dateLocale = locale === 'ar' ? ar : fr;
+
   return (
     <div className={className}>
       <Popover>
@@ -44,14 +49,14 @@ export function DatePickerWithRange({
               {date?.from ? (
                 date.to ? (
                   <>
-                    {format(date.from, "dd MMM", { locale: fr })} -{" "}
-                    {format(date.to, "dd MMM", { locale: fr })}
+                    {format(date.from, "dd MMM", { locale: dateLocale })} -{" "}
+                    {format(date.to, "dd MMM", { locale: dateLocale })}
                   </>
                 ) : (
-                  format(date.from, "dd MMM", { locale: fr })
+                  format(date.from, "dd MMM", { locale: dateLocale })
                 )
               ) : (
-                <span>Filtrer par date</span>
+                <span>{t('filterByDate')}</span>
               )}
             </span>
           </Button>
@@ -59,26 +64,26 @@ export function DatePickerWithRange({
         <PopoverContent className="w-auto p-0 rounded-2xl border-gray-100 shadow-xl overflow-hidden" align="end">
           <div className="flex flex-col md:flex-row">
             <div className="p-3 border-b md:border-b-0 md:border-r border-gray-100 bg-gray-50/50 flex flex-col gap-1.5 md:min-w-[160px]">
-               <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest px-2 mb-1">Raccourcis</p>
+               <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest px-2 mb-1">{t('shortcuts')}</p>
                <div className="grid grid-cols-2 md:grid-cols-1 gap-1">
                  <Button variant="ghost" size="sm" className="justify-start font-bold text-xs h-8 rounded-lg" onClick={() => setDate({ from: new Date(), to: new Date() })}>
-                   Aujourd'hui
+                   {t('today')}
                  </Button>
                  <Button variant="ghost" size="sm" className="justify-start font-bold text-xs h-8 rounded-lg" onClick={() => setDate({ from: subDays(new Date(), 1), to: subDays(new Date(), 1) })}>
-                   Hier
+                   {t('yesterday')}
                  </Button>
                  <Button variant="ghost" size="sm" className="justify-start font-bold text-xs h-8 rounded-lg" onClick={() => setDate({ from: subDays(new Date(), 7), to: new Date() })}>
-                   7 derniers jours
+                   {t('last7days')}
                  </Button>
                  <Button variant="ghost" size="sm" className="justify-start font-bold text-xs h-8 rounded-lg" onClick={() => setDate({ from: startOfMonth(new Date()), to: endOfMonth(new Date()) })}>
-                   Ce mois-ci
+                   {t('thisMonth')}
                  </Button>
                  <Button variant="ghost" size="sm" className="justify-start font-bold text-xs h-8 rounded-lg" onClick={() => setDate({ from: startOfYear(new Date()), to: endOfYear(new Date()) })}>
-                   Cette année
+                   {t('thisYear')}
                  </Button>
                </div>
                <Button variant="ghost" size="sm" className="justify-start font-bold text-xs h-8 rounded-lg text-red-500 hover:text-red-600 hover:bg-red-50" onClick={() => setDate(undefined)}>
-                 Effacer le filtre
+                 {t('clearFilter')}
                </Button>
             </div>
             <div className="p-1">
@@ -89,7 +94,7 @@ export function DatePickerWithRange({
                 selected={date}
                 onSelect={setDate}
                 numberOfMonths={1}
-                locale={fr}
+                locale={dateLocale}
                 className="p-3"
               />
             </div>

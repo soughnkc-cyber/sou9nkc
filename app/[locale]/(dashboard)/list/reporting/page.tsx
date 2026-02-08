@@ -136,16 +136,7 @@ export default function ReportingPage() {
             <span className="hidden sm:inline">{t('export')}</span>
             <span className="sm:hidden">Export</span>
           </Button>
-          <Button 
-            variant="outline" 
-            size="sm" 
-            onClick={() => fetchData()} 
-            disabled={loading}
-            className="h-10 rounded-xl px-3 sm:px-4 font-bold border-gray-200 text-[#1F30AD] bg-blue-50/50 hover:bg-[#1F30AD] hover:text-white hover:border-[#1F30AD] transition-all shrink-0"
-          >
-            <RefreshCwIcon className={cn("sm:mr-2 h-4 w-4", loading && "animate-spin")} />
-            <span className="hidden sm:inline">{t('refresh')}</span>
-          </Button>
+
         </div>
       </div>
 

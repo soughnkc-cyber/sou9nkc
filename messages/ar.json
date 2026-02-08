@@ -6,6 +6,21 @@
     "save": "حفظ",
     "cancel": "إلغاء"
   },
+  "DateFilter": {
+    "filterByDate": "تصفية حسب التاريخ",
+    "shortcuts": "اختصارات",
+    "today": "اليوم",
+    "yesterday": "أمس",
+    "last7days": "آخر 7 أيام",
+    "thisMonth": "هذا الشهر",
+    "thisYear": "هذه السنة",
+    "clearFilter": "مسح التصفية",
+    "thisWeek": "هذا الأسبوع",
+    "customPeriod": "فترة مخصصة",
+    "startDate": "البداية",
+    "endDate": "النهاية",
+    "apply": "تطبيق"
+  },
   "Auth": {
     "signIn": "تسجيل الدخول",
     "signOut": "تسجيل الخروج",

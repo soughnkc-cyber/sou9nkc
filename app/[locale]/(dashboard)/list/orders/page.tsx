@@ -660,16 +660,7 @@ function OrdersPageContent() {
             showPagination
             rightHeaderActions={
               <div className="flex items-center gap-2">
-                  <Button 
-                    variant="outline" 
-                    size="sm" 
-                    className="h-9 rounded-xl font-bold border-gray-200" 
-                    onClick={() => refreshData()} 
-                    disabled={isLoadingPage}
-                  >
-                    <RefreshCw className={cn("h-4 w-4 mr-2", isLoadingPage && "animate-spin")} />
-                    <span className="hidden sm:inline">{t('refresh')}</span>
-                  </Button>
+
 
                   {selectedOrders.length > 0 && (
                     <Button
