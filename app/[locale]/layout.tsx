@@ -53,7 +53,7 @@ export default async function LocaleLayout({
       <body
         className={`${fontVariable} font-sans antialiased overflow-x-hidden`}
       >
-        <NextIntlClientProvider messages={messages}>
+        <NextIntlClientProvider messages={messages} locale={locale}>
           <AuthWrapper>
             {children}
             <Toaster position="bottom-right" expand={false} richColors />

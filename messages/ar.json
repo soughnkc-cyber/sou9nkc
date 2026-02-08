@@ -53,6 +53,8 @@
   },
   "Dashboard": {
     "welcome": "مرحباً",
+    "welcomeBack": "سعداء برؤيتك مرة أخرى",
+    "supervisorView": "عرض المشرف",
     "totalOrders": "إجمالي الطلبات",
     "processed": "تمت معالجتها",
     "toProcess": "قيد المعالجة",
@@ -81,6 +83,7 @@
     "historicalVolume": "الحجم التاريخي",
     "conversionRate": "معدل التحويل",
     "vsLastMonth": "مقابل الشهر الماضي",
+    "totalRevenue": "إجمالي المبيعات",
     "agentSpace": "فضاء الوكيل",
     "supervisorSpace": "فضاء المشرف",
     "overview": "نظرة عامة",
@@ -95,6 +98,18 @@
     "noStatus": "بدون حالة",
     "statusDistributionTitle": "توزيع الحالات",
     "noStatusData": "لا توجد بيانات متاحة للحالات.",
+    "orderStatuses": {
+      "En attente": "قيد الانتظار",
+      "Annulé": "ملغى",
+      "Confirmé": "مؤكد",
+      "Reporté": "مؤجل",
+      "Ne répond pas": "لا يرد",
+      "Injoignable": "لا يمكن الاتصال به",
+      "Doublon": "مكرر",
+      "Expédié": "تم الشحن",
+      "Livré": "تم التوصيل",
+      "Retourné": "مرتجع"
+    },
     "commandes": "طلبات",
     "agentPerformanceTitle": "متوسط وقت المعالجة لكل وكيل",
     "noPerformanceData": "لا توجد بيانات أداء متاحة.",
@@ -499,7 +514,14 @@
       "statusDistribution": "توزيع الحالات",
       "revenue": "رقم الأعمال",
       "orders": "الطلبات",
-      "revenueLabel": "الدخل"
+      "revenueLabel": "الدخل",
+      "processingTimeTitle": "وقت المعالجة (دقيقة/يوم)",
+      "ordersByWeekday": "الطلبات حسب اليوم",
+      "priceDistribution": "توزيع الأسعار",
+      "agentPerformance": "أداء الوكلاء (معدل التأكيد)",
+      "confirmationRateTitle": "معدل التأكيد اليومي (%)",
+      "rate": "المعدل %",
+      "avgTime": "متوسط الوقت"
     },
     "agentPerformance": {
       "title": "أداء الوكلاء",

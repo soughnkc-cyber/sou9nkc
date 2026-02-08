@@ -2,20 +2,18 @@
 
 import React, { useEffect, useState } from "react";
 import { getAgentStats } from "@/lib/actions/dashboard";
-import { StatsCard } from "@/components/dashboard/stats-card";
-import { RecentOrders } from "@/components/dashboard/recent-orders";
-import { StatusDistribution } from "@/components/dashboard/status-distribution";
+import { KPICard } from "@/components/dashboard/kpi-card";
 import { 
   ShoppingBagIcon, 
   TrendingUpIcon, 
   WalletIcon,
-  UserIcon,
   TargetIcon
 } from "lucide-react";
 import { useSession } from "next-auth/react";
 import { getMe } from "@/lib/actions/users";
 import PermissionDenied from "@/components/permission-denied";
 import { useTranslations, useLocale } from "next-intl";
+import { RevenueAreaChart, OrdersBarChart, StatusPieChart, ConfirmationRateChart } from "@/components/dashboard/charts";
 
 export default function AgentDashboardPage() {
   const t = useTranslations("Dashboard");
@@ -24,7 +22,6 @@ export default function AgentDashboardPage() {
   const [stats, setStats] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [hasPermission, setHasPermission] = useState<boolean | null>(null);
-
 
   const fetchStats = async (isSilent = false) => {
     if (!session?.user?.id) return;
@@ -51,14 +48,9 @@ export default function AgentDashboardPage() {
     });
   }, [session?.user?.id]);
 
-  // 🔄 Auto-Refresh Polling (Every 60 seconds for Agent Dashboard)
   useEffect(() => {
     if (!hasPermission || !session?.user?.id) return;
-    
-    const interval = setInterval(() => {
-        fetchStats(true); // Silent background refresh
-    }, 60000);
-
+    const interval = setInterval(() => fetchStats(true), 60000);
     return () => clearInterval(interval);
   }, [hasPermission, session?.user?.id]);
 
@@ -66,70 +58,79 @@ export default function AgentDashboardPage() {
   if (hasPermission === false) return <PermissionDenied />;
   if (hasPermission === null || (loading && !stats)) {
     return (
-      <div className="flex flex-col gap-6 animate-pulse">
-        <div className="h-10 w-48 bg-gray-200 rounded-md mb-2"></div>
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+      <div className="flex flex-col gap-6 animate-pulse p-6">
+        <div className="h-8 w-48 bg-gray-200 rounded-md"></div>
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
           {[1, 2, 3, 4].map((i) => (
-            <div key={i} className="h-32 bg-gray-100 rounded-xl"></div>
+            <div key={i} className="h-32 bg-gray-100 rounded-2xl"></div>
           ))}
         </div>
-        <div className="grid grid-cols-1 lg:grid-cols-7 gap-6 mt-6">
-          <div className="col-span-4 h-96 bg-gray-100 rounded-xl"></div>
-          <div className="col-span-3 h-96 bg-gray-100 rounded-xl"></div>
-        </div>
+        <div className="h-96 bg-gray-100 rounded-2xl"></div>
       </div>
     );
   }
 
+  if (!session?.user?.id) return null;
 
-  if (!session?.user?.id) {
-    return <div className="p-8 text-center text-gray-500">{t('loading')}</div>;
-  }
+  // Enhance dailyStats with rate for agent as well if needed, ensuring data exists
+  const dailyStatsWithRate = stats.dailyStats?.map((d: any) => ({
+      ...d,
+      rate: d.orders > 0 ? Math.round(((d.revenue > 0 ? 1 : 0) / d.orders) * 100) : 0 // Rough approx if we don't have processed count in agent daily stats
+      // Actually getAgentStats doesn't calculate daily processed count yet.
+      // For now, let's omit ConfirmationRateChart or assume rate is 0. 
+      // Better: Update getAgentStats or just use Revenue/Orders charts.
+  })) || [];
 
   return (
-    <div className="flex flex-col gap-4">
-      <div className="flex items-center justify-between pb-2 border-b border-gray-100">
-        <div>
-          <div className="flex items-center gap-2 mb-1">
-            <h1 className="text-3xl font-black text-blue-900 tracking-tight">{t('welcome')}, {session.user.name || t('agent')} !</h1>
-            <UserIcon className="h-6 w-6 text-blue-500" />
-          </div>
-          <p className="text-muted-foreground font-medium">{t('agentSpace')}</p>
-        </div>
+    <div className="flex flex-col gap-6 pb-6">
+      <div className="flex items-center gap-2 mb-1 pb-2 border-b border-gray-100">
+        <h1 className="text-2xl font-black text-blue-900 tracking-tight">{t('welcome')}, {session.user.name}</h1>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-        <StatsCard
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
+        <KPICard
           title={t('myOrdersMonth')}
           value={stats.currentMonthOrders}
-          trend={{ value: stats.ordersTrend, isPositive: stats.ordersTrend >= 0 }}
-          description={t('vsLastMonth')}
-          icon={<ShoppingBagIcon className="h-5 w-5" />}
+          trend={stats.ordersTrend.toFixed(1) + "%"}
+          trendUp={stats.ordersTrend >= 0}
+          icon={ShoppingBagIcon}
+          bgColor="#e3f0ff"
+          color="text-blue-600"
         />
-        <StatsCard
+        <KPICard
           title={t('myRevenueMonth')}
-          value={stats.revenue.toLocaleString(locale === 'ar' ? "ar-EG" : "fr-FR", { style: "currency", currency: "MRU" })}
-          description={t('potentialCommission')}
-          icon={<WalletIcon className="h-5 w-5" />}
-          className="border-l-4 border-l-[#1F30AD]"
+          value={stats.revenue.total.toLocaleString(locale === 'ar' ? "ar-EG" : "fr-FR", { style: "currency", currency: "MRU" })}
+          icon={WalletIcon}
+          bgColor="#e3ffef"
+          color="text-emerald-600"
         />
-        <StatsCard
+        <KPICard
           title={t('historicalVolume')}
           value={stats.totalOrders}
-          description={t('overview')}
-          icon={<TargetIcon className="h-5 w-5" />}
+          icon={TargetIcon}
+          bgColor="#f6f6f6"
+          color="text-gray-600"
         />
-        <StatsCard
+        <KPICard
           title={t('conversionRate')}
-          value="..." 
-          description={t('loading')}
-          icon={<TrendingUpIcon className="h-5 w-5" />}
+          value={`${Math.round(stats.confirmationRate || 0)}%`} 
+          icon={TrendingUpIcon}
+          bgColor="#fffbe3"
+          color="text-yellow-600"
         />
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-7 gap-6">
-        <RecentOrders orders={stats.recentOrders} showAgent={false} />
-        <StatusDistribution stats={stats.statusDistribution} />
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+         <div className="col-span-1 md:col-span-2">
+            <RevenueAreaChart data={stats.dailyStats} />
+         </div>
+         <div className="col-span-1 md:col-span-2">
+            <OrdersBarChart data={stats.dailyStats} />
+         </div>
+         <div className="col-span-1">
+            <StatusPieChart data={stats.statusDistribution} />
+         </div>
+         {/* Agent gets fewer charts naturally as they don't see team stats */}
       </div>
     </div>
   );

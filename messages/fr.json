@@ -53,6 +53,8 @@
   },
   "Dashboard": {
     "welcome": "Bienvenue",
+    "welcomeBack": "Content de vous revoir",
+    "supervisorView": "Vue Superviseur",
     "totalOrders": "Total Commandes",
     "processed": "Traitées",
     "toProcess": "À Traiter",
@@ -81,6 +83,7 @@
     "historicalVolume": "Volume historique",
     "conversionRate": "Taux de Conversion",
     "vsLastMonth": "vs mois dernier",
+    "totalRevenue": "Ventes Totales",
     "agentSpace": "Espace Agent",
     "supervisorSpace": "Espace Superviseur",
     "overview": "Vue d'ensemble",
@@ -95,6 +98,18 @@
     "noStatus": "Sans statut",
     "statusDistributionTitle": "Répartition des Statuts",
     "noStatusData": "Aucune donnée de statut disponible.",
+    "orderStatuses": {
+      "En attente": "En attente",
+      "Annulé": "Annulé",
+      "Confirmé": "Confirmé",
+      "Reporté": "Reporté",
+      "Ne répond pas": "Ne répond pas",
+      "Injoignable": "Injoignable",
+      "Doublon": "Doublon",
+      "Expédié": "Expédié",
+      "Livré": "Livré",
+      "Retourné": "Retourné"
+    },
     "commandes": "commandes",
     "agentPerformanceTitle": "Temps Moyen de Traitement par Agent",
     "noPerformanceData": "Aucune donnée de performance disponible.",
@@ -500,7 +515,14 @@
       "statusDistribution": "Répartition par Statut",
       "revenue": "Chiffre d'Affaires",
       "orders": "Commandes",
-      "revenueLabel": "Revenu"
+      "revenueLabel": "Revenu",
+      "processingTimeTitle": "Temps de Traitement (min/jour)",
+      "ordersByWeekday": "Commandes par Jour de la Semaine",
+      "priceDistribution": "Distribution par Prix",
+      "agentPerformance": "Performance Agents (Taux de Conf.)",
+      "confirmationRateTitle": "Taux de Confirmation Journalier (%)",
+      "rate": "Taux %",
+      "avgTime": "Temps Moyen"
     },
     "agentPerformance": {
       "title": "Performance des Agents",

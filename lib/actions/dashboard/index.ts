@@ -203,9 +203,13 @@ export async function getAdminStats(
   const previousTotalOrders = previousPeriodOrders.length;
   const previousProcessedOrders = previousPeriodOrders.filter(o => o.statusId !== null).length;
   
-  // Calculate revenue trend
+  // Calculate trends
   const revenueTrend = previousRevenue > 0 
     ? ((totalRevenue - previousRevenue) / previousRevenue) * 100 
+    : 0;
+
+  const orderTrend = previousTotalOrders > 0
+    ? ((totalOrders - previousTotalOrders) / previousTotalOrders) * 100
     : 0;
   
   // Calculate average basket
@@ -215,36 +219,41 @@ export async function getAdminStats(
     ? ((avgBasket - previousAvgBasket) / previousAvgBasket) * 100
     : 0;
   
-  // ============ PHASE 1: ORDER EVOLUTION DATA ============
+  // ============ PHASE 1: ORDER EVOLUTION & REVENUE DATA ============
   
   // Group orders by day
-  const ordersByDay = new Map<string, { total: number; processed: number; pending: number }>();
+  const dailyMap = new Map<string, { date: string; total: number; processed: number; pending: number; revenue: number; orders: number }>();
   
   ordersInRange.forEach(order => {
     const dateKey = order.orderDate.toISOString().split('T')[0]; // YYYY-MM-DD
-    const existing = ordersByDay.get(dateKey);
+    const existing = dailyMap.get(dateKey);
     
     if (existing) {
       existing.total++;
+      existing.orders++; // Same as total for this chart context
+      existing.revenue += order.totalPrice;
       if (order.statusId !== null) existing.processed++;
       else existing.pending++;
     } else {
-      ordersByDay.set(dateKey, {
+      dailyMap.set(dateKey, {
+        date: dateKey,
         total: 1,
+        orders: 1,
+        revenue: order.totalPrice,
         processed: order.statusId !== null ? 1 : 0,
         pending: order.statusId === null ? 1 : 0,
       });
     }
   });
   
-  const orderEvolution = Array.from(ordersByDay.entries())
-    .map(([date, counts]) => ({
-      date,
-      total: counts.total,
-      processed: counts.processed,
-      pending: counts.pending,
-    }))
-    .sort((a, b) => a.date.localeCompare(b.date)); // Sort chronologically
+  const dailyStats = Array.from(dailyMap.values())
+    .sort((a, b) => a.date.localeCompare(b.date))
+    .map(stat => ({
+      ...stat,
+      rate: stat.total > 0 ? Math.round((stat.processed / stat.total) * 100) : 0
+    }));
+
+  const orderEvolution = dailyStats.map(({ date, total, processed, pending }) => ({ date, total, processed, pending }));
   
   // ============ PHASE 1: PROCESSING RATE ============
   
@@ -265,9 +274,8 @@ export async function getAdminStats(
     ordersByWeekday.set(day, (ordersByWeekday.get(day) || 0) + 1);
   });
   
-  const weekdayNames = ["Dimanche", "Lundi", "Mardi", "Mercredi", "Jeudi", "Vendredi", "Samedi"];
   const ordersByWeekdayData = Array.from({ length: 7 }, (_, i) => ({
-    day: weekdayNames[i],
+    day: i, // Use index 0-6
     orders: ordersByWeekday.get(i) || 0,
   }));
 
@@ -286,7 +294,7 @@ export async function getAdminStats(
     },
   });
   
-  const productCounts = new Map<string, { title: string; count: number }>();
+  const productCounts = new Map<string, { title: string; count: number; revenue: number }>();
   
   ordersWithProducts.forEach(order => {
     order.products.forEach(product => {
@@ -297,26 +305,43 @@ export async function getAdminStats(
         productCounts.set(product.id, {
           title: product.title,
           count: 1,
+          revenue: 0 // Placeholder if we don't fetch price
         });
       }
     });
   });
+
+  // To get accurate revenue per product, we need product prices or order-lines. 
   
-  const topProducts = Array.from(productCounts.values())
-    .sort((a, b) => b.count - a.count)
-    .slice(0, 10)
+  const productsPerformance = await prisma.product.findMany({
+     where: {
+         orders: { some: whereClause }
+     },
+     include: {
+         orders: {
+             where: whereClause,
+             select: { totalPrice: true }
+         }
+     }
+  });
+
+  const topProducts = productsPerformance
     .map(p => ({
       name: p.title,
-      count: p.count,
-    }));
+      revenue: p.orders.reduce((sum, o) => sum + o.totalPrice, 0),
+      count: p.orders.length
+    }))
+    .sort((a, b) => b.revenue - a.revenue)
+    .slice(0, 10);
+
 
   // ============ PHASE 2: PRICE DISTRIBUTION ============
   
   const priceRanges = [
-    { label: "< 100 DH", min: 0, max: 100, count: 0 },
-    { label: "100-500 DH", min: 100, max: 500, count: 0 },
-    { label: "500-1000 DH", min: 500, max: 1000, count: 0 },
-    { label: "> 1000 DH", min: 1000, max: Infinity, count: 0 },
+    { key: "priceRangeLess100", min: 0, max: 100, count: 0 },
+    { key: "priceRange100_500", min: 100, max: 500, count: 0 },
+    { key: "priceRange500_1000", min: 500, max: 1000, count: 0 },
+    { key: "priceRangeMore1000", min: 1000, max: Infinity, count: 0 },
   ];
   
   ordersInRange.forEach(order => {
@@ -330,7 +355,7 @@ export async function getAdminStats(
   });
   
   const priceDistribution = priceRanges.map(r => ({
-    range: r.label,
+    rangeKey: r.key,
     count: r.count,
   }));
 
@@ -463,6 +488,7 @@ export async function getAdminStats(
 
   return {
     totalOrders,
+    orderTrend,
     processedOrders,
     toProcessOrders,
     toRecallOrders,
@@ -493,6 +519,7 @@ export async function getAdminStats(
       trend: avgBasketTrend,
     },
     orderEvolution,
+    dailyStats, // Added for new charts
     processingRate: {
       value: processingRate,
       trend: processingRateTrend,
@@ -548,11 +575,57 @@ export async function getAgentStats(agentId: string) {
     }
   });
 
+  // Calculate daily stats for charts
+  const dailyMap = new Map<string, { date: string; orders: number; revenue: number }>();
+  
+  // Initialize daily map for the current month to ensure all days are present (optional, but good for charts)
+  // For now, let's just map existing orders
+  allOrders.forEach(order => {
+    const dateKey = order.orderDate.toISOString().split('T')[0];
+    const existing = dailyMap.get(dateKey);
+    if (existing) {
+      existing.orders++;
+      existing.revenue += order.totalPrice;
+    } else {
+      dailyMap.set(dateKey, {
+        date: dateKey,
+        orders: 1,
+        revenue: order.totalPrice
+      });
+    }
+  });
+
+  const dailyStats = Array.from(dailyMap.values())
+    .sort((a, b) => a.date.localeCompare(b.date));
+
+  // Calculate confirmation rate (orders with status that implies success)
+  // Assuming 'Livre' or 'Confirme' based statuses. 
+  // Let's use a heuristic: status.name contains 'Livr' or 'Confirm'
+  const confirmedCount = allOrders.filter(o => 
+    o.status?.name?.toLowerCase().includes('livr') || 
+    o.status?.name?.toLowerCase().includes('confirm')
+  ).length;
+
+  const confirmationRate = totalOrders > 0 ? (confirmedCount / totalOrders) * 100 : 0;
+
+  // Calculate processing rate
+  const processedCount = allOrders.filter(o => o.statusId !== null).length;
+  const processingRateValue = allOrders.length > 0 ? (processedCount / allOrders.length) * 100 : 0;
+
   return {
     currentMonthOrders,
     ordersTrend,
     totalOrders,
-    revenue: totalRevenue,
+    revenue: {
+      total: totalRevenue,
+      trend: 0, // Trend calculation for agent revenue would require previous revenue which we can add if needed
+    },
+    dailyStats, 
+    processingRate: {
+      value: processingRateValue,
+      trend: 0 // Placeholder
+    },
+    confirmationRate, 
     recentOrders: recentOrders.map(o => ({
       id: o.id,
       orderNumber: o.orderNumber,
