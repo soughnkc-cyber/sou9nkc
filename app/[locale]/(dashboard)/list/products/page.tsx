@@ -191,7 +191,7 @@ export default function ProductsPage() {
                   <Button 
                     variant="outline" 
                     size="sm" 
-                    className="h-8 rounded-lg px-2 sm:px-3 font-bold border-gray-200 hover:bg-blue-50 hover:text-[#1F30AD] transition-all text-[10px] font-mono" 
+                    className="h-8 rounded-lg px-2 sm:px-3 font-bold border-gray-200 hover:bg-blue-50 hover:text-[#1F30AD] transition-all text-[10px]" 
                     disabled
                   >
                     <Edit className="h-3.5 w-3.5 sm:mr-1.5" />

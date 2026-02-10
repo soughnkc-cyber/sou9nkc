@@ -45,7 +45,7 @@ export function createColumn<T>(config: {
           }
         >
           {config.header}
-          <ArrowUpDown className="ml-2 h-4 w-4" />
+          <ArrowUpDown className="ms-2 h-4 w-4" />
         </Button>
       ) : (
         config.header

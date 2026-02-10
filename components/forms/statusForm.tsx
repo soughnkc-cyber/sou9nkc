@@ -44,6 +44,7 @@ export function StatusForm({
   isEditMode = false,
 }: StatusFormProps) {
   const t = useTranslations("Status.form");
+  const ts = useTranslations("Status");
   const form = useForm<StatusFormData>({
     resolver: zodResolver(statusFormSchema),
     defaultValues: {
@@ -104,7 +105,7 @@ export function StatusForm({
                   <SelectContent>
                     {Object.values(Etat).map((etat) => (
                       <SelectItem key={etat} value={etat}>
-                        {etat}
+                        {ts(`etats.${etat}`)}
                       </SelectItem>
                     ))}
                   </SelectContent>
@@ -217,7 +218,7 @@ export function StatusForm({
           >
             {isLoading ? (
               <>
-                <div className="h-4 w-4 animate-spin rounded-full border-2 border-current border-t-transparent mr-2" />
+                <div className="h-4 w-4 animate-spin rounded-full border-2 border-current border-t-transparent me-2" />
                 {isEditMode ? t('editing') : t('adding')}
               </>
             ) : (

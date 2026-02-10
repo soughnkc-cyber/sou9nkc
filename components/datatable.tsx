@@ -46,6 +46,7 @@ import {
   PopoverTrigger,
 } from "@/components/ui/popover";
 import { Checkbox } from "@/components/ui/checkbox";
+import { useTranslations } from "next-intl";
 
 import { DataTableViewOptions } from "@/components/datatable-view-options";
 
@@ -89,6 +90,7 @@ export function DataTable<TData, TValue>({
   mobileExpandedAction,
   onFilteredDataChange,
 }: DataTableProps<TData, TValue>) {
+  const t = useTranslations("Common");
   const [sorting, setSorting] = useState<SortingState>([]);
   const [columnFilters, setColumnFilters] = React.useState<ColumnFiltersState>([]);
   const [expandedRows, setExpandedRows] = React.useState<Record<string, boolean>>({});
@@ -277,7 +279,10 @@ export function DataTable<TData, TValue>({
             {table.getHeaderGroups().map((group) => (
               <TableRow key={group.id} className="bg-gray-50/80 hover:bg-gray-50/80 border-b border-gray-100">
                 {group.headers.map((header) => (
-                  <TableHead key={header.id} className="h-10 py-2 text-[10px] font-extrabold text-gray-500 uppercase tracking-widest pl-4">
+                  <TableHead key={header.id} className={cn(
+                  "h-10 py-2 text-[10px] font-extrabold text-gray-500 uppercase tracking-widest ps-4",
+                  header.id === 'select' && "w-[40px] ps-4"
+                )}>
                     <div className="flex items-center gap-1.5 min-h-[32px]">
                       {flexRender(
                         header.column.columnDef.header,
@@ -312,9 +317,9 @@ export function DataTable<TData, TValue>({
                   )}
                 >
                   {row.getVisibleCells().map((cell, index) => (
-                    <TableCell key={cell.id} className={cn("py-2.5 pl-4", index === 0 && "relative")}>
+                    <TableCell key={cell.id} className={cn("py-2.5 ps-4", index === 0 && "relative")}>
                       {index === 0 && row.getIsSelected() && (
-                          <div className="absolute left-0 top-0 bottom-0 w-1 bg-[#1F30AD] rounded-r-full" />
+                          <div className="absolute start-0 top-0 bottom-0 w-1 bg-[#1F30AD] rounded-e-full" />
                       )}
                       <div className="text-[13px] font-medium text-gray-700">
                         {flexRender(
@@ -329,7 +334,7 @@ export function DataTable<TData, TValue>({
             ) : (
               <TableRow>
                 <TableCell colSpan={columns.length} className="text-center h-32 text-gray-400 italic">
-                  Aucun résultat
+                  {t("noResults")}
                 </TableCell>
               </TableRow>
             )}
@@ -477,7 +482,7 @@ export function DataTable<TData, TValue>({
           })
         ) : (
           <div className="text-center py-12 bg-white border border-dashed rounded-2xl italic text-gray-400">
-            Aucun résultat
+            {t("noResults")}
           </div>
         )}
       </div>

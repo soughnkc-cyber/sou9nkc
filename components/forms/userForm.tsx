@@ -107,6 +107,7 @@ export function UserForm({ user, onSubmit, isLoading = false, isEditMode = false
 
   const t = useTranslations("Users.form");
   const tp = useTranslations("Users.permissionsList");
+  const tu = useTranslations("Users");
 
   const handleSubmit = async (data: UserFormData) => {
     try {
@@ -192,7 +193,7 @@ export function UserForm({ user, onSubmit, isLoading = false, isEditMode = false
                       type="button"
                       variant="ghost"
                       size="icon"
-                      className="absolute right-0 top-0 h-full px-3"
+                      className="absolute end-0 top-0 h-full px-3"
                       onClick={() => setShowPassword(!showPassword)}
                       disabled={isLoading}
                     >
@@ -231,10 +232,10 @@ export function UserForm({ user, onSubmit, isLoading = false, isEditMode = false
                       </SelectTrigger>
                     </FormControl>
                     <SelectContent>
-                      <SelectItem value="ADMIN">{t('roles.ADMIN')}</SelectItem>
-                      <SelectItem value="AGENT">{t('roles.AGENT')}</SelectItem>
-                      <SelectItem value="SUPERVISOR">{t('roles.SUPERVISOR')}</SelectItem>
-                      <SelectItem value="AGENT_TEST">{t('roles.AGENT_TEST')}</SelectItem>
+                      <SelectItem value="ADMIN">{tu('roles.ADMIN')}</SelectItem>
+                      <SelectItem value="AGENT">{tu('roles.AGENT')}</SelectItem>
+                      <SelectItem value="SUPERVISOR">{tu('roles.SUPERVISOR')}</SelectItem>
+                      <SelectItem value="AGENT_TEST">{tu('roles.AGENT_TEST')}</SelectItem>
                     </SelectContent>
                   </Select>
                   <FormDescription>
@@ -356,7 +357,7 @@ export function UserForm({ user, onSubmit, isLoading = false, isEditMode = false
           <div className="space-y-4 pt-4 border-t">
             <div className="flex items-center gap-2 text-blue-600">
               <ShieldCheck className="h-5 w-5" />
-              <h3 className="text-lg font-semibold">{tp('title', { role: t(`roles.${form.watch("role")}`) })}</h3>
+              <h3 className="text-lg font-semibold">{tp('title', { role: tu(`roles.${form.watch("role")}`) })}</h3>
             </div>
             
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-y-4 gap-x-8 p-4 bg-gray-50 rounded-lg border">
@@ -426,7 +427,7 @@ export function UserForm({ user, onSubmit, isLoading = false, isEditMode = false
           >
             {isLoading ? (
               <>
-                <div className="h-4 w-4 animate-spin rounded-full border-2 border-current border-t-transparent mr-2" />
+                <div className="h-4 w-4 animate-spin rounded-full border-2 border-current border-t-transparent me-2" />
                 {isEditMode ? t('editing') : t('adding')}
               </>
             ) : (

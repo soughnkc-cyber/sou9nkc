@@ -15,6 +15,7 @@ import {
 import { Separator } from "@/components/ui/separator";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Input } from "@/components/ui/input";
+import { useTranslations } from "next-intl";
 
 interface DataTableFacetedFilterProps<TData, TValue> {
   column?: Column<TData, TValue>;
@@ -33,6 +34,7 @@ export function DataTableFacetedFilter<TData, TValue>({
   options,
   trigger,
 }: DataTableFacetedFilterProps<TData, TValue>) {
+  const t = useTranslations("Common");
   const [searchTerm, setSearchTerm] = React.useState("");
   const selectedValues = new Set(column?.getFilterValue() as string[]);
 
@@ -75,7 +77,7 @@ export function DataTableFacetedFilter<TData, TValue>({
           <div className="overflow-y-auto overflow-x-hidden p-1">
             {filteredOptions.length === 0 ? (
               <div className="p-4 text-sm text-center text-muted-foreground">
-                Aucun résultat trouvé.
+                {t("noResultsFound")}
               </div>
             ) : (
               <div className="space-y-1">
@@ -129,7 +131,7 @@ export function DataTableFacetedFilter<TData, TValue>({
                 className="justify-center text-center font-normal rounded-none h-9 mt-1"
                 onClick={() => column?.setFilterValue(undefined)}
               >
-                Réinitialiser
+                {t("cancel")}
               </Button>
             </>
           )}

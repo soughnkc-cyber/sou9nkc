@@ -4,7 +4,10 @@
     "loading": "Chargement...",
     "error": "Une erreur est survenue",
     "save": "Enregistrer",
-    "cancel": "Annuler"
+    "cancel": "Annuler",
+    "noResults": "Aucun résultat",
+    "noResultsFound": "Aucun résultat trouvé.",
+    "language": "Langue"
   },
   "DateFilter": {
     "filterByDate": "Filtrer par date",
@@ -457,6 +460,23 @@
       "editBtn": "Modifier",
       "adding": "Ajout...",
       "editing": "Modification..."
+    },
+    "etats": {
+      "STATUS_01": "État 01",
+      "STATUS_02": "État 02",
+      "STATUS_03": "État 03",
+      "STATUS_04": "État 04",
+      "STATUS_05": "État 05",
+      "STATUS_06": "État 06",
+      "STATUS_07": "État 07",
+      "STATUS_08": "État 08",
+      "STATUS_09": "État 09",
+      "STATUS_10": "État 10",
+      "STATUS_11": "État 11",
+      "STATUS_12": "État 12",
+      "STATUS_13": "État 13",
+      "STATUS_14": "État 14",
+      "STATUS_15": "État 15"
     },
     "modal": {
       "createTitle": "Créer un statut",

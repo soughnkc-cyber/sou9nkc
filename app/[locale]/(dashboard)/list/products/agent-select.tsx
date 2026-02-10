@@ -58,7 +58,7 @@ export function AgentSelect({
           <div className="flex flex-wrap gap-1">
             {selectedLabels.length > 0 ? (
               selectedLabels.map((label) => (
-                <Badge key={label} variant="secondary" className="mr-1">
+                <Badge key={label} variant="secondary" className="me-1">
                   {label}
                 </Badge>
               ))

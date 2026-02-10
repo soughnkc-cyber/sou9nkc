@@ -65,7 +65,7 @@ const StatusSelect = ({
     return (
       <div 
         className={cn(
-          "h-7 w-[140px] text-xs font-medium flex items-center px-3 rounded-md transition-colors border-0 shadow-sm cursor-default",
+          "h-7 w-[110px] text-[10px] font-medium flex items-center px-2 rounded-md transition-colors border-0 shadow-sm cursor-default",
           selectedStatus?.color ? "text-white" : "border border-input bg-background",
           isPending && "opacity-70 italic"
         )}
@@ -84,7 +84,7 @@ const StatusSelect = ({
         <DropdownMenuTrigger asChild>
           <div 
             className={cn(
-              "h-7 w-[140px] text-xs font-medium flex items-center px-3 rounded-md transition-colors border-0 shadow-sm cursor-pointer",
+              "h-7 w-[110px] text-[10px] font-medium flex items-center px-2 rounded-md transition-colors border-0 shadow-sm cursor-pointer",
               selectedStatus?.color ? "text-white" : "border border-input bg-background",
               isPending && "ring-2 ring-yellow-400 opacity-90 italic"
             )}
@@ -96,7 +96,7 @@ const StatusSelect = ({
           </div>
         </DropdownMenuTrigger>
 
-        <DropdownMenuContent align="start" className="w-[140px]">
+        <DropdownMenuContent align="start" className="w-[110px]">
           {statuses
             .filter(s => s.isActive || s.id === order.status?.id)
             .map((s) => (
@@ -139,7 +139,7 @@ const AgentSelect = ({
           }}
           disabled={readOnly}
         >
-          <SelectTrigger className={cn("h-7 w-[150px] text-xs", readOnly && "opacity-50 cursor-not-allowed")}>
+          <SelectTrigger className={cn("h-7 w-[120px] text-[10px]", readOnly && "opacity-50 cursor-not-allowed")}>
              <div className="flex items-center gap-2 truncate">
                 {order.agent?.id && selectedAgent?.iconColor && (
                    <div 

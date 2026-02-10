@@ -10,7 +10,7 @@ import {routing} from '@/i18n/routing';
 const montserrat = Montserrat({
   variable: "--font-app",
   subsets: ["latin"],
-  weight: ["300", "400", "500", "600", "700"],
+  weight: ["300", "400", "500", "600", "700", "800", "900"],
 });
 
 const ibmPlexSansArabic = IBM_Plex_Sans_Arabic({
