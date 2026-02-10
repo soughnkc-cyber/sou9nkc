@@ -137,7 +137,9 @@ function OrdersPageContent() {
             ...o, 
             status: updated.status, 
             recallAt: updated.recallAt,
-            recallAttempts: updated.recallAttempts 
+            recallAttempts: updated.recallAttempts,
+            processingTimeMin: updated.processingTimeMin,
+            absoluteDelayMin: updated.absoluteDelayMin
           } : o
         )
       );

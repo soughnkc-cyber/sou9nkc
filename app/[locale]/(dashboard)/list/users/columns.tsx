@@ -4,8 +4,9 @@ import { ColumnDef } from "@tanstack/react-table";
 import { createColumn, createActionsColumn, createFacetedFilter, createSelectColumn } from "@/components/columns";
 import { Badge } from "@/components/ui/badge";
 import { Edit, Trash2, Eye, User as UserIcon } from "lucide-react";
-import { Role } from "@/app/generated/prisma";
 import { cn } from "@/lib/utils";
+
+export type Role = "ADMIN" | "AGENT" | "SUPERVISOR" | "AGENT_TEST";
 
 export interface User {
   id: string;

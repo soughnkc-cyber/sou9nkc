@@ -476,16 +476,58 @@ export const bulkUpdateOrders = async (
       }
     }
     
+    // ------------------------------------------------------------------
+    // 🔍 PRE-FETCH: Get orders and settings to calculate Delay / processingTime
+    // ------------------------------------------------------------------
+    const [ordersToUpdate, settings] = await Promise.all([
+      prisma.order.findMany({
+        where: { id: { in: orderIds } },
+        select: { id: true, orderDate: true, assignedAt: true, firstProcessedAt: true, processingTimeMin: true, updatedAt: true }
+      }),
+      getSystemSettings()
+    ]);
+
+    const { calculateWorkMinutes } = await import("@/lib/work-time");
+    const now = new Date();
+
     // We'll use a transaction to ensure all orders are updated or none
     const results = await prisma.$transaction(
-      orderIds.map(id => {
+      ordersToUpdate.map(order => {
         let data: any = {};
+        
+        // --- 1. Agent & Assignment
         if (agentId !== undefined) {
           data.agentId = agentId === "unassigned" ? null : agentId;
-          if (agentId !== "unassigned") data.assignedAt = new Date();
+          if (agentId !== "unassigned") data.assignedAt = now;
         }
-        if (statusId !== undefined) data.statusId = statusId;
+
+        // --- 2. Status Update
+        if (statusId !== undefined) {
+          data.statusId = statusId;
+          
+          // ⏱️ TIME CALCULATION LOGIC (Same as updateOrderStatus)
+          // If status is beneficial (not null) and we need to calc time
+          if (statusId && (!order.firstProcessedAt || order.processingTimeMin === null)) {
+             
+             // Fallback: assignedAt -> updatedAt -> orderDate
+             const calculationBase = order.assignedAt || order.updatedAt || order.orderDate;
+             
+             const absoluteDiffMs = now.getTime() - calculationBase.getTime();
+             const absoluteDiffMin = Math.round(absoluteDiffMs / (1000 * 60));
+             
+             const workMin = calculateWorkMinutes(calculationBase, now, settings as any);
+             
+             // Only update firstProcessedAt if it was missing
+             if (!order.firstProcessedAt) {
+                 data.firstProcessedAt = now;
+             }
+             
+             data.processingTimeMin = workMin;
+             data.absoluteDelayMin = absoluteDiffMin;
+          }
+        }
         
+        // --- 3. Recall Logic
         // Handle recallAt based on explicit value or auto-clear logic
         if (recallAt !== undefined) {
           data.recallAt = recallAt;
@@ -494,7 +536,7 @@ export const bulkUpdateOrders = async (
         }
         
         return prisma.order.update({
-          where: { id },
+          where: { id: order.id },
           data,
         });
       })

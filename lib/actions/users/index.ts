@@ -49,7 +49,7 @@ function mapUser(u: PrismaUser) {
     canEditStatuses: u.canEditStatuses,
     canViewReporting: u.canViewReporting,
     canViewDashboard: u.canViewDashboard,
-    decryptedPassword: u.encryptedPassword ? decrypt(u.encryptedPassword) : undefined, // Add decrypted password
+    decryptedPassword: (u.encryptedPassword && u.encryptedPassword.includes(':')) ? decrypt(u.encryptedPassword) : undefined,
   };
 }
 
