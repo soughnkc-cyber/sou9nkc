@@ -302,7 +302,11 @@ export const getColumns = (
       header: t('client'),
       sortable: false,
       hideMobileLabel: true,
-      cell: ({ row }: { row: Row<Order> }) => <span className="text-xs">{row.original.customerName}</span>,
+      cell: ({ row }: { row: Row<Order> }) => (
+        <div className="max-w-[150px] truncate" title={row.original.customerName || ""}>
+          <span className="text-xs">{row.original.customerName}</span>
+        </div>
+      ),
     }),
 
     createColumn<Order>({

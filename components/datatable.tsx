@@ -281,7 +281,7 @@ export function DataTable<TData, TValue>({
                 {group.headers.map((header) => (
                   <TableHead key={header.id} className={cn(
                   "h-10 py-2 text-[10px] font-extrabold text-gray-500 uppercase tracking-widest ps-4",
-                  header.id === 'select' && "w-[40px] ps-4"
+                  header.id === 'select' && "w-[40px]"
                 )}>
                     <div className="flex items-center gap-1.5 min-h-[32px]">
                       {flexRender(
