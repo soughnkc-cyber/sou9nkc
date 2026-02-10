@@ -254,6 +254,7 @@
     "agent": "Agent",
     "unassigned": "Non affecté",
     "status": "Statut",
+    "noStatus": "Sans statut",
     "recallState": "État Rappel",
     "toRecallBadge": "À rappeler",
     "recallDate": "Date Rappel",

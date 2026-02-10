@@ -254,6 +254,7 @@
     "agent": "الوكيل",
     "unassigned": "غير معين",
     "status": "الحالة",
+    "noStatus": "بدون حالة",
     "recallState": "حالة الإعادة",
     "toRecallBadge": "إعادة الاتصال",
     "edit": "تعديل",

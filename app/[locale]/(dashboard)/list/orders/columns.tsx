@@ -359,11 +359,14 @@ export const getColumns = (
       hideMobileLabel: true,
       filterComponent: createFacetedFilter(
         t('status'),
-        statuses
-          .filter(s => s.isActive)
-          .map((s) => ({ label: s.name, value: s.name }))
+        [
+          { label: t('noStatus'), value: "__NO_STATUS__" },
+          ...statuses
+            .filter(s => s.isActive)
+            .map((s) => ({ label: s.name, value: s.name }))
+        ]
       ),
-      accessorFn: (row) => row.status?.name,
+      accessorFn: (row) => row.status?.name || "__NO_STATUS__",
       cell: ({ row }: { row: Row<Order> }) => {
         const pending = pendingUpdates?.[row.original.id];
         return (
