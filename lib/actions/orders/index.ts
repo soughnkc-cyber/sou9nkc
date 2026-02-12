@@ -206,11 +206,14 @@ export const insertNewOrders = async (shopifyOrders: ShopifyOrder[]) => {
 
     let baseCandidates: typeof agents = [];
 
-    if (requiredAgentIds.length > 0) {
-        // CASE A: Strict Assignment
-        baseCandidates = agents.filter(a => requiredAgentIds.includes(a.id) && !blockedAgentIds.includes(a.id));
+    // IMPORTANT: On vérifie si parmis les agents ASSIGNÉS au produit, il y en a au moins un qui est ACTIF (présent dans notre liste agents)
+    const activeRequiredIds = requiredAgentIds.filter(id => agents.some(a => a.id === id));
+
+    if (activeRequiredIds.length > 0) {
+        // CASE A: Strict Assignment (Seulement si au moins un des assignés est réellement éligible/actif)
+        baseCandidates = agents.filter(a => activeRequiredIds.includes(a.id) && !blockedAgentIds.includes(a.id));
     } else {
-        // CASE B: Open Assignment
+        // CASE B: Open Assignment (Si personne n'est assigné, ou si TOUS les assignés sont inactifs/éteints)
         baseCandidates = agents.filter(a => !blockedAgentIds.includes(a.id));
     }
 
