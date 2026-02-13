@@ -42,7 +42,7 @@ function OrdersPageContent() {
   // --------------------
   const [orders, setOrders] = useState<Order[]>([]);
   const [statuses, setStatuses] = useState<{ id: string; name: string; color?: string; isActive?: boolean; etat: string }[]>([]);
-  const [agents, setAgents] = useState<{ id: string; name: string; isActive: boolean; iconColor?: string }[]>([]);
+  const [agents, setAgents] = useState<{ id: string; name: string; isActive: boolean; role: string; iconColor?: string }[]>([]);
   const [isLoadingPage, setIsLoadingPage] = useState(false);
   const [hasPermission, setHasPermission] = useState<boolean | null>(null);
   

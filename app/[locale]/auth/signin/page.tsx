@@ -86,6 +86,8 @@ export default function SignInPage() {
         return t('errors.requiredFields');
       case "Aucun compte trouvé avec ce numéro":
         return t('errors.accountNotFound');
+      case "Votre compte est bloqué. Veuillez contacter l'administrateur.":
+        return "Votre compte est bloqué. Veuillez contacter l'administrateur.";
       case "Mot de passe incorrect":
         return t('errors.wrongPassword');
       default:

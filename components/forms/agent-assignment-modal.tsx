@@ -8,7 +8,7 @@ interface AgentAssignmentModalProps {
   isOpen: boolean;
   onClose: () => void;
   onSubmit: (data: AgentAssignmentData) => Promise<void>;
-  agents: { id: string; name: string }[];
+  agents: { id: string; name: string; isActive: boolean }[];
   currentAgentId?: string | null;
   isLoading?: boolean;
   orderNumber?: number;

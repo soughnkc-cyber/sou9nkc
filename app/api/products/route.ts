@@ -2,9 +2,28 @@
 import { insertNewProducts } from "@/lib/actions/products";
 import { NextResponse } from "next/server";
 
+import { getServerSession } from "next-auth/next";
+import { authOptions } from "@/app/api/auth/[...nextauth]/route";
+import prisma from "@/lib/prisma";
+
 export const runtime = "nodejs";
 
 export const GET = async () => {
+  const session = await getServerSession(authOptions);
+  
+  if (!session?.user) {
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  }
+
+  const user = await prisma.user.findUnique({
+    where: { id: (session.user as any).id },
+    select: { status: true, canEditProducts: true }
+  });
+
+  if (!user || user.status !== "ACTIVE" || !user.canEditProducts) {
+    return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+  }
+
   const accessToken = process.env.SHOPIFY_ACCESS_TOKEN;
   const shop = process.env.SHOPIFY_STORE_URL;
 

@@ -15,6 +15,8 @@ import { cn } from "@/lib/utils";
 export interface Option {
   id: string;
   name: string;
+  isActive?: boolean;
+  role?: string;
 }
 
 interface AgentSelectProps {
@@ -34,16 +36,19 @@ export function AgentSelect({
 }: AgentSelectProps) {
   const [open, setOpen] = React.useState(false);
 
-  const toggleOption = (id: string) => {
-    const newSelected = selected.includes(id)
-      ? selected.filter((s) => s !== id)
-      : [...selected, id];
+  const toggleOption = (option: Option) => {
+    // If the agent is inactive and not already selected, we don't allow selecting them.
+    if (!option.isActive && !selected.includes(option.id)) {
+      return;
+    }
+    
+    const newSelected = selected.includes(option.id)
+      ? selected.filter((s) => s !== option.id)
+      : [...selected, option.id];
     onChange(newSelected);
   };
 
-  const selectedLabels = options
-    .filter((opt) => selected.includes(opt.id))
-    .map((opt) => opt.name);
+  const selectedOptions = options.filter((opt) => selected.includes(opt.id));
 
   return (
     <Popover open={open} onOpenChange={setOpen}>
@@ -56,10 +61,14 @@ export function AgentSelect({
           className="w-full justify-between min-h-[40px] h-auto py-2 disabled:opacity-50 disabled:cursor-not-allowed"
         >
           <div className="flex flex-wrap gap-1">
-            {selectedLabels.length > 0 ? (
-              selectedLabels.map((label) => (
-                <Badge key={label} variant="secondary" className="me-1">
-                  {label}
+            {selectedOptions.length > 0 ? (
+              selectedOptions.map((opt) => (
+                <Badge 
+                  key={opt.id} 
+                  variant="secondary" 
+                  className="me-1"
+                >
+                  {opt.name}
                 </Badge>
               ))
             ) : (
@@ -76,16 +85,18 @@ export function AgentSelect({
               Aucun agent trouvé
             </div>
           ) : (
-            options.map((option) => (
+            options
+              .filter(option => option.isActive && (option.role === "AGENT" || option.role === "AGENT_TEST"))
+              .map((option) => (
               <div
                 key={option.id}
                 className="flex items-center space-x-2 p-2 hover:bg-accent rounded-sm cursor-pointer"
-                onClick={() => toggleOption(option.id)}
+                onClick={() => toggleOption(option)}
               >
                 <Checkbox
                   id={`agent-${option.id}`}
                   checked={selected.includes(option.id)}
-                  onCheckedChange={() => toggleOption(option.id)}
+                  onCheckedChange={() => toggleOption(option)}
                 />
                 <label
                   htmlFor={`agent-${option.id}`}

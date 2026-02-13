@@ -536,6 +536,7 @@ export async function getAdminStats(
 }
 
 export async function getAgentStats(agentId: string) {
+  await checkPermission("canViewDashboard");
   const now = new Date();
   const startMonth = startOfMonth(now);
   const endMonth = endOfMonth(now);

@@ -25,7 +25,7 @@ export type AgentAssignmentData = z.infer<ReturnType<typeof agentAssignmentSchem
 
 interface AgentAssignmentFormProps {
   currentAgentId?: string | null;
-  agents: { id: string; name: string }[];
+  agents: { id: string; name: string; isActive: boolean; role: string }[];
   onSubmit: (data: AgentAssignmentData) => Promise<void>;
   isLoading?: boolean;
 }
@@ -57,11 +57,15 @@ export function AgentAssignmentForm({
               <Select onValueChange={field.onChange} defaultValue={field.value}>
                 <FormControl>
                   <SelectTrigger>
-                    <SelectValue placeholder={t('placeholder')} />
+                    <SelectValue placeholder={t('placeholder')}>
+                        {agents.find(a => a.id === field.value)?.name || agents.find(a => a.id === currentAgentId)?.name}
+                    </SelectValue>
                   </SelectTrigger>
                 </FormControl>
                 <SelectContent>
-                  {agents.map((agent) => (
+                  {agents
+                    .filter(agent => agent.isActive && (agent.role === "AGENT" || agent.role === "AGENT_TEST"))
+                    .map((agent) => (
                     <SelectItem key={agent.id} value={agent.id}>
                       {agent.name}
                     </SelectItem>

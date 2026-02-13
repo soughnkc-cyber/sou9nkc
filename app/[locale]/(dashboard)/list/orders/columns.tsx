@@ -124,7 +124,7 @@ const AgentSelect = ({
     readOnly,
   }: {
     order: Order;
-    agents: { id: string; name: string; isActive: boolean; iconColor?: string }[];
+    agents: { id: string; name: string; isActive: boolean; role: string; iconColor?: string }[];
     onChange: (orderId: string, agentId: string) => void;
     readOnly?: boolean;
   }) => {
@@ -139,15 +139,24 @@ const AgentSelect = ({
           }}
           disabled={readOnly}
         >
-          <SelectTrigger className={cn("h-7 w-[120px] text-[10px]", readOnly && "opacity-50 cursor-not-allowed")}>
-             <div className="flex items-center gap-2 truncate">
-                {order.agent?.id && selectedAgent?.iconColor && (
+          <SelectTrigger className={cn(
+            "h-7 w-full sm:w-[120px] text-[10px]", 
+            readOnly && "opacity-50 cursor-not-allowed"
+          )}>
+             <div className="flex items-center gap-2 truncate text-start">
+                {(order.agent?.id && (selectedAgent?.iconColor || order.agent?.iconColor)) && (
                    <div 
                       className="w-2 h-2 rounded-full shrink-0" 
-                      style={{ backgroundColor: selectedAgent.iconColor }}
+                      style={{ backgroundColor: selectedAgent?.iconColor || order.agent?.iconColor }}
                    />
                 )}
-                <SelectValue placeholder="..." />
+                <div className="truncate text-start">
+                  <SelectValue placeholder="...">
+                    {selectedAgent ? (
+                      selectedAgent.name
+                    ) : (order.agent?.name || undefined)}
+                  </SelectValue>
+                </div>
              </div>
           </SelectTrigger>
     
@@ -156,12 +165,11 @@ const AgentSelect = ({
                -
             </SelectItem>
             {agents
-              .filter(a => a.isActive || a.id === order.agent?.id)
+              .filter(a => a.isActive && (a.role === "AGENT" || a.role === "AGENT_TEST"))
               .map((a) => (
               <SelectItem key={a.id} value={a.id}>
                 <div className="flex items-center gap-2">
                    <span>{a.name}</span>
-                   {!a.isActive && <span className="text-[10px] text-red-400">(Inactif)</span>}
                 </div>
               </SelectItem>
             ))}
@@ -199,7 +207,7 @@ export const getColumns = (
   role: string | undefined,
   canEditOrders: boolean,
   statuses: { id: string; name: string; color?: string; isActive?: boolean; etat?: string }[],
-  agents: { id: string; name: string; isActive: boolean; iconColor?: string }[],
+  agents: { id: string; name: string; isActive: boolean; role: string; iconColor?: string }[],
   productOptions: string[],
   priceOptions: number[],
   onStatusChange: (orderId: string, statusId: string | null) => void,

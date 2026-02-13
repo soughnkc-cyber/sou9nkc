@@ -22,6 +22,7 @@ export async function checkPermission(requiredPermission: keyof Permissions | (k
     where: { id: tokenUser.id },
     select: {
       role: true,
+      status: true,
       canViewOrders: true,
       canEditOrders: true,
       canViewUsers: true,
@@ -37,6 +38,10 @@ export async function checkPermission(requiredPermission: keyof Permissions | (k
 
   if (!dbUser) {
     throw new Error("Compte utilisateur introuvable");
+  }
+
+  if (dbUser.status !== "ACTIVE") {
+    throw new Error("Votre compte est bloqué. Veuillez contacter l'administrateur.");
   }
 
   const permissionsArray = Array.isArray(requiredPermission) ? requiredPermission : [requiredPermission];

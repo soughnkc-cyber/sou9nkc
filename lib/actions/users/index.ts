@@ -114,17 +114,23 @@ export async function getUsers(): Promise<User[]> {
 
 export async function getAgents() {
   const users = await prisma.user.findMany({
-    where: {
-      status: "ACTIVE",
-      role: {
-        not: {
-          in: ["ADMIN", "SUPERVISOR"]
-        }
-      }
+    select: {
+      id: true,
+      name: true,
+      status: true,
+      role: true,
+      iconColor: true,
     },
     orderBy: { name: "asc" },
   });
-  return users.map(mapUser);
+
+  return users.map((u) => ({
+    id: u.id,
+    name: u.name || "Utilisateur inconnu",
+    isActive: u.status === "ACTIVE",
+    role: u.role,
+    iconColor: u.iconColor || "#000000",
+  }));
 }
 
 export async function toggleUserStatus(userId: string) {
@@ -154,7 +160,7 @@ export async function createUserAction(data: UserFormData) {
 
   try {
     const hashedPassword = await bcrypt.hash(data.password!, SALT_ROUNDS);
-    const encryptedPassword = data.password ? encrypt(data.password) : undefined; // Encrypt if present
+    const encryptedPassword = data.password ? encrypt(data.password) : undefined; 
 
     const user = await prisma.user.create({
       data: {
@@ -244,7 +250,7 @@ export async function getMe(): Promise<any | null> {
     where: { id: userId },
   });
 
-  if (!dbUser) return null;
+  if (!dbUser || dbUser.status !== "ACTIVE") return null;
 
   // Pulse heartbeat in background
   prisma.user.update({
@@ -273,6 +279,15 @@ export async function updateMeAction(data: Partial<UserFormData>) {
   const session = await getServerSession(authOptions);
   if (!session?.user) throw new Error("Non autorisé");
   const userId = (session.user as any).id;
+
+  const user = await prisma.user.findUnique({
+    where: { id: userId },
+    select: { status: true }
+  });
+
+  if (!user || user.status !== "ACTIVE") {
+    throw new Error("Votre compte est bloqué. Veuillez contacter l'administrateur.");
+  }
 
   try {
     const updateData: any = { ...data };
