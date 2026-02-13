@@ -25,7 +25,7 @@ export function BulkEditModal({
   isOpen: boolean;
   onClose: () => void;
   selectedCount: number;
-  agents: { id: string; name: string; isActive: boolean }[];
+  agents: { id: string; name: string; isActive: boolean; role: string }[];
   statuses: { id: string; name: string; color?: string; isActive?: boolean }[];
   onUpdate: (updates: { agentId?: string; statusId?: string | null; recallAt?: string | null }) => Promise<void>;
   isLoading?: boolean;
@@ -87,7 +87,7 @@ export function BulkEditModal({
                         <SelectItem value="no_change" className="text-gray-500 italic">{t('noChange')}</SelectItem>
                         <SelectItem value="unassigned" className="text-amber-600 font-medium">{t('unassigned')}</SelectItem>
                         {agents
-                            .filter(a => a.isActive)
+                            .filter(a => a.isActive && (a.role === "AGENT" || a.role === "AGENT_TEST"))
                             .map(a => (
                             <SelectItem key={a.id} value={a.id}>{a.name}</SelectItem>
                         ))}
