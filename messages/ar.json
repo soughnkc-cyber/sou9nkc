@@ -548,7 +548,9 @@
       "performanceRate": "الربحية (للطلبات المعالجة)",
       "conversionRate": "التحويل (لإجمالي الطلبات)",
       "confirmedRevenue": "الأرباح المؤكدة",
-      "avgTime": "متوسط الوقت"
+      "avgTime": "متوسط الوقت",
+      "dailyBreakdown": "السجل اليومي",
+      "agentDetail": "تفاصيل الأداء"
     },
     "agentPerformance": {
       "title": "أداء الوكلاء",

@@ -428,6 +428,7 @@ export async function getAdminStats(
           id: true,
           statusId: true,
           processingTimeMin: true,
+          orderDate: true,
           recallAt: true,
           status: {
             select: {
@@ -459,6 +460,34 @@ export async function getAdminStats(
     
     const toRecall = agent.orders.filter(o => o.recallAt !== null).length;
     
+    // Group orders by date for the daily breakdown table
+    const dailyMap = new Map<string, { date: string; totalAssigned: number; processed: number; confirmed: number }>();
+    
+    agent.orders.forEach(o => {
+      const dateKey = o.orderDate.toISOString().split('T')[0];
+      const isProcessed = o.statusId !== null && o.status?.etat !== "STATUS_01" && o.status?.etat !== "STATUS_14";
+      const isConfirmed = o.status?.etat === "STATUS_15";
+      
+      const existing = dailyMap.get(dateKey);
+      if (existing) {
+        existing.totalAssigned++;
+        if (isProcessed) existing.processed++;
+        if (isConfirmed) existing.confirmed++;
+      } else {
+        dailyMap.set(dateKey, {
+          date: dateKey,
+          totalAssigned: 1,
+          processed: isProcessed ? 1 : 0,
+          confirmed: isConfirmed ? 1 : 0,
+        });
+      }
+    });
+    
+    const dailyBreakdown = Array.from(dailyMap.values()).map(day => ({
+      ...day,
+      rate: day.processed > 0 ? Math.round((day.confirmed / day.processed) * 100) : 0
+    })).sort((a, b) => b.date.localeCompare(a.date));
+    
     return {
       id: agent.id,
       name: agent.name || "Agent inconnu",
@@ -469,6 +498,7 @@ export async function getAdminStats(
       confirmationRate: Math.round(confirmationRate),
       avgProcessingTime: avgTime,
       toRecall,
+      dailyBreakdown,
     };
   }).sort((a, b) => b.totalAssigned - a.totalAssigned);
 

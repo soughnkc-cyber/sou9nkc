@@ -549,7 +549,9 @@
       "performanceRate": "Rentabilité (Commandes traitées)",
       "conversionRate": "Conversion (Total des commandes)",
       "confirmedRevenue": "Chiffre Confirmé",
-      "avgTime": "Temps Moyen"
+      "avgTime": "Temps Moyen",
+      "dailyBreakdown": "Historique Journalier",
+      "agentDetail": "Détails de Performance"
     },
     "agentPerformance": {
       "title": "Performance des Agents",

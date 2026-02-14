@@ -17,9 +17,25 @@ import {
   LineChart,
   Line
 } from "recharts";
+import { useState } from "react";
 import { format, parseISO } from "date-fns";
 import { fr, arSA } from "date-fns/locale";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
+import { 
+  Dialog, 
+  DialogContent, 
+  DialogHeader, 
+  DialogTitle 
+} from "@/components/ui/dialog";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
+import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
 import { useTranslations, useLocale } from "next-intl";
 
@@ -125,38 +141,166 @@ export const RevenueAreaChart = ({ data }: { data: any[] }) => {
   );
 };
 
+const AgentDetailModal = ({ 
+  isOpen, 
+  onClose, 
+  agent 
+}: { 
+  isOpen: boolean; 
+  onClose: () => void; 
+  agent: any 
+}) => {
+  const t = useTranslations("Reporting");
+  const d = useTranslations("Dashboard");
+  const locale = useLocale();
+
+  if (!agent) return null;
+
+  return (
+    <Dialog open={isOpen} onOpenChange={onClose}>
+      <DialogContent className="max-w-7xl h-fit max-h-[95vh] flex flex-col p-6">
+        <DialogHeader className="shrink-0 mb-4">
+          <DialogTitle className="text-xl font-bold flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <span>{t('charts.agentDetail')}: {agent.name}</span>
+              <Badge variant="outline" className="text-xs">{agent.role}</Badge>
+            </div>
+          </DialogTitle>
+        </DialogHeader>
+
+        {/* Summary KPIs - Simple & Colored */}
+        <div className="grid grid-cols-2 md:grid-cols-5 gap-4 shrink-0">
+          <div className="p-3 bg-blue-50 rounded-lg border border-blue-100 shadow-sm">
+            <p className="text-[9px] text-blue-600 font-bold uppercase mb-1">{t('charts.orders')}</p>
+            <p className="text-xl font-bold text-blue-900">{formatNumber(agent.totalAssigned, locale)}</p>
+          </div>
+          <div className="p-3 bg-indigo-50 rounded-lg border border-indigo-100 shadow-sm">
+            <p className="text-[9px] text-indigo-600 font-bold uppercase mb-1">{d('processed')}</p>
+            <p className="text-xl font-bold text-indigo-900">{formatNumber(agent.processed, locale)}</p>
+          </div>
+          <div className="p-3 bg-sky-50 rounded-lg border border-sky-100 shadow-sm">
+            <p className="text-[9px] text-sky-600 font-bold uppercase mb-1">{d('processingRate')}</p>
+            <p className="text-xl font-bold text-sky-900">{agent.processingRate}%</p>
+          </div>
+          <div className="p-3 bg-emerald-50 rounded-lg border border-emerald-100 shadow-sm">
+            <p className="text-[9px] text-emerald-600 font-bold uppercase mb-1">{d('revenue')}</p>
+            <p className="text-xl font-bold text-emerald-900">{agent.confirmationRate}%</p>
+          </div>
+          <div className="p-3 bg-orange-50 rounded-lg border border-orange-100 shadow-sm">
+            <p className="text-[9px] text-orange-600 font-bold uppercase mb-1">{d('toRecall')}</p>
+            <p className="text-xl font-bold text-orange-900">{formatNumber(agent.toRecall, locale)}</p>
+          </div>
+        </div>
+
+        {/* Scrollable Table Section */}
+        <div className="mt-8 flex flex-col min-h-0">
+          <h3 className="text-xs font-bold mb-3 text-slate-500 uppercase flex items-center gap-2">
+             <div className="w-1 h-3 bg-blue-600 rounded-full" />
+             {t('charts.dailyBreakdown')}
+          </h3>
+          <div className="rounded-xl border border-slate-200 overflow-hidden flex-1 overflow-y-auto max-h-[50vh]">
+            <Table>
+              <TableHeader className="bg-slate-50 sticky top-0 z-10">
+                <TableRow>
+                  <TableHead className="font-bold text-xs">{d('periodAnalyzed')}</TableHead>
+                  <TableHead className="text-center font-bold text-xs">{d('totalOrders')}</TableHead>
+                  <TableHead className="text-center font-bold text-xs">{d('processed')}</TableHead>
+                  <TableHead className="text-center font-bold text-xs">{d('orderStatuses.Confirmé')}</TableHead>
+                  <TableHead className="text-right font-bold text-xs pr-6">{t('charts.rate')}</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {agent.dailyBreakdown?.map((day: any) => (
+                  <TableRow key={day.date} className="hover:bg-slate-50/50">
+                    <TableCell className="font-medium text-slate-700 py-3 text-sm">
+                      {formatDate(day.date, locale, { dateStyle: 'medium' })}
+                    </TableCell>
+                    <TableCell className="text-center font-bold text-slate-900 text-sm">
+                      {formatNumber(day.totalAssigned, locale)}
+                    </TableCell>
+                    <TableCell className="text-center font-bold text-slate-600 text-sm">
+                      {formatNumber(day.processed, locale)}
+                    </TableCell>
+                    <TableCell className="text-center font-bold text-green-600 text-sm">
+                      {formatNumber(day.confirmed, locale)}
+                    </TableCell>
+                    <TableCell className="text-right pr-6">
+                      <Badge className={cn(
+                        "font-bold text-[10px] px-2 py-0",
+                        day.rate >= 70 ? "bg-green-100 text-green-700 hover:bg-green-100" :
+                        day.rate >= 40 ? "bg-amber-100 text-amber-700 hover:bg-amber-100" :
+                        "bg-red-100 text-red-700 hover:bg-red-100"
+                      )} variant="secondary">
+                        {day.rate}%
+                      </Badge>
+                    </TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          </div>
+        </div>
+      </DialogContent>
+    </Dialog>
+  );
+};
+
 export const OrdersBarChart = ({ data }: { data: any[] }) => {
   const t = useTranslations("Reporting");
   const locale = useLocale();
+  const [selectedAgent, setSelectedAgent] = useState<any>(null);
 
   return (
-    <ChartCard title={t('charts.ordersVolume')} className="lg:col-span-3 border-gray-100 shadow-xs rounded-2xl">
-      <ResponsiveContainer width="100%" height="100%">
-        <BarChart data={data} margin={{ top: 10, right: 30, left: 0, bottom: 0 }}>
-          <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f1f5f9" />
-          <XAxis 
-            dataKey="name" 
-            style={{ fontSize: '10px', fontWeight: 'bold' }}
-            tick={{ fill: '#94a3b8' }}
-            axisLine={false}
-            tickLine={false}
-          />
-          <YAxis 
-            style={{ fontSize: '10px', fontWeight: 'bold' }}
-            tick={{ fill: '#94a3b8' }}
-            axisLine={false}
-            tickLine={false}
-            tickFormatter={(value) => formatNumber(value, locale, { notation: 'compact' })}
-          />
-          <Tooltip 
-            contentStyle={{ borderRadius: '12px', border: 'none', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)' }}
-            labelStyle={{ fontWeight: 'bold', color: '#111827' }}
-            formatter={(value: any) => [formatNumber(value, locale), t('charts.orders')]}
-          />
-          <Bar dataKey="totalAssigned" fill="#1F30AD" radius={[4, 4, 0, 0]} name={t('charts.orders')} />
-        </BarChart>
-      </ResponsiveContainer>
-    </ChartCard>
+    <>
+      <ChartCard title={t('charts.ordersVolume')} className="lg:col-span-3 border-gray-100 shadow-xs rounded-2xl">
+        <ResponsiveContainer width="100%" height="100%">
+          <BarChart 
+            data={data} 
+            margin={{ top: 10, right: 30, left: 0, bottom: 0 }}
+            onClick={(state) => {
+              if (state && state.activePayload && state.activePayload.length > 0) {
+                setSelectedAgent(state.activePayload[0].payload);
+              }
+            }}
+          >
+            <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f1f5f9" />
+            <XAxis 
+              dataKey="name" 
+              style={{ fontSize: '10px', fontWeight: 'bold' }}
+              tick={{ fill: '#94a3b8' }}
+              axisLine={false}
+              tickLine={false}
+            />
+            <YAxis 
+              style={{ fontSize: '10px', fontWeight: 'bold' }}
+              tick={{ fill: '#94a3b8' }}
+              axisLine={false}
+              tickLine={false}
+              tickFormatter={(value) => formatNumber(value, locale, { notation: 'compact' })}
+            />
+            <Tooltip 
+              cursor={{ fill: '#f1f5f9', radius: 4 }}
+              contentStyle={{ borderRadius: '12px', border: 'none', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)' }}
+              labelStyle={{ fontWeight: 'bold', color: '#111827' }}
+              formatter={(value: any) => [formatNumber(value, locale), t('charts.orders')]}
+            />
+            <Bar 
+              dataKey="totalAssigned" 
+              fill="#1F30AD" 
+              radius={[4, 4, 0, 0]} 
+              name={t('charts.orders')} 
+              className="cursor-pointer hover:opacity-80 transition-opacity"
+            />
+          </BarChart>
+        </ResponsiveContainer>
+      </ChartCard>
+
+      <AgentDetailModal 
+        isOpen={!!selectedAgent} 
+        onClose={() => setSelectedAgent(null)} 
+        agent={selectedAgent} 
+      />
+    </>
   );
 };
 
