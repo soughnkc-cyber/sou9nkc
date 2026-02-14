@@ -1,14 +1,19 @@
 "use client";
 
 import React, { useEffect, useState } from "react";
-import { getAdminStats, DateFilterType } from "@/lib/actions/dashboard";
+import { getAdminStats } from "@/lib/actions/dashboard";
 import { KPICard } from "@/components/dashboard/kpi-card";
-import { DateFilter } from "@/components/dashboard/date-filter";
+import { DatePickerWithRange } from "@/components/date-range-picker";
+import { DateRange } from "react-day-picker";
+import { startOfMonth, endOfMonth } from "date-fns";
 import { 
   ShoppingBagIcon, 
   DollarSignIcon, 
   UsersIcon, 
-  TargetIcon
+  TargetIcon,
+  Clock,
+  PhoneIncoming,
+  Timer
 } from "lucide-react";
 import { useSession } from "next-auth/react";
 import { getMe } from "@/lib/actions/users";
@@ -32,41 +37,46 @@ export default function AdminDashboardPage() {
   const { data: session } = useSession();
   const [stats, setStats] = useState<any>(null);
   const [loading, setLoading] = useState(true);
-  const [filterType, setFilterType] = useState<DateFilterType>("month");
-  const [customRange, setCustomRange] = useState<{ start: Date; end: Date } | undefined>();
+  const [dateRange, setDateRange] = useState<DateRange | undefined>({
+    from: startOfMonth(new Date()),
+    to: endOfMonth(new Date()),
+  });
   const [hasPermission, setHasPermission] = useState<boolean | null>(null);
 
-  const fetchStats = async (isSilent = false) => {
+  const fetchStats = React.useCallback(async (isSilent = false) => {
     if (!isSilent) setLoading(true);
     try {
-      const range = customRange ? { start: customRange.start.toISOString(), end: customRange.end.toISOString() } : undefined;
-      const data = await getAdminStats(filterType, range);
+      const data = await getAdminStats(dateRange?.from, dateRange?.to);
       setStats(data);
     } catch (error) {
       console.error("Failed to fetch admin stats:", error);
     } finally {
       if (!isSilent) setLoading(false);
     }
-  };
+  }, [dateRange]);
 
   useEffect(() => {
     getMe().then(user => {
       if (user?.canViewDashboard) {
         setHasPermission(true);
-        fetchStats();
       } else if (user) {
         setHasPermission(false);
-        setLoading(false);
       }
     });
-  }, [filterType, customRange]);
+  }, []);
+
+  useEffect(() => {
+    if (hasPermission) {
+      fetchStats();
+    }
+  }, [hasPermission, fetchStats]);
 
   // 🔄 Auto-Refresh
   useEffect(() => {
     if (!hasPermission) return;
     const interval = setInterval(() => fetchStats(true), 60000);
     return () => clearInterval(interval);
-  }, [hasPermission]);
+  }, [hasPermission, fetchStats]);
 
   if (hasPermission === false) return <PermissionDenied />;
   if (hasPermission === null || (loading && !stats)) {
@@ -95,58 +105,71 @@ export default function AdminDashboardPage() {
       <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
         <div>
           <h1 className="text-3xl font-black text-slate-900 tracking-tight">{t('overview')}</h1>
-          <p className="text-muted-foreground font-medium">{t('welcomeBack')}</p>
+          <p className="text-gray-500 font-medium text-xs sm:text-sm mt-1">{t('consolidatedData')}</p>
         </div>
-        <DateFilter 
-          value={filterType} 
-          onChange={(type, range) => {
-            setFilterType(type);
-            if (range) {
-              setCustomRange({ 
-                start: new Date(range.start), 
-                end: new Date(range.end) 
-              });
-            }
-          }} 
-        />
+        <DatePickerWithRange date={dateRange} setDate={setDateRange} />
       </div>
 
-      {/* KPI Cards - New "Orders" Style */}
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
-        <KPICard
-          title={t('totalRevenue')}
-          value={`${stats.revenue.total.toLocaleString()} MRU`}
-          icon={DollarSignIcon}
-          trend={stats.revenue.trend.toFixed(1) + "%"}
-          trendUp={stats.revenue.trend >= 0}
-          bgColor="#e3ffef"
-          color="text-emerald-600"
-        />
-        <KPICard
-          title={t('totalOrders')}
-          value={stats.totalOrders}
-          icon={ShoppingBagIcon}
-          trend={stats.orderTrend.toFixed(1) + "%"}
-          trendUp={stats.orderTrend >= 0}
-          bgColor="#e3f0ff"
-          color="text-blue-600"
-        />
-        <KPICard
-          title={t('conversionRate')}
-          value={`${Math.round(stats.processingRate.value)}%`}
-          icon={TargetIcon}
-          trend={stats.processingRate.trend.toFixed(1) + "%"}
-          trendUp={stats.processingRate.trend >= 0}
-          bgColor="#fffbe3"
-          color="text-yellow-600"
-        />
-        <KPICard
-          title={t('activeAgents')}
-          value={stats.agentCount}
-          icon={UsersIcon}
-          bgColor="#f6f6f6"
-          color="text-gray-600"
-        />
+      {/* Top Section: KPIs + Status Pie Chart */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 items-start">
+        {/* Left: 6 KPI Cards in a 2x3 Grid */}
+        <div className="grid grid-cols-2 sm:grid-cols-2 gap-3 sm:gap-4 items-start">
+          <KPICard
+            title={t('totalOrders')}
+            value={stats.totalOrders}
+            icon={ShoppingBagIcon}
+            trend={stats.orderTrend.toFixed(1) + "%"}
+            trendUp={stats.orderTrend >= 0}
+            bgColor="#e3f0ff"
+            color="text-blue-600"
+          />
+          <KPICard
+            title={t('processed')}
+            value={stats.processedOrders}
+            icon={TargetIcon}
+            trend={`${Math.round(stats.processingRate.value)}%`}
+            trendUp={stats.processingRate.trend >= 0}
+            bgColor="#e3ffef"
+            color="text-emerald-600"
+          />
+          <KPICard
+            title={t('toProcess')}
+            value={stats.toProcessOrders}
+            icon={Clock}
+            trend={stats.pendingTrend.toFixed(1) + "%"}
+            trendUp={stats.pendingTrend >= 0}
+            bgColor="#fffbe3"
+            color="text-yellow-600"
+          />
+          <KPICard
+            title={t('toRecall')}
+            value={stats.toRecallOrders}
+            icon={PhoneIncoming}
+            bgColor="#ffe3e3"
+            color="text-red-600"
+          />
+          <KPICard
+            title={t('confirmedRevenue')}
+            value={`${stats.confirmedRevenue.toLocaleString()} MRU`}
+            icon={DollarSignIcon}
+            trend={stats.confirmedRevenueTrend.toFixed(1) + "%"}
+            trendUp={stats.confirmedRevenueTrend >= 0}
+            bgColor="#e3ffef"
+            color="text-emerald-600"
+          />
+          <KPICard
+            title={t('avgTime')}
+            value={`${stats.avgProcessingTime} min`}
+            icon={Timer}
+            trend={stats.avgTimeTrend.toFixed(1) + "%"}
+            trendUp={stats.avgTimeTrend >= 0}
+            bgColor="#f3f4f6"
+            color="text-gray-600"
+          />
+        </div>
+
+        {/* Right: Status Pie Chart - Using its internal ChartCard */}
+        <StatusPieChart data={stats.statusDistribution} />
       </div>
 
       {/* Charts Grid - Target: 10 Charts */}
@@ -171,10 +194,6 @@ export default function AdminDashboardPage() {
            <ProcessingTimeChart data={stats.processingTimeTrend} />
         </div>
 
-        {/* 5. Status Distribution */}
-        <div className="col-span-1 md:col-span-1 lg:col-span-1">
-           <StatusPieChart data={stats.statusDistribution} />
-        </div>
 
         {/* 6. Top Products */}
         <div className="col-span-1 md:col-span-1 lg:col-span-1">

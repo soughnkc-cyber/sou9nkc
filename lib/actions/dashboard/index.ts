@@ -12,44 +12,15 @@ interface DateRange {
 }
 
 export async function getAdminStats(
-  filterType: DateFilterType = "month",
-  customRange?: { start: string; end: string }
+  startDate?: string | Date,
+  endDate?: string | Date
 ) {
   await checkPermission("canViewDashboard");
 
-  const now = new Date();
-  let dateRange: DateRange;
+  const start = startDate ? new Date(startDate) : startOfMonth(new Date());
+  const end = endDate ? new Date(endDate) : endOfMonth(new Date());
 
-  // Determine date range based on filter
-  switch (filterType) {
-    case "today":
-      dateRange = {
-        start: startOfDay(now),
-        end: endOfDay(now),
-      };
-      break;
-    case "week":
-      dateRange = {
-        start: startOfWeek(now, { weekStartsOn: 1 }), // Monday
-        end: endOfWeek(now, { weekStartsOn: 1 }),
-      };
-      break;
-    case "month":
-      dateRange = {
-        start: startOfMonth(now),
-        end: endOfMonth(now),
-      };
-      break;
-    case "custom":
-      if (!customRange) {
-        throw new Error("Custom range required for custom filter type");
-      }
-      dateRange = {
-        start: new Date(customRange.start),
-        end: new Date(customRange.end),
-      };
-      break;
-  }
+  const dateRange = { start, end };
 
   const whereClause = {
     orderDate: {
@@ -90,17 +61,19 @@ export async function getAdminStats(
   });
 
   // Status distribution for pie chart
-  const statusMap = new Map<string, { name: string; count: number; color: string }>();
+  const statusMap = new Map<string, { name: string; count: number; revenue: number; color: string }>();
   
   ordersInRange.forEach(order => {
     if (order.status) {
       const existing = statusMap.get(order.status.id);
       if (existing) {
         existing.count++;
+        existing.revenue += order.totalPrice;
       } else {
         statusMap.set(order.status.id, {
           name: order.status.name,
           count: 1,
+          revenue: order.totalPrice,
           color: order.status.color,
         });
       }
@@ -108,6 +81,15 @@ export async function getAdminStats(
   });
 
   const statusDistribution = Array.from(statusMap.values());
+
+  // Calculate specific revenues for cards
+  const confirmedRevenue = ordersInRange
+    .filter(order => order.statusId === "STATUS_15") // Confirmed
+    .reduce((sum, order) => sum + order.totalPrice, 0);
+
+  const recallStatusRevenue = ordersInRange
+    .filter(order => order.statusId === "STATUS_14") // To Recall
+    .reduce((sum, order) => sum + order.totalPrice, 0);
 
   // Agent count (not filtered by date)
   const agentCount = await prisma.user.count({
@@ -202,6 +184,23 @@ export async function getAdminStats(
   const previousRevenue = previousPeriodOrders.reduce((sum, order) => sum + order.totalPrice, 0);
   const previousTotalOrders = previousPeriodOrders.length;
   const previousProcessedOrders = previousPeriodOrders.filter(o => o.statusId !== null).length;
+  const previousPendingOrders = previousPeriodOrders.filter(o => o.statusId === null).length;
+  
+  const previousConfirmedRevenue = previousPeriodOrders
+    .filter(o => o.statusId === "STATUS_15")
+    .reduce((sum, o) => sum + o.totalPrice, 0);
+
+  // For processing time trend, we need previous orders with processingTimeMin
+  const previousOrdersWithTime = await prisma.order.findMany({
+    where: {
+      orderDate: { gte: previousPeriodStart, lte: previousPeriodEnd },
+      processingTimeMin: { not: null }
+    },
+    select: { processingTimeMin: true }
+  });
+  const previousAvgProcessingTime = previousOrdersWithTime.length > 0
+    ? Math.round(previousOrdersWithTime.reduce((sum, o) => sum + (o.processingTimeMin || 0), 0) / previousOrdersWithTime.length)
+    : 0;
   
   // Calculate trends
   const revenueTrend = previousRevenue > 0 
@@ -210,6 +209,18 @@ export async function getAdminStats(
 
   const orderTrend = previousTotalOrders > 0
     ? ((totalOrders - previousTotalOrders) / previousTotalOrders) * 100
+    : 0;
+
+  const pendingTrend = previousPendingOrders > 0
+    ? ((toProcessOrders - previousPendingOrders) / previousPendingOrders) * 100
+    : 0;
+  
+  const confirmedRevenueTrend = previousConfirmedRevenue > 0
+    ? ((confirmedRevenue - previousConfirmedRevenue) / previousConfirmedRevenue) * 100
+    : 0;
+
+  const avgTimeTrend = previousAvgProcessingTime > 0
+    ? ((avgProcessingTime - previousAvgProcessingTime) / previousAvgProcessingTime) * 100
     : 0;
   
   // Calculate average basket
@@ -528,8 +539,13 @@ export async function getAdminStats(
     ordersByWeekday: ordersByWeekdayData,
     topProducts,
     priceDistribution,
-    // Phase 3 additions
+    // Specific status revenues
+    confirmedRevenue,
+    confirmedRevenueTrend,
+    recallStatusRevenue,
     processingTimeTrend,
+    pendingTrend,
+    avgTimeTrend,
     agentsDetailed,
     recallTimeline,
   };
@@ -567,12 +583,21 @@ export async function getAgentStats(agentId: string) {
   const totalRevenue = allOrders.reduce((sum, o) => sum + o.totalPrice, 0);
 
   // Status distribution
-  const statusMap = new Map<string, { name: string; count: number; color: string }>();
+  const statusMap = new Map<string, { name: string; count: number; revenue: number; color: string }>();
   allOrders.forEach(order => {
     if (order.status) {
       const existing = statusMap.get(order.status.id);
-      if (existing) existing.count++;
-      else statusMap.set(order.status.id, { name: order.status.name, count: 1, color: order.status.color });
+      if (existing) {
+        existing.count++;
+        existing.revenue += order.totalPrice;
+      } else {
+        statusMap.set(order.status.id, { 
+          name: order.status.name, 
+          count: 1, 
+          revenue: order.totalPrice,
+          color: order.status.color 
+        });
+      }
     }
   });
 

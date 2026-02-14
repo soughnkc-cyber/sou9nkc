@@ -24,13 +24,13 @@ import { cn } from "@/lib/utils";
 import { useTranslations, useLocale } from "next-intl";
 
 const CHART_COLORS = [
-  "#1F30AD", // brand blue
-  "#3b82f6", // blue-500
-  "#60a5fa", // blue-400
-  "#1e40af", // blue-800
-  "#172585", // brand darker
-  "#f59e0b", // amber-500
-  "#10b981", // emerald-500
+  "#22c55e", // green (Confirmed)
+  "#3b82f6", // blue (Pending)
+  "#f97316", // orange (No answer)
+  "#fbbf24", // amber (Canceled)
+  "#64748b", // slate (Duplicate)
+  "#ef4444", // red (Wrong)
+  "#a855f7", // purple (Expired)
 ];
 
 const formatNumber = (value: number, locale: string, options?: Intl.NumberFormatOptions) => {
@@ -50,15 +50,16 @@ interface ChartCardProps {
   title: string;
   children: React.ReactNode;
   className?: string;
+  compact?: boolean;
 }
 
-const ChartCard = ({ title, children, className }: ChartCardProps) => (
+const ChartCard = ({ title, children, className, compact }: ChartCardProps) => (
   <Card className={cn("transition-all duration-300 hover:shadow-md hover:border-blue-100", className)}>
-    <CardHeader className="pb-2 bg-gray-50/50 border-b border-gray-100 mb-4">
+    <CardHeader className={cn("pb-2 bg-gray-50/50 border-b border-gray-100", compact ? "mb-1 px-3 py-2" : "mb-4")}>
       <CardTitle className="text-[10px] font-black text-gray-400 uppercase tracking-widest">{title}</CardTitle>
     </CardHeader>
-    <CardContent>
-      <div className="h-[300px] w-full mt-4" dir="ltr">
+    <CardContent className={cn(compact ? "p-0" : "")}>
+      <div className={cn("w-full", compact ? "h-[220px] mt-0" : "h-[300px] mt-4")} dir="ltr">
         {children}
       </div>
     </CardContent>
@@ -190,7 +191,7 @@ export const TopProductsChart = ({ data }: { data: any[] }) => {
   );
 };
 
-export const StatusPieChart = ({ data }: { data: any[] }) => {
+export const StatusPieChart = ({ data, hideCard = false }: { data: any[], hideCard?: boolean }) => {
   const t = useTranslations("Reporting");
   const d = useTranslations("Dashboard");
   const locale = useLocale();
@@ -210,29 +211,80 @@ export const StatusPieChart = ({ data }: { data: any[] }) => {
     };
   });
 
+  const chart = (
+    <ResponsiveContainer width="100%" height="100%">
+      <PieChart>
+        <Pie
+          data={formattedData}
+          cx="45%"
+          cy="50%"
+          outerRadius={80}
+          dataKey="count"
+          nameKey="name"
+          label={({ cx, cy, midAngle, innerRadius, outerRadius, percent }) => {
+            if (percent < 0.05) return null; // Don't show labels for tiny slices
+            const RADIAN = Math.PI / 180;
+            const radius = innerRadius + (outerRadius - innerRadius) * 0.5;
+            const x = cx + radius * Math.cos(-midAngle * RADIAN);
+            const y = cy + radius * Math.sin(-midAngle * RADIAN);
+
+            return (
+              <text 
+                x={x} 
+                y={y} 
+                fill="white" 
+                textAnchor="middle" 
+                dominantBaseline="central" 
+                style={{ fontSize: '12px', fontWeight: '900' }}
+              >
+                {`${(percent * 100).toFixed(0)}%`}
+              </text>
+            );
+          }}
+          labelLine={false}
+        >
+          {formattedData.map((entry, index) => (
+            <Cell key={`cell-${index}`} fill={CHART_COLORS[index % CHART_COLORS.length]} />
+          ))}
+        </Pie>
+        <Tooltip 
+          contentStyle={{ borderRadius: '12px', border: 'none', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)' }}
+          formatter={(value: any) => formatNumber(value, locale)}
+        />
+        <Legend 
+          layout="vertical" 
+          verticalAlign="middle" 
+          align="right"
+          formatter={(value, entry: any) => {
+            const item = formattedData.find(d => d.name === value);
+            return (
+              <span className="text-slate-700 whitespace-nowrap">
+                {value} <span className="text-slate-400 font-normal">({formatNumber(item?.revenue || 0, locale)} MRU)</span>
+              </span>
+            );
+          }}
+          wrapperStyle={{ 
+            fontSize: '10px', 
+            fontWeight: 'bold',
+            paddingLeft: '0px'
+          }} 
+          iconType="circle"
+          iconSize={8}
+        />
+      </PieChart>
+    </ResponsiveContainer>
+  );
+
+
+  if (hideCard) return chart;
+
   return (
-    <ChartCard title={t('charts.statusDistribution')} className="lg:col-span-3 border-gray-100 shadow-xs rounded-2xl">
-      <ResponsiveContainer width="100%" height="100%">
-        <PieChart>
-          <Pie
-            data={formattedData}
-            innerRadius={60}
-            outerRadius={80}
-            paddingAngle={5}
-            dataKey="count"
-            nameKey="name"
-          >
-            {formattedData.map((entry, index) => (
-              <Cell key={`cell-${index}`} fill={CHART_COLORS[index % CHART_COLORS.length]} />
-            ))}
-          </Pie>
-          <Tooltip 
-            contentStyle={{ borderRadius: '12px', border: 'none', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)' }}
-            formatter={(value: any) => formatNumber(value, locale)}
-          />
-          <Legend wrapperStyle={{ fontSize: '10px', fontWeight: 'bold' }} />
-        </PieChart>
-      </ResponsiveContainer>
+    <ChartCard 
+      title={t('charts.statusDistribution')} 
+      className="border-gray-100 shadow-xs rounded-2xl h-full"
+      compact
+    >
+      {chart}
     </ChartCard>
   );
 };

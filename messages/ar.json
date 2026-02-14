@@ -62,6 +62,8 @@
     "processed": "تمت معالجتها",
     "toProcess": "قيد المعالجة",
     "toRecall": "لإعادة الاتصال",
+    "confirmedRevenue": "إيرادات مؤكدة",
+    "recallRevenue": "إيرادات المتابعة",
     "revenue": "الإيرادات",
     "avgBasket": "متوسط السلة",
     "processingRate": "معدل المعالجة",

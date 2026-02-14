@@ -62,6 +62,8 @@
     "processed": "Traitées",
     "toProcess": "À Traiter",
     "toRecall": "À Rappeler",
+    "confirmedRevenue": "Chiffre Confirmé",
+    "recallRevenue": "Chiffre Rappels",
     "revenue": "Revenu",
     "avgBasket": "Panier Moyen",
     "processingRate": "Taux Traitement",
