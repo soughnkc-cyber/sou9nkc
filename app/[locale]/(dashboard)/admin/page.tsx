@@ -27,7 +27,6 @@ import {
   TopProductsChart,
   ProcessingTimeChart,
   WeekdayChart,
-  PriceDistributionChart,
   AgentPerformanceChart,
   AgentAvgTimeChart,
   ConfirmationRateChart
@@ -203,24 +202,15 @@ export default function AdminDashboardPage() {
 
 
         {/* 6. Top Products */}
-        <div className="col-span-1 md:col-span-1 lg:col-span-1">
+        <div className="col-span-1 md:col-span-2 lg:col-span-2">
            <TopProductsChart data={stats.topProducts} />
         </div>
 
         {/* 7. Orders by Weekday */}
-        <div className="col-span-1 md:col-span-1 lg:col-span-1">
+        <div className="col-span-1 md:col-span-2 lg:col-span-2">
            <WeekdayChart data={stats.ordersByWeekday} />
         </div>
 
-        {/* 8. Price Distribution */}
-        <div className="col-span-1 md:col-span-1 lg:col-span-1">
-           <PriceDistributionChart data={stats.priceDistribution} />
-        </div>
-
-        {/* 8. Price Distribution */}
-        <div className="col-span-1 md:col-span-1 lg:col-span-1">
-           <PriceDistributionChart data={stats.priceDistribution} />
-        </div>
       </div>
     </div>
   );

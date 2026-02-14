@@ -360,44 +360,29 @@ export async function getAdminStats(
      include: {
          orders: {
              where: whereClause,
-             select: { totalPrice: true }
+             select: { 
+               totalPrice: true,
+               status: {
+                 select: { etat: true }
+               }
+             }
          }
      }
   });
 
   const topProducts = productsPerformance
-    .map(p => ({
-      name: p.title,
-      revenue: p.orders.reduce((sum, o) => sum + o.totalPrice, 0),
-      count: p.orders.length
-    }))
+    .map(p => {
+      const confirmedOrders = p.orders.filter(o => o.status?.etat === "STATUS_15");
+      return {
+        name: p.title,
+        revenue: confirmedOrders.reduce((sum, o) => sum + o.totalPrice, 0),
+        count: confirmedOrders.length
+      };
+    })
+    .filter(p => p.count > 0)
     .sort((a, b) => b.revenue - a.revenue)
     .slice(0, 10);
 
-
-  // ============ PHASE 2: PRICE DISTRIBUTION ============
-  
-  const priceRanges = [
-    { key: "priceRangeLess100", min: 0, max: 100, count: 0 },
-    { key: "priceRange100_500", min: 100, max: 500, count: 0 },
-    { key: "priceRange500_1000", min: 500, max: 1000, count: 0 },
-    { key: "priceRangeMore1000", min: 1000, max: Infinity, count: 0 },
-  ];
-  
-  ordersInRange.forEach(order => {
-    const price = order.totalPrice;
-    for (const range of priceRanges) {
-      if (price >= range.min && price < range.max) {
-        range.count++;
-        break;
-      }
-    }
-  });
-  
-  const priceDistribution = priceRanges.map(r => ({
-    rangeKey: r.key,
-    count: r.count,
-  }));
 
   // ============ PHASE 3: PROCESSING TIME TREND ============
   
@@ -581,7 +566,6 @@ export async function getAdminStats(
     // Phase 2 additions
     ordersByWeekday: ordersByWeekdayData,
     topProducts,
-    priceDistribution,
     // Specific status revenues
     confirmedRevenue,
     confirmedRevenueTrend,

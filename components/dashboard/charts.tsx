@@ -380,48 +380,6 @@ export const WeekdayChart = ({ data }: { data: any[] }) => {
   );
 };
 
-export const PriceDistributionChart = ({ data }: { data: any[] }) => {
-  const t = useTranslations("Reporting");
-  const d = useTranslations("Dashboard");
-  const locale = useLocale();
-
-  const formattedData = data.map(item => ({
-    ...item,
-    localizedRange: d(item.rangeKey)
-  }));
-
-  return (
-    <ChartCard title={t('charts.priceDistribution')}>
-      <ResponsiveContainer width="100%" height="100%">
-        <BarChart data={formattedData} layout="vertical" margin={{ top: 5, right: 20, left: 20, bottom: 5 }}>
-          <CartesianGrid strokeDasharray="3 3" horizontal={true} vertical={false} stroke="#E5E7EB" />
-          <XAxis type="number" hide />
-          <YAxis 
-            dataKey="localizedRange" 
-            type="category" 
-            width={130}
-            axisLine={false}
-            tickLine={false}
-            tick={{ fill: '#6B7280', fontSize: 10 }}
-          />
-          <Tooltip 
-             cursor={{ fill: '#F3F4F6' }}
-             contentStyle={{ borderRadius: '12px', border: 'none', boxShadow: '0 4px 12px rgba(0,0,0,0.1)' }}
-             formatter={(value: any) => [formatNumber(value, locale), t('charts.orders')]}
-          />
-          <Bar 
-            dataKey="count" 
-            name={t('charts.orders')} 
-            fill="#10B981" 
-            radius={[0, 4, 4, 0]} 
-            barSize={20}
-          />
-        </BarChart>
-      </ResponsiveContainer>
-    </ChartCard>
-  );
-};
-
 export const AgentPerformanceChart = ({ data }: { data: any[] }) => {
   const t = useTranslations("Reporting");
   const locale = useLocale();
