@@ -543,6 +543,7 @@
       "ordersByWeekday": "Commandes par Jour de la Semaine",
       "priceDistribution": "Distribution par Prix",
       "agentPerformance": "Performance Agents (Taux de Conf.)",
+      "agentAvgTime": "Temps Moyen Traitement / Agent",
       "confirmationRateTitle": "Taux de Confirmation Journalier (%)",
       "rate": "Taux %",
       "avgTime": "Temps Moyen"

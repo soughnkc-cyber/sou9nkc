@@ -443,8 +443,45 @@ export const AgentPerformanceChart = ({ data }: { data: any[] }) => {
              formatter={(value: any) => [`${formatNumber(value, locale)}%`, t('charts.rate')]}
           />
           <Bar 
-            dataKey="processingRate" 
+            dataKey="confirmationRate" 
             name={t('charts.rate')} 
+            fill="#10B981" 
+            radius={[0, 4, 4, 0]} 
+            barSize={15}
+            background={{ fill: '#F3F4F6' }}
+          />
+        </BarChart>
+      </ResponsiveContainer>
+    </ChartCard>
+  );
+};
+
+export const AgentAvgTimeChart = ({ data }: { data: any[] }) => {
+  const t = useTranslations("Reporting");
+  const locale = useLocale();
+
+  return (
+    <ChartCard title={t('charts.agentAvgTime')}>
+       <ResponsiveContainer width="100%" height="100%">
+        <BarChart data={data} layout="vertical" margin={{ top: 5, right: 20, left: 20, bottom: 5 }}>
+          <CartesianGrid strokeDasharray="3 3" horizontal={true} vertical={false} stroke="#E5E7EB" />
+          <XAxis type="number" hide />
+          <YAxis 
+            dataKey="name" 
+            type="category" 
+            width={80}
+            axisLine={false}
+            tickLine={false}
+            tick={{ fill: '#6B7280', fontSize: 10 }}
+          />
+          <Tooltip 
+             cursor={{ fill: '#F3F4F6' }}
+             contentStyle={{ borderRadius: '12px', border: 'none', boxShadow: '0 4px 12px rgba(0,0,0,0.1)' }}
+             formatter={(value: any) => [`${formatNumber(value, locale)} min`, t('charts.avgTime')]}
+          />
+          <Bar 
+            dataKey="avgProcessingTime" 
+            name={t('charts.avgTime')} 
             fill="#3B82F6" 
             radius={[0, 4, 4, 0]} 
             barSize={15}
@@ -454,7 +491,7 @@ export const AgentPerformanceChart = ({ data }: { data: any[] }) => {
       </ResponsiveContainer>
     </ChartCard>
   );
-}
+};
 
 export const ConfirmationRateChart = ({ data }: { data: any[] }) => {
   const t = useTranslations("Reporting");

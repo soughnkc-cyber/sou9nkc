@@ -542,6 +542,7 @@
       "ordersByWeekday": "الطلبات حسب اليوم",
       "priceDistribution": "توزيع الأسعار",
       "agentPerformance": "أداء الوكلاء (معدل التأكيد)",
+      "agentAvgTime": "متوسط وقت المعالجة / الوكيل",
       "confirmationRateTitle": "معدل التأكيد اليومي (%)",
       "rate": "المعدل %",
       "avgTime": "متوسط الوقت"

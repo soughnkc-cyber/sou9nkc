@@ -39,6 +39,7 @@ export async function getAdminStats(
           name: true,
           recallAfterH: true,
           color: true,
+          etat: true,
         },
       },
     },
@@ -84,18 +85,17 @@ export async function getAdminStats(
 
   // Calculate specific revenues for cards
   const confirmedRevenue = ordersInRange
-    .filter(order => order.statusId === "STATUS_15") // Confirmed
+    .filter(order => order.status?.etat === "STATUS_15") // Confirmed
     .reduce((sum, order) => sum + order.totalPrice, 0);
 
   const recallStatusRevenue = ordersInRange
-    .filter(order => order.statusId === "STATUS_14") // To Recall
+    .filter(order => order.status?.etat === "STATUS_14") // To Recall
     .reduce((sum, order) => sum + order.totalPrice, 0);
 
   // Agent count (not filtered by date)
   const agentCount = await prisma.user.count({
     where: {
-      role: { in: ["AGENT", "AGENT_TEST", "SUPERVISOR"] },
-      status: "ACTIVE",
+      role: { in: ["AGENT", "AGENT_TEST"] },
     },
   });
 
@@ -402,8 +402,7 @@ export async function getAdminStats(
   
   const detailedAgentStats = await prisma.user.findMany({
     where: {
-      role: { in: ["AGENT", "AGENT_TEST", "SUPERVISOR"] },
-      status: "ACTIVE",
+      role: { in: ["AGENT", "AGENT_TEST"] },
     },
     select: {
       id: true,
@@ -416,6 +415,11 @@ export async function getAdminStats(
           statusId: true,
           processingTimeMin: true,
           recallAt: true,
+          status: {
+            select: {
+              etat: true,
+            },
+          },
         },
       },
     },
@@ -430,6 +434,10 @@ export async function getAdminStats(
     const avgTime = ordersWithTime.length > 0
       ? Math.round(ordersWithTime.reduce((sum, o) => sum + (o.processingTimeMin || 0), 0) / ordersWithTime.length)
       : 0;
+    
+    const confirmed = agent.orders.filter(o => o.status?.etat === "STATUS_15").length;
+    const confirmationRate = processed > 0 ? (confirmed / processed) * 100 : 0;
+    
     const toRecall = agent.orders.filter(o => o.recallAt !== null).length;
     
     return {
@@ -439,6 +447,7 @@ export async function getAdminStats(
       totalAssigned,
       processed,
       processingRate: Math.round(processingRate),
+      confirmationRate: Math.round(confirmationRate),
       avgProcessingTime: avgTime,
       toRecall,
     };

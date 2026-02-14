@@ -29,6 +29,7 @@ import {
   WeekdayChart,
   PriceDistributionChart,
   AgentPerformanceChart,
+  AgentAvgTimeChart,
   ConfirmationRateChart
 } from "@/components/dashboard/charts";
 
@@ -111,7 +112,7 @@ export default function AdminDashboardPage() {
       </div>
 
       {/* Top Section: KPIs + Status Pie Chart */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 items-start">
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 items-start mb-6">
         {/* Left: 6 KPI Cards in a 2x3 Grid */}
         <div className="grid grid-cols-2 sm:grid-cols-2 gap-3 sm:gap-4 items-start">
           <KPICard
@@ -172,6 +173,12 @@ export default function AdminDashboardPage() {
         <StatusPieChart data={stats.statusDistribution} />
       </div>
 
+      {/* Prominent Agent Performance Charts */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6 mb-6">
+        <AgentPerformanceChart data={stats.agentsDetailed} />
+        <AgentAvgTimeChart data={stats.agentsDetailed} />
+      </div>
+
       {/* Charts Grid - Target: 10 Charts */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 sm:gap-6">
         {/* 1. Revenue Area */}
@@ -210,29 +217,10 @@ export default function AdminDashboardPage() {
            <PriceDistributionChart data={stats.priceDistribution} />
         </div>
 
-         {/* 9. Agent Performance (Processing Rate) */}
-         <div className="col-span-1 md:col-span-2 lg:col-span-2">
-           <AgentPerformanceChart data={stats.agentsDetailed} />
+        {/* 8. Price Distribution */}
+        <div className="col-span-1 md:col-span-1 lg:col-span-1">
+           <PriceDistributionChart data={stats.priceDistribution} />
         </div>
-
-        {/* 10. Avg Basket (Reusing Revenue Chart logic or similar if needed, or just new one. 
-            For now, let's reuse RevenueAreaChart but data mapped for basket if we had it. 
-            Or just leave it at 9 solid charts for now. 
-            User asked for MAX charts (10). 
-            Let's count: 
-            1. RevenueArea
-            2. OrdersBar
-            3. ConfirmationRate
-            4. ProcessingTime
-            5. StatusPie
-            6. TopProducts
-            7. Weekday
-            8. PriceDst
-            9. AgentPerf
-            That's 9. Let's add one more: "Orders vs Delivered" Stacked Bar?
-            Or separate "Return Rate" pie?
-            Let's stick to 9 for this pass, it's very dense already.
-        */}
       </div>
     </div>
   );
