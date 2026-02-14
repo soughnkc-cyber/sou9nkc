@@ -40,6 +40,12 @@ function OrdersPageContent() {
   // --------------------
   // Hooks
   // --------------------
+  // Read URL query params for filtering
+  const searchParams = useSearchParams();
+  const filterType = searchParams.get("filter"); 
+  const fromParam = searchParams.get("from");
+  const toParam = searchParams.get("to");
+
   const [orders, setOrders] = useState<Order[]>([]);
   const [statuses, setStatuses] = useState<{ id: string; name: string; color?: string; isActive?: boolean; etat: string }[]>([]);
   const [agents, setAgents] = useState<{ id: string; name: string; isActive: boolean; role: string; iconColor?: string }[]>([]);
@@ -47,10 +53,19 @@ function OrdersPageContent() {
   const [hasPermission, setHasPermission] = useState<boolean | null>(null);
   
   const [selectedOrders, setSelectedOrders] = useState<Order[]>([]);
-  const [dateRange, setDateRange] = useState<DateRange | undefined>({
-    from: subDays(new Date(), 6), 
-    to: new Date(),
+  const [dateRange, setDateRange] = useState<DateRange | undefined>(() => {
+    if (fromParam) {
+      return {
+        from: new Date(fromParam),
+        to: toParam ? new Date(toParam) : new Date(fromParam)
+      };
+    }
+    return {
+      from: subDays(new Date(), 6), 
+      to: new Date(),
+    };
   });
+
   const [tableFilteredOrders, setTableFilteredOrders] = useState<Order[]>([]);
   const [lastServerTime, setLastServerTime] = useState<string | null>(null);
   const [isPaused, setIsPaused] = useState(false); 
@@ -74,10 +89,6 @@ function OrdersPageContent() {
     window.addEventListener('resize', checkMobile);
     return () => window.removeEventListener('resize', checkMobile);
   }, []);
-
-  // Read URL query params for filtering
-  const searchParams = useSearchParams();
-  const filterType = searchParams.get("filter"); 
 
   useEffect(() => {
     if (session.status === "unauthenticated") {
@@ -353,6 +364,8 @@ function OrdersPageContent() {
         return dateFilteredOrders.filter(order => !order.status);
       case "torecall":
         return orders.filter(o => o.recallAt && new Date(o.recallAt) <= new Date());
+      case "confirmed":
+        return dateFilteredOrders.filter(order => order.status?.etat === "STATUS_15");
       case "new_arrivals":
         return dateFilteredOrders.filter(o => 
             !o.status && 
@@ -375,6 +388,8 @@ function OrdersPageContent() {
         return orders.filter(order => !order.status);
       case "torecall":
         return orders.filter(o => o.recallAt && new Date(o.recallAt) <= new Date());
+      case "confirmed":
+        return dateFilteredOrders.filter(order => order.status?.etat === "STATUS_15");
       case "new_arrivals":
         return orders.filter(o => 
             !o.status && 

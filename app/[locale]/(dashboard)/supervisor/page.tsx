@@ -17,7 +17,7 @@ import {
 } from "lucide-react";
 import { getMe } from "@/lib/actions/users";
 import PermissionDenied from "@/components/permission-denied";
-import { useTranslations } from "next-intl";
+import { useTranslations, useLocale } from "next-intl";
 
 import { 
   RevenueAreaChart, 
@@ -39,6 +39,14 @@ export default function SupervisorDashboardPage() {
     to: endOfMonth(new Date()),
   });
   const [hasPermission, setHasPermission] = useState<boolean | null>(null);
+
+  const locale = useLocale();
+
+  const getFilterUrl = (filter: string) => {
+    const fromStr = dateRange?.from ? dateRange.from.toISOString().split('T')[0] : "";
+    const toStr = dateRange?.to ? dateRange.to.toISOString().split('T')[0] : fromStr;
+    return `/${locale}/list/orders?filter=${filter}&from=${fromStr}&to=${toStr}`;
+  };
 
   const fetchStats = React.useCallback(async (isSilent = false) => {
     if (!isSilent) setLoading(true);
@@ -115,6 +123,7 @@ export default function SupervisorDashboardPage() {
             trendUp={stats.orderTrend >= 0}
             bgColor="#e3f0ff"
             color="text-blue-600"
+            href={getFilterUrl("all")}
           />
           <KPICard
             title={t('processed')}
@@ -124,6 +133,7 @@ export default function SupervisorDashboardPage() {
             trendUp={stats.processingRate?.trend >= 0}
             bgColor="#e3ffef"
             color="text-emerald-600"
+            href={getFilterUrl("processed")}
           />
           <KPICard
             title={t('toProcess')}
@@ -133,6 +143,7 @@ export default function SupervisorDashboardPage() {
             trendUp={stats.pendingTrend >= 0}
             bgColor="#fffbe3"
             color="text-yellow-600"
+            href={getFilterUrl("toprocess")}
           />
           <KPICard
             title={t('toRecall')}
@@ -140,6 +151,7 @@ export default function SupervisorDashboardPage() {
             icon={PhoneIncoming}
             bgColor="#ffe3e3"
             color="text-red-600"
+            href={getFilterUrl("torecall")}
           />
           <KPICard
             title={t('confirmedRevenue')}
@@ -149,6 +161,7 @@ export default function SupervisorDashboardPage() {
             trendUp={stats.confirmedRevenueTrend >= 0}
             bgColor="#e3ffef"
             color="text-emerald-600"
+            href={getFilterUrl("confirmed")}
           />
           <KPICard
             title={t('activeAgents')}

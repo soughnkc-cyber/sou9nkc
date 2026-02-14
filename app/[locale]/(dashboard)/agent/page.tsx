@@ -32,6 +32,12 @@ export default function AgentDashboardPage() {
   });
   const [hasPermission, setHasPermission] = useState<boolean | null>(null);
 
+  const getFilterUrl = (filter: string) => {
+    const fromStr = dateRange?.from ? dateRange.from.toISOString().split('T')[0] : "";
+    const toStr = dateRange?.to ? dateRange.to.toISOString().split('T')[0] : fromStr;
+    return `/${locale}/list/orders?filter=${filter}&from=${fromStr}&to=${toStr}`;
+  };
+
   const fetchStats = React.useCallback(async (isSilent = false) => {
     if (!session?.user?.id) return;
     if (!isSilent) setLoading(true);
@@ -110,6 +116,7 @@ export default function AgentDashboardPage() {
             trendUp={stats.ordersTrend >= 0}
             bgColor="#e3f0ff"
             color="text-blue-600"
+            href={getFilterUrl("all")}
           />
           <KPICard
             title={t('processed')}
@@ -118,6 +125,7 @@ export default function AgentDashboardPage() {
             trend={`${Math.round(stats.processingRate?.value || 0)}%`}
             bgColor="#e3ffef"
             color="text-emerald-600"
+            href={getFilterUrl("processed")}
           />
           <KPICard
             title={t('toProcess')}
@@ -127,6 +135,7 @@ export default function AgentDashboardPage() {
             trendUp={stats.pendingTrend >= 0}
             bgColor="#fffbe3"
             color="text-yellow-600"
+            href={getFilterUrl("toprocess")}
           />
           <KPICard
             title={t('toRecall')}
@@ -134,6 +143,7 @@ export default function AgentDashboardPage() {
             icon={PhoneIncoming}
             bgColor="#ffe3e3"
             color="text-red-600"
+            href={getFilterUrl("torecall")}
           />
           <KPICard
             title={t('confirmedRevenue')}
@@ -143,6 +153,7 @@ export default function AgentDashboardPage() {
             trendUp={stats.confirmedRevenueTrend >= 0}
             bgColor="#e3ffef"
             color="text-emerald-600"
+            href={getFilterUrl("confirmed")}
           />
           <KPICard
             title={t('historicalVolume')}

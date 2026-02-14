@@ -1,4 +1,5 @@
 import React from "react";
+import Link from "next/link";
 import { Card } from "@/components/ui/card";
 import { cn } from "@/lib/utils";
 import { ArrowUpIcon, ArrowDownIcon } from "lucide-react";
@@ -13,6 +14,7 @@ interface KPICardProps {
   bgColor?: string; // Hex color (e.g. "#e3f0ff")
   active?: boolean;
   onClick?: () => void;
+  href?: string;
   className?: string;
 }
 
@@ -26,20 +28,13 @@ export function KPICard({
   bgColor = "#ffffff", // Default white if not specified
   active,
   onClick,
+  href,
   className
 }: KPICardProps) {
-  const isClickable = !!onClick;
+  const isClickable = !!onClick || !!href;
 
-  return (
-    <Card
-      onClick={onClick}
-      style={{ backgroundColor: bgColor }}
-      className={cn(
-        "relative p-3 border-none shadow-sm rounded-xl overflow-hidden flex flex-col transition-all duration-300",
-        isClickable ? "cursor-pointer hover:brightness-95 active:scale-95" : "cursor-default",
-        className
-      )}
-    >
+  const content = (
+    <>
       <div className="flex flex-col gap-1">
         <div className="flex justify-between items-start">
           {Icon && (
@@ -71,6 +66,35 @@ export function KPICard({
       {active && (
         <div className="absolute top-2 right-2 h-1.5 w-1.5 rounded-full bg-[#1F30AD] ring-2 ring-white/20" />
       )}
+    </>
+  );
+
+  if (href) {
+    return (
+      <Link
+        href={href}
+        style={{ backgroundColor: bgColor }}
+        className={cn(
+          "relative p-3 border-none shadow-sm rounded-xl overflow-hidden flex flex-col transition-all duration-300 cursor-pointer hover:brightness-95 active:scale-95",
+          className
+        )}
+      >
+        {content}
+      </Link>
+    );
+  }
+
+  return (
+    <Card
+      onClick={onClick}
+      style={{ backgroundColor: bgColor }}
+      className={cn(
+        "relative p-3 border-none shadow-sm rounded-xl overflow-hidden flex flex-col transition-all duration-300",
+        isClickable ? "cursor-pointer hover:brightness-95 active:scale-95" : "cursor-default",
+        className
+      )}
+    >
+      {content}
     </Card>
   );
 }
