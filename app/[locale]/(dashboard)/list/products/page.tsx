@@ -84,7 +84,12 @@ export default function ProductsPage() {
       ]);
       setProducts(productsData);
       
-      const formattedAgents = agentsData.map(u => ({ id: u.id, name: u.name }));
+      const formattedAgents = agentsData.map(u => ({ 
+        id: u.id, 
+        name: u.name,
+        role: u.role,
+        isActive: u.isActive
+      }));
       setAgents(formattedAgents);
     } catch (error) {
       console.error(error);
