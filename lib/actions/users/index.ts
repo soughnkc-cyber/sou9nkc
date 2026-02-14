@@ -23,6 +23,11 @@ const SALT_ROUNDS = 10;
 import { encrypt, decrypt } from "@/lib/crypto";
 
 function mapUser(u: PrismaUser) {
+  const now = new Date();
+  const startDate = u.paymentStartDate || u.createdAt;
+  const diffDays = Math.floor((now.getTime() - startDate.getTime()) / (1000 * 60 * 60 * 24));
+  const remainingDays = Math.max(0, u.paymentRemainingDays - diffDays);
+
   return {
     // ... existing fields ...
     id: u.id,
@@ -35,7 +40,7 @@ function mapUser(u: PrismaUser) {
     isActive: u.status === "ACTIVE",
     iconColor: u.iconColor,
     roleColor: u.roleColor,
-    paymentRemainingDays: u.paymentRemainingDays,
+    paymentRemainingDays: remainingDays,
     paymentDefaultDays: u.paymentDefaultDays,
     lastSeenAt: u.lastSeenAt?.toISOString() ?? undefined,
     // Permissions
@@ -67,7 +72,7 @@ export async function getUsers(): Promise<User[]> {
   });
 
   const ONLINE_THRESHOLD_MS = 5 * 60 * 1000; // 5 minutes
-  const now = Date.now();
+  const now = new Date();
 
   return users.map(u => {
     // ... existing logic ...
@@ -75,10 +80,14 @@ export async function getUsers(): Promise<User[]> {
     const lastLogout = u.lastLogoutAt?.getTime() ?? 0;
     
     // Online si : (Vu récemment) ET (Pas déconnecté depuis la dernière activité)
-    const isRecent = (now - lastSeen) < ONLINE_THRESHOLD_MS;
+    const isRecent = (now.getTime() - lastSeen) < ONLINE_THRESHOLD_MS;
     const isNotLoggedOut = lastSeen > lastLogout;
     
     const online = isRecent && isNotLoggedOut;
+
+    const startDate = u.paymentStartDate || u.createdAt;
+    const diffDays = Math.floor((now.getTime() - startDate.getTime()) / (1000 * 60 * 60 * 24));
+    const remainingDays = Math.max(0, u.paymentRemainingDays - diffDays);
 
     return {
       // ... existing fields ...
@@ -93,7 +102,7 @@ export async function getUsers(): Promise<User[]> {
       isActive: u.status === "ACTIVE",
       iconColor: u.iconColor,
       roleColor: u.roleColor,
-      paymentRemainingDays: u.paymentRemainingDays,
+      paymentRemainingDays: remainingDays,
       paymentDefaultDays: u.paymentDefaultDays,
       // Permissions
       canViewOrders: u.canViewOrders,
@@ -173,6 +182,7 @@ export async function createUserAction(data: UserFormData) {
         roleColor: data.roleColor,
         paymentRemainingDays: data.paymentRemainingDays,
         paymentDefaultDays: data.paymentDefaultDays,
+        paymentStartDate: new Date(),
         // Par défaut, pas de permissions pour les nouveaux utilisateurs sauf si spécifié plus tard
       },
     });
@@ -189,7 +199,17 @@ export async function updateUserAction(userId: string, data: Partial<UserFormDat
   await checkPermission("canEditUsers");
 
   try {
+    const existingUser = await prisma.user.findUnique({
+      where: { id: userId },
+      select: { paymentRemainingDays: true }
+    });
+
     const updateData: any = { ...data };
+
+    // Reset paymentStartDate if paymentRemainingDays is changed
+    if (data.paymentRemainingDays !== undefined && existingUser && data.paymentRemainingDays !== existingUser.paymentRemainingDays) {
+      updateData.paymentStartDate = new Date();
+    }
 
     // Hasher le mot de passe si fourni
     if (updateData.password && updateData.password.trim() !== "") {

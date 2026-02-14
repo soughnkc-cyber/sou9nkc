@@ -32,6 +32,7 @@ model User {
   roleColor     String     @default("#f3f4f6")
   paymentRemainingDays Int  @default(0)
   paymentDefaultDays   Int  @default(0)
+  paymentStartDate     DateTime @default(now())
 
   // Permissions granulaires
   canViewOrders     Boolean @default(false)
