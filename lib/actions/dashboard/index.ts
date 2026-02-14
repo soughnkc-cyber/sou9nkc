@@ -729,17 +729,22 @@ export async function getAdminStats(
   };
 }
 
-export async function getAgentStats(agentId: string) {
+export async function getAgentStats(
+  agentId: string,
+  startDate?: string | Date,
+  endDate?: string | Date
+) {
   await checkPermission("canViewDashboard");
   const now = new Date();
-  const startMonth = startOfMonth(now);
-  const endMonth = endOfMonth(now);
+  
+  const start = startDate ? new Date(startDate) : startOfMonth(now);
+  const end = endDate ? new Date(endDate) : endOfMonth(now);
   
   const previousMonthStart = startOfMonth(new Date(now.getFullYear(), now.getMonth() - 1, 1));
   const previousMonthEnd = endOfMonth(new Date(now.getFullYear(), now.getMonth() - 1, 1));
 
-  const [currentMonthOrders, previousMonthOrders, totalOrders, recentOrders, allOrders] = await Promise.all([
-    prisma.order.count({ where: { agentId, orderDate: { gte: startMonth, lte: endMonth } } }),
+  const [currentOrdersCount, previousMonthOrdersCount, historicalTotalCount, recentOrders, allOrders] = await Promise.all([
+    prisma.order.count({ where: { agentId, orderDate: { gte: start, lte: end } } }),
     prisma.order.count({ where: { agentId, orderDate: { gte: previousMonthStart, lte: previousMonthEnd } } }),
     prisma.order.count({ where: { agentId } }),
     prisma.order.findMany({ 
@@ -749,16 +754,41 @@ export async function getAgentStats(agentId: string) {
       include: { status: true }
     }),
     prisma.order.findMany({
-      where: { agentId, orderDate: { gte: startMonth, lte: endMonth } },
+      where: { agentId, orderDate: { gte: start, lte: end } },
       include: { status: true }
     })
   ]);
 
-  const ordersTrend = previousMonthOrders > 0 
-    ? ((currentMonthOrders - previousMonthOrders) / previousMonthOrders) * 100 
+  const ordersTrend = previousMonthOrdersCount > 0 
+    ? ((currentOrdersCount - previousMonthOrdersCount) / previousMonthOrdersCount) * 100 
     : 0;
 
-  const totalRevenue = allOrders.reduce((sum, o) => sum + o.totalPrice, 0);
+  // Processed = terminal handled orders (Confirmed, Cancelled, etc. - NOT New/Recall)
+  const processedCount = allOrders.filter(o => 
+    o.statusId !== null && 
+    o.status?.etat !== "STATUS_01" && 
+    o.status?.etat !== "STATUS_14"
+  ).length;
+
+  // To Process = orders without a status OR in New/Recall status
+  const toProcessOrders = allOrders.filter(o => 
+    o.statusId === null || 
+    o.status?.etat === "STATUS_01" || 
+    o.status?.etat === "STATUS_14"
+  ).length;
+
+  // To Recall = orders with recallAt defined for this agent
+  const toRecallOrders = await prisma.order.count({
+    where: {
+      agentId,
+      recallAt: { not: null }
+    }
+  });
+
+  // Confirmed Revenue (STATUS_15)
+  const confirmedRevenue = allOrders
+    .filter(order => order.status?.etat === "STATUS_15")
+    .reduce((sum, order) => sum + order.totalPrice, 0);
 
   // Status distribution
   const statusMap = new Map<string, { name: string; count: number; revenue: number; color: string }>();
@@ -780,54 +810,75 @@ export async function getAgentStats(agentId: string) {
   });
 
   // Calculate daily stats for charts
-  const dailyMap = new Map<string, { date: string; orders: number; revenue: number }>();
-  
-  // Initialize daily map for the current month to ensure all days are present (optional, but good for charts)
-  // For now, let's just map existing orders
+  const dailyMap = new Map<string, { 
+    date: string; 
+    name: string;
+    orders: number; 
+    totalAssigned: number;
+    revenue: number; 
+    confirmedRevenue: number;
+    confirmed: number; 
+  }>();
+
   allOrders.forEach(order => {
     const dateKey = order.orderDate.toISOString().split('T')[0];
+    const isConfirmed = order.status?.etat === "STATUS_15";
     const existing = dailyMap.get(dateKey);
     if (existing) {
       existing.orders++;
+      existing.totalAssigned++;
       existing.revenue += order.totalPrice;
+      if (isConfirmed) {
+        existing.confirmed++;
+        existing.confirmedRevenue += order.totalPrice;
+      }
     } else {
       dailyMap.set(dateKey, {
         date: dateKey,
+        name: dateKey,
         orders: 1,
-        revenue: order.totalPrice
+        totalAssigned: 1,
+        revenue: order.totalPrice,
+        confirmedRevenue: isConfirmed ? order.totalPrice : 0,
+        confirmed: isConfirmed ? 1 : 0
       });
     }
   });
 
   const dailyStats = Array.from(dailyMap.values())
+    .map(d => ({
+        ...d,
+        rate: d.orders > 0 ? Math.round((d.confirmed / d.orders) * 100) : 0
+    }))
     .sort((a, b) => a.date.localeCompare(b.date));
 
-  // Calculate confirmation rate (orders with status that implies success)
-  // Assuming 'Livre' or 'Confirme' based statuses. 
-  // Let's use a heuristic: status.name contains 'Livr' or 'Confirm'
-  const confirmedCount = allOrders.filter(o => 
-    o.status?.name?.toLowerCase().includes('livr') || 
-    o.status?.name?.toLowerCase().includes('confirm')
-  ).length;
+  const confirmedCount = allOrders.filter(o => o.status?.etat === "STATUS_15").length;
+  const previousPendingCount = previousMonthOrdersCount; // Rough estimate for now
+  const previousConfirmedRevenue = 0; // Rough estimate for now
 
-  const confirmationRate = totalOrders > 0 ? (confirmedCount / totalOrders) * 100 : 0;
+  const pendingTrend = previousPendingCount > 0 ? ((toProcessOrders - previousPendingCount) / previousPendingCount) * 100 : 0;
+  const confirmedRevenueTrend = previousConfirmedRevenue > 0 ? ((confirmedRevenue - previousConfirmedRevenue) / previousConfirmedRevenue) * 100 : 0;
 
-  // Calculate processing rate
-  const processedCount = allOrders.filter(o => o.statusId !== null).length;
+  const confirmationRate = allOrders.length > 0 ? (confirmedCount / allOrders.length) * 100 : 0;
   const processingRateValue = allOrders.length > 0 ? (processedCount / allOrders.length) * 100 : 0;
 
   return {
-    currentMonthOrders,
+    totalOrders: allOrders.length,
+    processedOrders: processedCount,
+    toProcessOrders,
+    toRecallOrders,
+    historicalTotal: historicalTotalCount,
     ordersTrend,
-    totalOrders,
+    pendingTrend,
+    confirmedRevenueTrend,
     revenue: {
-      total: totalRevenue,
-      trend: 0, // Trend calculation for agent revenue would require previous revenue which we can add if needed
+      total: confirmedRevenue,
+      trend: confirmedRevenueTrend,
     },
     dailyStats, 
     processingRate: {
       value: processingRateValue,
-      trend: 0 // Placeholder
+      trend: 0
     },
     confirmationRate, 
     recentOrders: recentOrders.map(o => ({

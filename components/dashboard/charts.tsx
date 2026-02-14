@@ -70,12 +70,12 @@ interface ChartCardProps {
 }
 
 const ChartCard = ({ title, children, className, compact }: ChartCardProps) => (
-  <Card className={cn("transition-all duration-300 hover:shadow-md hover:border-blue-100", className)}>
-    <CardHeader className={cn("pb-2 bg-gray-50/50 border-b border-gray-100", compact ? "mb-1 px-3 py-2" : "mb-4")}>
-      <CardTitle className="text-[10px] font-black text-gray-400 uppercase tracking-widest">{title}</CardTitle>
+  <Card className={cn("transition-all duration-300 hover:shadow-md hover:border-blue-100 overflow-hidden", className)}>
+    <CardHeader className={cn("pb-2 bg-gray-50/50 border-b border-gray-100", compact ? "px-3 py-2" : "px-4 py-3 sm:px-6 sm:py-4")}>
+      <CardTitle className="text-[9px] sm:text-[10px] font-black text-gray-400 uppercase tracking-widest">{title}</CardTitle>
     </CardHeader>
-    <CardContent className={cn(compact ? "p-0" : "")}>
-      <div className={cn("w-full", compact ? "h-[220px] mt-0" : "h-[300px] mt-4")} dir="ltr">
+    <CardContent className={cn("p-0 sm:p-6", compact ? "" : "p-3")}>
+      <div className={cn("w-full", compact ? "h-[180px] sm:h-[220px]" : "h-[250px] sm:h-[300px] mt-2 sm:mt-4")} dir="ltr">
         {children}
       </div>
     </CardContent>
@@ -158,13 +158,11 @@ const AgentDetailModal = ({
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="max-w-7xl h-fit max-h-[95vh] flex flex-col p-6">
-        <DialogHeader className="shrink-0 mb-4">
-          <DialogTitle className="text-xl font-bold flex items-center justify-between">
-            <div className="flex items-center gap-2">
-              <span>{t('charts.agentDetail')}: {agent.name}</span>
-              <Badge variant="outline" className="text-xs">{agent.role}</Badge>
-            </div>
+      <DialogContent className="max-w-7xl w-[95vw] md:w-full h-fit max-h-[95vh] flex flex-col p-4 md:p-6 overflow-hidden">
+        <DialogHeader className="shrink-0 mb-2 md:mb-4">
+          <DialogTitle className="text-lg md:text-xl font-bold flex flex-wrap items-center gap-2">
+            <span>{t('charts.agentDetail')}: {agent.name}</span>
+            <Badge variant="outline" className="text-[10px] md:text-xs">{agent.role}</Badge>
           </DialogTitle>
         </DialogHeader>
 
@@ -193,12 +191,13 @@ const AgentDetailModal = ({
         </div>
 
         {/* Scrollable Table Section */}
-        <div className="mt-8 flex flex-col min-h-0">
+        <div className="mt-6 md:mt-8 flex flex-col min-h-0 overflow-hidden">
           <h3 className="text-xs font-bold mb-3 text-slate-500 uppercase flex items-center gap-2">
              <div className="w-1 h-3 bg-blue-600 rounded-full" />
              {t('charts.dailyBreakdown')}
           </h3>
-          <div className="rounded-xl border border-slate-200 overflow-hidden flex-1 overflow-y-auto max-h-[50vh]">
+          <div className="rounded-xl border border-slate-200 overflow-hidden flex-1 flex flex-col min-h-0">
+            <div className="overflow-x-auto overflow-y-auto max-h-[50vh]">
             <Table>
               <TableHeader className="bg-slate-50 sticky top-0 z-10">
                 <TableRow>
@@ -250,6 +249,7 @@ const AgentDetailModal = ({
                 ))}
               </TableBody>
             </Table>
+            </div>
           </div>
         </div>
       </DialogContent>
@@ -274,12 +274,10 @@ export const ProductDetailModal = ({
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="max-w-5xl h-fit max-h-[95vh] flex flex-col p-6">
-        <DialogHeader className="shrink-0 mb-4">
-          <DialogTitle className="text-xl font-bold flex items-center justify-between">
-            <div className="flex items-center gap-2">
-              <span>{t('charts.productDetail')}: {product.name}</span>
-            </div>
+      <DialogContent className="max-w-5xl w-[95vw] md:w-full h-fit max-h-[95vh] flex flex-col p-4 md:p-6 overflow-hidden">
+        <DialogHeader className="shrink-0 mb-2 md:mb-4">
+          <DialogTitle className="text-lg md:text-xl font-bold">
+            {t('charts.productDetail')}: {product.name}
           </DialogTitle>
         </DialogHeader>
 
@@ -304,12 +302,13 @@ export const ProductDetailModal = ({
         </div>
 
         {/* Scrollable Table Section */}
-        <div className="mt-8 flex flex-col min-h-0">
+        <div className="mt-6 md:mt-8 flex flex-col min-h-0 overflow-hidden">
           <h3 className="text-xs font-bold mb-3 text-slate-500 uppercase flex items-center gap-2">
              <div className="w-1 h-3 bg-indigo-600 rounded-full" />
              {t('charts.dailyBreakdown')}
           </h3>
-          <div className="rounded-xl border border-slate-200 overflow-hidden flex-1 overflow-y-auto max-h-[50vh]">
+          <div className="rounded-xl border border-slate-200 overflow-hidden flex-1 flex flex-col min-h-0">
+            <div className="overflow-x-auto overflow-y-auto max-h-[50vh]">
             <Table>
               <TableHeader className="bg-slate-50 sticky top-0 z-10">
                 <TableRow>
@@ -345,6 +344,7 @@ export const ProductDetailModal = ({
                 ))}
               </TableBody>
             </Table>
+            </div>
           </div>
         </div>
       </DialogContent>

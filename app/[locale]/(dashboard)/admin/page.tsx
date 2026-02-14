@@ -102,18 +102,20 @@ export default function AdminDashboardPage() {
   return (
     <div className="flex flex-col gap-6 pb-8">
       {/* Header */}
-      <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
+      <div className="flex flex-row items-center justify-between gap-2 px-1 mb-2">
         <div>
-          <h1 className="text-3xl font-black text-slate-900 tracking-tight">{t('overview')}</h1>
-          <p className="text-gray-500 font-medium text-xs sm:text-sm mt-1">{t('consolidatedData')}</p>
+          <h1 className="text-lg sm:text-3xl font-black text-slate-900 tracking-tight leading-none">{t('overview')}</h1>
+          <p className="text-gray-500 font-medium text-[9px] sm:text-[10px] mt-1 hidden xs:block">{t('consolidatedData')}</p>
         </div>
-        <DatePickerWithRange date={dateRange} setDate={setDateRange} />
+        <div className="shrink-0 scale-[0.85] sm:scale-100 origin-right translate-x-3 sm:translate-x-0">
+          <DatePickerWithRange date={dateRange} setDate={setDateRange} />
+        </div>
       </div>
 
       {/* Top Section: KPIs + Status Pie Chart */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 items-start mb-6">
-        {/* Left: 6 KPI Cards in a 2x3 Grid */}
-        <div className="grid grid-cols-2 sm:grid-cols-2 gap-3 sm:gap-4 items-start">
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 lg:gap-6 items-start mb-6">
+        {/* Left: 6 KPI Cards in a Responsive Grid */}
+        <div className="grid grid-cols-2 md:grid-cols-2 gap-3 sm:gap-4 items-start">
           <KPICard
             title={t('totalOrders')}
             value={stats.totalOrders}
