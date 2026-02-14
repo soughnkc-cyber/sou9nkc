@@ -3,6 +3,7 @@
 import prisma from "@/lib/prisma";
 import { startOfMonth, endOfMonth, startOfWeek, endOfWeek, startOfDay, endOfDay } from "date-fns";
 import { checkPermission } from "../auth-helper";
+import { getSystemSettings } from "../settings";
 
 export type DateFilterType = "today" | "week" | "month" | "custom";
 
@@ -463,6 +464,7 @@ export async function getAdminStats(
           processingTimeMin: true,
           orderDate: true,
           recallAt: true,
+          updatedAt: true,
           status: {
             select: {
               etat: true,
@@ -472,6 +474,9 @@ export async function getAdminStats(
       },
     },
   });
+  
+  // Fetch system settings for work schedule (needed for work time calculations)
+  const systemSettings = await getSystemSettings();
   
   const agentsDetailed = detailedAgentStats.map(agent => {
     const totalAssigned = agent.orders.length;
@@ -493,8 +498,59 @@ export async function getAdminStats(
     
     const toRecall = agent.orders.filter(o => o.recallAt !== null).length;
     
-    // Group orders by date for the daily breakdown table
-    const dailyMap = new Map<string, { date: string; totalAssigned: number; processed: number; confirmed: number }>();
+    // Helper function to check if a timestamp is within work hours
+    const isWithinWorkHours = (date: Date): boolean => {
+      const dayOfWeek = date.getDay();
+      if (!systemSettings.workDays.includes(dayOfWeek)) return false;
+      
+      const timeStr = date.toTimeString().substring(0, 5); // HH:MM format
+      
+      // Check if within work hours
+      if (timeStr < systemSettings.workStart || timeStr >= systemSettings.workEnd) return false;
+      
+      // Check if within break time
+      if (systemSettings.breakStart && systemSettings.breakEnd) {
+        if (timeStr >= systemSettings.breakStart && timeStr < systemSettings.breakEnd) return false;
+      }
+      
+      return true;
+    };
+    
+    // Calculate work time metrics based on processed orders within work hours
+    const processedOrders = agent.orders.filter(o => 
+      o.statusId !== null && 
+      o.status?.etat !== "STATUS_01" && 
+      o.status?.etat !== "STATUS_14" &&
+      o.updatedAt &&
+      isWithinWorkHours(o.updatedAt)
+    );
+    
+    let firstOrderTime: string | null = null;
+    let lastOrderTime: string | null = null;
+    let workDurationMinutes = 0;
+    
+    if (processedOrders.length > 0) {
+      const sortedOrders = processedOrders
+        .map(o => o.updatedAt!)
+        .sort((a, b) => a.getTime() - b.getTime());
+      
+      firstOrderTime = sortedOrders[0].toISOString();
+      lastOrderTime = sortedOrders[sortedOrders.length - 1].toISOString();
+      
+      // Calculate duration in minutes
+      workDurationMinutes = Math.round(
+        (sortedOrders[sortedOrders.length - 1].getTime() - sortedOrders[0].getTime()) / (1000 * 60)
+      );
+    }
+    
+    // Group orders by date for the daily breakdown table with work time tracking
+    const dailyMap = new Map<string, { 
+      date: string; 
+      totalAssigned: number; 
+      processed: number; 
+      confirmed: number;
+      processedOrders: Date[];
+    }>();
     
     agent.orders.forEach(o => {
       const dateKey = o.orderDate.toISOString().split('T')[0];
@@ -504,22 +560,54 @@ export async function getAdminStats(
       const existing = dailyMap.get(dateKey);
       if (existing) {
         existing.totalAssigned++;
-        if (isProcessed) existing.processed++;
+        if (isProcessed) {
+          existing.processed++;
+          if (o.updatedAt && isWithinWorkHours(o.updatedAt)) {
+            existing.processedOrders.push(o.updatedAt);
+          }
+        }
         if (isConfirmed) existing.confirmed++;
       } else {
+        const processedOrders: Date[] = [];
+        if (isProcessed && o.updatedAt && isWithinWorkHours(o.updatedAt)) {
+          processedOrders.push(o.updatedAt);
+        }
         dailyMap.set(dateKey, {
           date: dateKey,
           totalAssigned: 1,
           processed: isProcessed ? 1 : 0,
           confirmed: isConfirmed ? 1 : 0,
+          processedOrders,
         });
       }
     });
     
-    const dailyBreakdown = Array.from(dailyMap.values()).map(day => ({
-      ...day,
-      rate: day.processed > 0 ? Math.round((day.confirmed / day.processed) * 100) : 0
-    })).sort((a, b) => b.date.localeCompare(a.date));
+    const dailyBreakdown = Array.from(dailyMap.values()).map(day => {
+      // Calculate work time metrics for this day
+      let firstOrderTime: string | null = null;
+      let lastOrderTime: string | null = null;
+      let workDurationMinutes = 0;
+      
+      if (day.processedOrders.length > 0) {
+        const sorted = day.processedOrders.sort((a, b) => a.getTime() - b.getTime());
+        firstOrderTime = sorted[0].toISOString();
+        lastOrderTime = sorted[sorted.length - 1].toISOString();
+        workDurationMinutes = Math.round(
+          (sorted[sorted.length - 1].getTime() - sorted[0].getTime()) / (1000 * 60)
+        );
+      }
+      
+      return {
+        date: day.date,
+        totalAssigned: day.totalAssigned,
+        processed: day.processed,
+        confirmed: day.confirmed,
+        rate: day.processed > 0 ? Math.round((day.confirmed / day.processed) * 100) : 0,
+        firstOrderTime,
+        lastOrderTime,
+        workDurationMinutes,
+      };
+    }).sort((a, b) => b.date.localeCompare(a.date));
     
     return {
       id: agent.id,

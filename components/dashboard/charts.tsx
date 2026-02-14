@@ -206,6 +206,9 @@ const AgentDetailModal = ({
                   <TableHead className="text-center font-bold text-xs">{d('totalOrders')}</TableHead>
                   <TableHead className="text-center font-bold text-xs">{d('processed')}</TableHead>
                   <TableHead className="text-center font-bold text-xs">{d('orderStatuses.Confirmé')}</TableHead>
+                  <TableHead className="text-center font-bold text-xs">{d('firstOrder')}</TableHead>
+                  <TableHead className="text-center font-bold text-xs">{d('lastOrder')}</TableHead>
+                  <TableHead className="text-center font-bold text-xs">{d('workDuration')}</TableHead>
                   <TableHead className="text-right font-bold text-xs pr-6">{t('charts.rate')}</TableHead>
                 </TableRow>
               </TableHeader>
@@ -223,6 +226,15 @@ const AgentDetailModal = ({
                     </TableCell>
                     <TableCell className="text-center font-bold text-green-600 text-sm">
                       {formatNumber(day.confirmed, locale)}
+                    </TableCell>
+                    <TableCell className="text-center text-purple-600 text-xs font-medium">
+                      {day.firstOrderTime ? new Date(day.firstOrderTime).toLocaleTimeString(locale === 'ar' ? 'ar-u-nu-latn' : 'fr-FR', { hour: '2-digit', minute: '2-digit' }) : '-'}
+                    </TableCell>
+                    <TableCell className="text-center text-pink-600 text-xs font-medium">
+                      {day.lastOrderTime ? new Date(day.lastOrderTime).toLocaleTimeString(locale === 'ar' ? 'ar-u-nu-latn' : 'fr-FR', { hour: '2-digit', minute: '2-digit' }) : '-'}
+                    </TableCell>
+                    <TableCell className="text-center text-violet-600 text-xs font-medium">
+                      {day.workDurationMinutes > 0 ? `${Math.floor(day.workDurationMinutes / 60)}h ${day.workDurationMinutes % 60}min` : '-'}
                     </TableCell>
                     <TableCell className="text-right pr-6">
                       <Badge className={cn(
