@@ -545,6 +545,9 @@
       "agentAvgTime": "متوسط وقت المعالجة / الوكيل",
       "confirmationRateTitle": "معدل التأكيد اليومي (%)",
       "rate": "المعدل %",
+      "performanceRate": "الربحية (للطلبات المعالجة)",
+      "conversionRate": "التحويل (لإجمالي الطلبات)",
+      "confirmedRevenue": "الأرباح المؤكدة",
       "avgTime": "متوسط الوقت"
     },
     "agentPerformance": {

@@ -546,6 +546,9 @@
       "agentAvgTime": "Temps Moyen Traitement / Agent",
       "confirmationRateTitle": "Taux de Confirmation Journalier (%)",
       "rate": "Taux %",
+      "performanceRate": "Rentabilité (Commandes traitées)",
+      "conversionRate": "Conversion (Total des commandes)",
+      "confirmedRevenue": "Chiffre Confirmé",
       "avgTime": "Temps Moyen"
     },
     "agentPerformance": {

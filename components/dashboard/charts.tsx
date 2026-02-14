@@ -79,6 +79,10 @@ export const RevenueAreaChart = ({ data }: { data: any[] }) => {
               <stop offset="5%" stopColor="#1F30AD" stopOpacity={0.1}/>
               <stop offset="95%" stopColor="#1F30AD" stopOpacity={0}/>
             </linearGradient>
+            <linearGradient id="colorConfirmed" x1="0" y1="0" x2="0" y2="1">
+              <stop offset="5%" stopColor="#10B981" stopOpacity={0.1}/>
+              <stop offset="95%" stopColor="#10B981" stopOpacity={0}/>
+            </linearGradient>
           </defs>
           <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f1f5f9" />
           <XAxis 
@@ -104,16 +108,16 @@ export const RevenueAreaChart = ({ data }: { data: any[] }) => {
               fontSize: '12px'
             }}
             labelFormatter={(label) => formatDate(label, locale, { dateStyle: 'full' })}
-            formatter={(value: any) => [`${formatNumber(value, locale)} MRU`, t('charts.revenueLabel')]}
+            formatter={(value: any) => [`${formatNumber(value, locale)} MRU`, t('charts.confirmedRevenue')]}
           />
           <Area 
             type="monotone" 
-            dataKey="revenue" 
-            stroke="#1F30AD" 
+            dataKey="confirmedRevenue" 
+            stroke="#10B981" 
             strokeWidth={3}
             fillOpacity={1} 
-            fill="url(#colorRevenue)" 
-            name={t('charts.revenue')}
+            fill="url(#colorConfirmed)" 
+            name={t('charts.confirmedRevenue')}
           />
         </AreaChart>
       </ResponsiveContainer>
@@ -131,8 +135,7 @@ export const OrdersBarChart = ({ data }: { data: any[] }) => {
         <BarChart data={data} margin={{ top: 10, right: 30, left: 0, bottom: 0 }}>
           <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f1f5f9" />
           <XAxis 
-            dataKey="date" 
-            tickFormatter={(str) => formatDate(str, locale, { day: '2-digit', month: 'short' })}
+            dataKey="name" 
             style={{ fontSize: '10px', fontWeight: 'bold' }}
             tick={{ fill: '#94a3b8' }}
             axisLine={false}
@@ -147,10 +150,10 @@ export const OrdersBarChart = ({ data }: { data: any[] }) => {
           />
           <Tooltip 
             contentStyle={{ borderRadius: '12px', border: 'none', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)' }}
-            labelFormatter={(label) => formatDate(label, locale, { dateStyle: 'full' })}
+            labelStyle={{ fontWeight: 'bold', color: '#111827' }}
             formatter={(value: any) => [formatNumber(value, locale), t('charts.orders')]}
           />
-          <Bar dataKey="orders" fill="#1F30AD" radius={[4, 4, 0, 0]} name={t('charts.orders')} />
+          <Bar dataKey="totalAssigned" fill="#1F30AD" radius={[4, 4, 0, 0]} name={t('charts.orders')} />
         </BarChart>
       </ResponsiveContainer>
     </ChartCard>
@@ -503,8 +506,8 @@ export const ConfirmationRateChart = ({ data }: { data: any[] }) => {
         <AreaChart data={data} margin={{ top: 10, right: 10, left: 0, bottom: 0 }}>
           <defs>
             <linearGradient id="colorRate" x1="0" y1="0" x2="0" y2="1">
-              <stop offset="5%" stopColor="#EC4899" stopOpacity={0.3}/>
-              <stop offset="95%" stopColor="#EC4899" stopOpacity={0}/>
+              <stop offset="5%" stopColor="#8B5CF6" stopOpacity={0.3}/>
+              <stop offset="95%" stopColor="#8B5CF6" stopOpacity={0}/>
             </linearGradient>
           </defs>
           <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#E5E7EB" />
@@ -524,13 +527,13 @@ export const ConfirmationRateChart = ({ data }: { data: any[] }) => {
           />
           <Tooltip 
             contentStyle={{ borderRadius: '12px', border: 'none', boxShadow: '0 4px 12px rgba(0,0,0,0.1)' }}
-            formatter={(value: any) => [`${formatNumber(value, locale)}%`, t('charts.rate')]}
+            formatter={(value: any) => [`${formatNumber(value, locale)}%`, t('charts.performanceRate')]}
           />
           <Area 
             type="monotone" 
             dataKey="rate" 
-            name={t('charts.rate')} 
-            stroke="#EC4899" 
+            name={t('charts.performanceRate')} 
+            stroke="#8B5CF6" 
             strokeWidth={3} 
             fillOpacity={1} 
             fill="url(#colorRate)" 

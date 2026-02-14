@@ -48,11 +48,19 @@ export async function getAdminStats(
   // Calculate the 4 main statistics
   const totalOrders = ordersInRange.length;
   
-  // Processed = orders with a status
-  const processedOrders = ordersInRange.filter(order => order.statusId !== null).length;
+  // Processed = terminal handled orders (Confirmed, Cancelled, etc. - NOT New/Recall)
+  const processedOrders = ordersInRange.filter(order => 
+    order.statusId !== null && 
+    order.status?.etat !== "STATUS_01" && 
+    order.status?.etat !== "STATUS_14"
+  ).length;
   
-  // To Process = orders without a status
-  const toProcessOrders = ordersInRange.filter(order => order.statusId === null).length;
+  // To Process = orders without a status OR in New/Recall status
+  const toProcessOrders = ordersInRange.filter(order => 
+    order.statusId === null || 
+    order.status?.etat === "STATUS_01" || 
+    order.status?.etat === "STATUS_14"
+  ).length;
   
   // To Recall = orders with recallAt defined (GLOBAL - ignore date range filter as requested)
   const toRecallOrders = await prisma.order.count({
@@ -233,17 +241,33 @@ export async function getAdminStats(
   // ============ PHASE 1: ORDER EVOLUTION & REVENUE DATA ============
   
   // Group orders by day
-  const dailyMap = new Map<string, { date: string; total: number; processed: number; pending: number; revenue: number; orders: number }>();
+  const dailyMap = new Map<string, { 
+    date: string; 
+    total: number; 
+    processed: number; 
+    pending: number; 
+    confirmed: number;
+    revenue: number; 
+    confirmedRevenue: number;
+    orders: number 
+  }>();
   
   ordersInRange.forEach(order => {
     const dateKey = order.orderDate.toISOString().split('T')[0]; // YYYY-MM-DD
     const existing = dailyMap.get(dateKey);
+    const isConfirmed = order.status?.etat === "STATUS_15";
+    const isProcessed = order.statusId !== null && order.status?.etat !== "STATUS_01" && order.status?.etat !== "STATUS_14";
+    const isPending = !isProcessed;
     
     if (existing) {
       existing.total++;
-      existing.orders++; // Same as total for this chart context
+      existing.orders++;
       existing.revenue += order.totalPrice;
-      if (order.statusId !== null) existing.processed++;
+      if (isConfirmed) {
+        existing.confirmed++;
+        existing.confirmedRevenue += order.totalPrice;
+      }
+      if (isProcessed) existing.processed++;
       else existing.pending++;
     } else {
       dailyMap.set(dateKey, {
@@ -251,8 +275,10 @@ export async function getAdminStats(
         total: 1,
         orders: 1,
         revenue: order.totalPrice,
-        processed: order.statusId !== null ? 1 : 0,
-        pending: order.statusId === null ? 1 : 0,
+        confirmedRevenue: isConfirmed ? order.totalPrice : 0,
+        processed: isProcessed ? 1 : 0,
+        confirmed: isConfirmed ? 1 : 0,
+        pending: isPending ? 1 : 0,
       });
     }
   });
@@ -261,7 +287,10 @@ export async function getAdminStats(
     .sort((a, b) => a.date.localeCompare(b.date))
     .map(stat => ({
       ...stat,
-      rate: stat.total > 0 ? Math.round((stat.processed / stat.total) * 100) : 0
+      // Performance rate: confirmed / handled
+      rate: stat.processed > 0 ? Math.round((stat.confirmed / stat.processed) * 100) : 0,
+      // Global conversion rate: confirmed / all received
+      globalRate: stat.total > 0 ? Math.round((stat.confirmed / stat.total) * 100) : 0
     }));
 
   const orderEvolution = dailyStats.map(({ date, total, processed, pending }) => ({ date, total, processed, pending }));
@@ -427,7 +456,12 @@ export async function getAdminStats(
   
   const agentsDetailed = detailedAgentStats.map(agent => {
     const totalAssigned = agent.orders.length;
-    const processed = agent.orders.filter(o => o.statusId !== null).length;
+    const processed = agent.orders.filter(o => 
+      o.statusId !== null && 
+      o.status?.etat !== "STATUS_01" && 
+      o.status?.etat !== "STATUS_14"
+    ).length;
+    
     const processingRate = totalAssigned > 0 ? (processed / totalAssigned) * 100 : 0;
     
     const ordersWithTime = agent.orders.filter(o => o.processingTimeMin !== null);

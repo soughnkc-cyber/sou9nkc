@@ -186,9 +186,9 @@ export default function AdminDashboardPage() {
            <RevenueAreaChart data={stats.dailyStats} />
         </div>
         
-        {/* 2. Orders Bar */}
+        {/* 2. Orders Volume (Per Agent) */}
         <div className="col-span-1 md:col-span-2 lg:col-span-2">
-           <OrdersBarChart data={stats.dailyStats} />
+           <OrdersBarChart data={stats.agentsDetailed} />
         </div>
 
         {/* 3. Confirmation Rate Trend */}
