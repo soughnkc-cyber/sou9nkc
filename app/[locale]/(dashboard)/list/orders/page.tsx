@@ -26,7 +26,7 @@ import PermissionDenied from "@/components/permission-denied";
 
 import { DatePickerWithRange } from "@/components/date-range-picker";
 import { DateRange } from "react-day-picker";
-import { startOfDay, endOfDay, isWithinInterval, startOfWeek, endOfWeek } from "date-fns";
+import { startOfDay, endOfDay, isWithinInterval, startOfWeek, endOfWeek, subDays } from "date-fns";
 
 import { AgentAssignmentModal } from "@/components/forms/agent-assignment-modal";
 import { AgentAssignmentData } from "@/components/forms/agent-assignment-form";
@@ -48,8 +48,8 @@ function OrdersPageContent() {
   
   const [selectedOrders, setSelectedOrders] = useState<Order[]>([]);
   const [dateRange, setDateRange] = useState<DateRange | undefined>({
-    from: startOfWeek(new Date(), { weekStartsOn: 1 }), // Monday start
-    to: endOfWeek(new Date(), { weekStartsOn: 1 }),
+    from: subDays(new Date(), 6), 
+    to: new Date(),
   });
   const [tableFilteredOrders, setTableFilteredOrders] = useState<Order[]>([]);
   const [lastServerTime, setLastServerTime] = useState<string | null>(null);
