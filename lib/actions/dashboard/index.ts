@@ -362,6 +362,8 @@ export async function getAdminStats(
              where: whereClause,
              select: { 
                totalPrice: true,
+               orderDate: true,
+               statusId: true,
                status: {
                  select: { etat: true }
                }
@@ -373,10 +375,41 @@ export async function getAdminStats(
   const topProducts = productsPerformance
     .map(p => {
       const confirmedOrders = p.orders.filter(o => o.status?.etat === "STATUS_15");
+      
+      const dailyMap = new Map<string, { date: string; orders: number; revenue: number; confirmed: number }>();
+    
+      p.orders.forEach(o => {
+        const dateKey = o.orderDate.toISOString().split('T')[0];
+        const isConfirmed = o.status?.etat === "STATUS_15";
+        
+        const existing = dailyMap.get(dateKey);
+        if (existing) {
+          existing.orders++;
+          existing.revenue += o.totalPrice;
+          if (isConfirmed) existing.confirmed++;
+        } else {
+          dailyMap.set(dateKey, {
+            date: dateKey,
+            orders: 1,
+            revenue: o.totalPrice,
+            confirmed: isConfirmed ? 1 : 0
+          });
+        }
+      });
+
+      const dailyBreakdown = Array.from(dailyMap.values()).map(day => ({
+        ...day,
+        rate: day.orders > 0 ? Math.round((day.confirmed / day.orders) * 100) : 0
+      })).sort((a, b) => b.date.localeCompare(a.date));
+
       return {
+        id: p.id,
         name: p.title,
         revenue: confirmedOrders.reduce((sum, o) => sum + o.totalPrice, 0),
-        count: confirmedOrders.length
+        count: confirmedOrders.length,
+        totalOrders: p.orders.length,
+        conversionRate: p.orders.length > 0 ? Math.round((confirmedOrders.length / p.orders.length) * 100) : 0,
+        dailyBreakdown
       };
     })
     .filter(p => p.count > 0)

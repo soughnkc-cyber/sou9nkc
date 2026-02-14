@@ -245,6 +245,101 @@ const AgentDetailModal = ({
   );
 };
 
+export const ProductDetailModal = ({ 
+  isOpen, 
+  onClose, 
+  product 
+}: { 
+  isOpen: boolean; 
+  onClose: () => void; 
+  product: any 
+}) => {
+  const t = useTranslations("Reporting");
+  const d = useTranslations("Dashboard");
+  const locale = useLocale();
+
+  if (!product) return null;
+
+  return (
+    <Dialog open={isOpen} onOpenChange={onClose}>
+      <DialogContent className="max-w-5xl h-fit max-h-[95vh] flex flex-col p-6">
+        <DialogHeader className="shrink-0 mb-4">
+          <DialogTitle className="text-xl font-bold flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <span>{t('charts.productDetail')}: {product.name}</span>
+            </div>
+          </DialogTitle>
+        </DialogHeader>
+
+        {/* Summary KPIs - Simple & Colored */}
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-4 shrink-0">
+          <div className="p-3 bg-blue-50 rounded-lg border border-blue-100 shadow-sm">
+            <p className="text-[9px] text-blue-600 font-bold uppercase mb-1">{t('charts.orders')}</p>
+            <p className="text-xl font-bold text-blue-900">{formatNumber(product.totalOrders, locale)}</p>
+          </div>
+          <div className="p-3 bg-emerald-50 rounded-lg border border-emerald-100 shadow-sm">
+            <p className="text-[9px] text-emerald-600 font-bold uppercase mb-1">{d('orderStatuses.Confirmé')}</p>
+            <p className="text-xl font-bold text-emerald-900">{formatNumber(product.count, locale)}</p>
+          </div>
+          <div className="p-3 bg-amber-50 rounded-lg border border-amber-100 shadow-sm">
+            <p className="text-[9px] text-amber-600 font-bold uppercase mb-1">{t('charts.revenueLabel')}</p>
+            <p className="text-xl font-bold text-amber-900">{formatNumber(product.revenue, locale)} MRU</p>
+          </div>
+          <div className="p-3 bg-indigo-50 rounded-lg border border-indigo-100 shadow-sm">
+            <p className="text-[9px] text-indigo-600 font-bold uppercase mb-1">{t('charts.conversionRate')}</p>
+            <p className="text-xl font-bold text-indigo-900">{product.conversionRate}%</p>
+          </div>
+        </div>
+
+        {/* Scrollable Table Section */}
+        <div className="mt-8 flex flex-col min-h-0">
+          <h3 className="text-xs font-bold mb-3 text-slate-500 uppercase flex items-center gap-2">
+             <div className="w-1 h-3 bg-indigo-600 rounded-full" />
+             {t('charts.dailyBreakdown')}
+          </h3>
+          <div className="rounded-xl border border-slate-200 overflow-hidden flex-1 overflow-y-auto max-h-[50vh]">
+            <Table>
+              <TableHeader className="bg-slate-50 sticky top-0 z-10">
+                <TableRow>
+                  <TableHead className="font-bold text-xs">{d('periodAnalyzed')}</TableHead>
+                  <TableHead className="text-center font-bold text-xs">{d('totalOrders')}</TableHead>
+                  <TableHead className="text-center font-bold text-xs">{d('orderStatuses.Confirmé')}</TableHead>
+                  <TableHead className="text-right font-bold text-xs pr-6">{t('charts.rate')}</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {product.dailyBreakdown?.map((day: any) => (
+                  <TableRow key={day.date} className="hover:bg-slate-50/50">
+                    <TableCell className="font-medium text-slate-700 py-3 text-sm">
+                      {formatDate(day.date, locale, { dateStyle: 'medium' })}
+                    </TableCell>
+                    <TableCell className="text-center font-bold text-slate-900 text-sm">
+                      {formatNumber(day.orders, locale)}
+                    </TableCell>
+                    <TableCell className="text-center font-bold text-green-600 text-sm">
+                      {formatNumber(day.confirmed, locale)}
+                    </TableCell>
+                    <TableCell className="text-right pr-6">
+                      <Badge className={cn(
+                        "font-bold text-[10px] px-2 py-0",
+                        day.rate >= 50 ? "bg-green-100 text-green-700 hover:bg-green-100" :
+                        day.rate >= 30 ? "bg-amber-100 text-amber-700 hover:bg-amber-100" :
+                        "bg-red-100 text-red-700 hover:bg-red-100"
+                      )} variant="secondary">
+                        {day.rate}%
+                      </Badge>
+                    </TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          </div>
+        </div>
+      </DialogContent>
+    </Dialog>
+  );
+};
+
 export const OrdersBarChart = ({ data }: { data: any[] }) => {
   const t = useTranslations("Reporting");
   const locale = useLocale();
@@ -307,34 +402,58 @@ export const OrdersBarChart = ({ data }: { data: any[] }) => {
 export const TopProductsChart = ({ data }: { data: any[] }) => {
   const t = useTranslations("Reporting");
   const locale = useLocale();
+  const [selectedProduct, setSelectedProduct] = useState<any>(null);
 
   return (
-    <ChartCard title={t('charts.topProductsRevenue')} className="lg:col-span-4 border-gray-100 shadow-xs rounded-2xl">
-      <ResponsiveContainer width="100%" height="100%">
-        <BarChart data={data} layout="vertical" margin={{ top: 5, right: 30, left: 20, bottom: 5 }}>
-          <CartesianGrid strokeDasharray="3 3" horizontal={false} stroke="#f1f5f9" />
-          <XAxis type="number" hide />
-          <YAxis 
-            dataKey="name" 
-            type="category" 
-            width={140} 
-            style={{ fontSize: '10px', fontWeight: 'bold' }}
-            tick={{ fill: '#475569' }}
-            axisLine={false}
-            tickLine={false}
-          />
-          <Tooltip 
-            formatter={(value: any) => `${formatNumber(value, locale)} MRU`}
-            contentStyle={{ borderRadius: '12px', border: 'none', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)' }}
-          />
-          <Bar dataKey="revenue" fill="#10b981" radius={[0, 4, 4, 0]} name={t('charts.revenueLabel')}>
-            {data.map((entry, index) => (
-              <Cell key={`cell-${index}`} fill={CHART_COLORS[index % CHART_COLORS.length]} />
-            ))}
-          </Bar>
-        </BarChart>
-      </ResponsiveContainer>
-    </ChartCard>
+    <>
+      <ChartCard title={t('charts.topProductsRevenue')} className="lg:col-span-4 border-gray-100 shadow-xs rounded-2xl">
+        <ResponsiveContainer width="100%" height="100%">
+          <BarChart 
+            data={data} 
+            layout="vertical" 
+            margin={{ top: 5, right: 30, left: 20, bottom: 5 }}
+            onClick={(data) => {
+              if (data && data.activePayload && data.activePayload.length > 0) {
+                setSelectedProduct(data.activePayload[0].payload);
+              }
+            }}
+          >
+            <CartesianGrid strokeDasharray="3 3" horizontal={false} stroke="#f1f5f9" />
+            <XAxis type="number" hide />
+            <YAxis 
+              dataKey="name" 
+              type="category" 
+              width={140} 
+              style={{ fontSize: '10px', fontWeight: 'bold' }}
+              tick={{ fill: '#475569' }}
+              axisLine={false}
+              tickLine={false}
+            />
+            <Tooltip 
+              formatter={(value: any) => `${formatNumber(value, locale)} MRU`}
+              contentStyle={{ borderRadius: '12px', border: 'none', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)' }}
+            />
+            <Bar 
+              dataKey="revenue" 
+              fill="#10b981" 
+              radius={[0, 4, 4, 0]} 
+              name={t('charts.revenueLabel')}
+              className="cursor-pointer"
+            >
+              {data.map((entry, index) => (
+                <Cell key={`cell-${index}`} fill={CHART_COLORS[index % CHART_COLORS.length]} />
+              ))}
+            </Bar>
+          </BarChart>
+        </ResponsiveContainer>
+      </ChartCard>
+
+      <ProductDetailModal 
+        isOpen={!!selectedProduct} 
+        onClose={() => setSelectedProduct(null)} 
+        product={selectedProduct} 
+      />
+    </>
   );
 };
 

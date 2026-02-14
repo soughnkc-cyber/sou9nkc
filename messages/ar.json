@@ -550,7 +550,8 @@
       "confirmedRevenue": "الأرباح المؤكدة",
       "avgTime": "متوسط الوقت",
       "dailyBreakdown": "السجل اليومي",
-      "agentDetail": "تفاصيل الأداء"
+      "agentDetail": "تفاصيل الأداء",
+      "productDetail": "تفاصيل المنتج"
     },
     "agentPerformance": {
       "title": "أداء الوكلاء",

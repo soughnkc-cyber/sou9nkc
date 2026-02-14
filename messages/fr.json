@@ -551,7 +551,8 @@
       "confirmedRevenue": "Chiffre Confirmé",
       "avgTime": "Temps Moyen",
       "dailyBreakdown": "Historique Journalier",
-      "agentDetail": "Détails de Performance"
+      "agentDetail": "Détails de Performance",
+      "productDetail": "Détails du Produit"
     },
     "agentPerformance": {
       "title": "Performance des Agents",
