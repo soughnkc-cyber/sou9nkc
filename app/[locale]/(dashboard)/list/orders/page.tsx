@@ -376,7 +376,15 @@ function OrdersPageContent() {
         return dateFilteredOrders;
     }
   }, [dateFilteredOrders, filterType, currentFilter, recallFilterEntryTime, orders]);
-  
+
+  // Sort: recall-due orders first, then the rest in original (DESC) order
+  const sortedOrders = useMemo(() => {
+    const now = new Date();
+    const recallDue = filteredOrders.filter(o => o.recallAt && new Date(o.recallAt) <= now);
+    const rest = filteredOrders.filter(o => !(o.recallAt && new Date(o.recallAt) <= now));
+    return [...recallDue, ...rest];
+  }, [filteredOrders]);
+
   const categoryOnlyFilteredOrders = useMemo(() => {
     const activeFilter = currentFilter || filterType;
     if (!activeFilter || activeFilter === "all") return orders;
@@ -669,7 +677,7 @@ function OrdersPageContent() {
         <div className="bg-white rounded-3xl p-2 border border-gray-100 shadow-sm">
           <DataTable<Order, unknown>
             columns={columns}
-            data={filteredOrders}
+            data={sortedOrders}
             searchPlaceholder={t('searchPlaceholder')}
             pageSizeOptions={[10, 20, 50]}
             defaultPageSize={50}
