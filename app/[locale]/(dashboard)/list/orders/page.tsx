@@ -342,16 +342,24 @@ function OrdersPageContent() {
 
   const dateFilteredOrders = useMemo(() => {
     let result = orders;
+    const now = lastServerTime ? new Date(lastServerTime) : new Date();
+
     if (dateRange?.from) {
         const from = startOfDay(dateRange.from);
         const to = dateRange.to ? endOfDay(dateRange.to) : endOfDay(dateRange.from);
+        
         result = result.filter(order => {
             const date = new Date(order.orderDate);
-            return isWithinInterval(date, { start: from, end: to });
+            const isWithinDateRange = isWithinInterval(date, { start: from, end: to });
+            
+            // Critical: Always include orders that are due for recall
+            const isDueForRecall = order.recallAt && new Date(order.recallAt) <= now;
+            
+            return isWithinDateRange || isDueForRecall;
         });
     }
     return result;
-  }, [orders, dateRange]);
+  }, [orders, dateRange, lastServerTime]);
 
   const filteredOrders = useMemo(() => {
     const activeFilter = currentFilter || filterType;
@@ -379,14 +387,16 @@ function OrdersPageContent() {
 
   // Sort: recall-due orders first, then the rest in original (DESC) order
   const sortedOrders = useMemo(() => {
-    const now = new Date();
+    const now = lastServerTime ? new Date(lastServerTime) : new Date();
     const recallDue = filteredOrders.filter(o => o.recallAt && new Date(o.recallAt) <= now);
     const rest = filteredOrders.filter(o => !(o.recallAt && new Date(o.recallAt) <= now));
     return [...recallDue, ...rest];
-  }, [filteredOrders]);
+  }, [filteredOrders, lastServerTime]);
 
   const categoryOnlyFilteredOrders = useMemo(() => {
     const activeFilter = currentFilter || filterType;
+    const now = lastServerTime ? new Date(lastServerTime) : new Date();
+
     if (!activeFilter || activeFilter === "all") return orders;
     
     switch (activeFilter) {
@@ -395,7 +405,7 @@ function OrdersPageContent() {
       case "toprocess":
         return orders.filter(order => !order.status);
       case "torecall":
-        return orders.filter(o => o.recallAt && new Date(o.recallAt) <= new Date());
+        return orders.filter(o => o.recallAt && new Date(o.recallAt) <= now);
       case "confirmed":
         return dateFilteredOrders.filter(order => order.status?.etat === "STATUS_15");
       case "new_arrivals":
@@ -407,7 +417,7 @@ function OrdersPageContent() {
       default:
         return orders;
     }
-  }, [orders, filterType, currentFilter, recallFilterEntryTime]);
+  }, [orders, filterType, currentFilter, recallFilterEntryTime, lastServerTime, dateFilteredOrders]);
 
   const stats = useMemo(() => {
     const base = tableFilteredOrders;
@@ -449,9 +459,10 @@ function OrdersPageContent() {
 
     const currentStats = calculateStats(base);
     
-    const recallDue = categoryOnlyFilteredOrders.filter(o => 
-      o.recallAt && new Date(o.recallAt) <= new Date()
-    ).length;
+    const recallDue = categoryOnlyFilteredOrders.filter(o => {
+      const now = lastServerTime ? new Date(lastServerTime) : new Date();
+      return o.recallAt && new Date(o.recallAt) <= now;
+    }).length;
     
     let previousStats = { total: 0, totalRevenue: 0, treatmentRate: 0, avgDuration: 0 };
     
