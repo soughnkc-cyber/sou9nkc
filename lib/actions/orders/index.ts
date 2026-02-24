@@ -5,6 +5,7 @@ import prisma from "@/lib/prisma";
 import { checkPermission } from "../auth-helper";
 import { revalidatePath } from "next/cache";
 import { getSystemSettings } from "../settings";
+import { sendTelegramMessage } from "@/lib/telegram";
 
 
 
@@ -31,6 +32,23 @@ type ShopifyOrder = {
     product_id: number;
   }[];
 };
+
+async function notifyAgentOfNewOrder(agentId: string, orderNumber: number, productNames: string) {
+  try {
+    const agent = await prisma.user.findUnique({
+      where: { id: agentId },
+      select: { telegramChatId: true, name: true }
+    });
+
+    if (agent?.telegramChatId) {
+      const appUrl = process.env.NEXT_PUBLIC_APP_URL || "https://sou9nkc.vercel.app";
+      const message = `🔔 <b>تم تعيين طلب جديد</b>\n\n<b>الطلب:</b> #${orderNumber}\n<b>المنتج:</b> ${productNames}\n<b>الوكيل:</b> ${agent.name}\n\n<a href="${appUrl}">👉 انقر هنا لفتح التطبيق</a>`;
+      await sendTelegramMessage(agent.telegramChatId, message);
+    }
+  } catch (error) {
+    console.error("Error sending Telegram notification:", error);
+  }
+}
 
 
 export const insertNewOrders = async (shopifyOrders: ShopifyOrder[]) => {
@@ -255,6 +273,10 @@ export const insertNewOrders = async (shopifyOrders: ShopifyOrder[]) => {
             },
         });
 
+        // Notify agent
+        const productNames = order.products.map(p => p.title).join(", ");
+        notifyAgentOfNewOrder(bestAgent.id, order.orderNumber, productNames);
+
         // Update local memory counters
         const newUntreatedScore = getAgentUntreatedCount(bestAgent.id) + 1;
         localUntreatedCounts.set(bestAgent.id, newUntreatedScore);
@@ -360,10 +382,16 @@ export const updateOrderAgent = async (orderId: string, agentId: string) => {
         agentId: agentId === "unassigned" ? null : agentId,
         assignedAt: agentId === "unassigned" ? null : new Date()
       },
-      include: { agent: true, status: true }
+      include: { agent: true, status: true, products: true }
     });
 
     revalidatePath("/");
+
+    // Notify agent if assigned
+    if (agentId !== "unassigned") {
+        const productNames = order.products.map((p: any) => p.title).join(", ");
+        notifyAgentOfNewOrder(agentId, order.orderNumber, productNames);
+    }
     
     const typedOrder = order as any;
     
@@ -485,7 +513,7 @@ export const bulkUpdateOrders = async (
     const [ordersToUpdate, settings] = await Promise.all([
       prisma.order.findMany({
         where: { id: { in: orderIds } },
-        select: { id: true, orderDate: true, assignedAt: true, firstProcessedAt: true, processingTimeMin: true, updatedAt: true }
+        select: { id: true, orderNumber: true, orderDate: true, assignedAt: true, firstProcessedAt: true, processingTimeMin: true, updatedAt: true }
       }),
       getSystemSettings()
     ]);
@@ -544,6 +572,20 @@ export const bulkUpdateOrders = async (
         });
       })
     );
+
+    // Notify agents if assigned
+    if (agentId !== undefined && agentId !== "unassigned") {
+      ordersToUpdate.forEach(async order => {
+        // We already have product titles in a bulk order? No, we only selected id, orderNumber... 
+        // We need to fetch products or pass them. Let's fetch products for notifications.
+        const orderWithProducts = await prisma.order.findUnique({
+          where: { id: order.id },
+          select: { products: { select: { title: true } } }
+        });
+        const productNames = orderWithProducts?.products.map(p => p.title).join(", ") || "";
+        notifyAgentOfNewOrder(agentId, order.orderNumber, productNames);
+      });
+    }
 
     revalidatePath("/");
     return { success: true, count: results.length };

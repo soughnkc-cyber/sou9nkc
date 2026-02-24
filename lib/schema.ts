@@ -29,6 +29,7 @@ export const userFormSchema = z.object({
   canEditStatuses: z.boolean().optional(),
   canViewReporting: z.boolean().optional(),
   canViewDashboard: z.boolean().optional(),
+  telegramChatId: z.string().optional().or(z.literal("")),
 });
 
 

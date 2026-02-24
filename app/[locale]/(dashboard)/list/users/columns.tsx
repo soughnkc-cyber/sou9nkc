@@ -36,6 +36,7 @@ export interface User {
   canViewReporting: boolean;
   canViewDashboard: boolean;
   decryptedPassword?: string;
+  telegramChatId?: string | null;
 }
 
 const formatDateTime = (date: string | null | undefined) => {

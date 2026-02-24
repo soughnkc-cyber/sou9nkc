@@ -54,6 +54,7 @@ function mapUser(u: PrismaUser) {
     canEditStatuses: u.canEditStatuses,
     canViewReporting: u.canViewReporting,
     canViewDashboard: u.canViewDashboard,
+    telegramChatId: u.telegramChatId,
     decryptedPassword: (u.encryptedPassword && u.encryptedPassword.includes(':')) ? decrypt(u.encryptedPassword) : undefined,
   };
 }
@@ -115,6 +116,7 @@ export async function getUsers(): Promise<User[]> {
       canEditStatuses: u.canEditStatuses,
       canViewReporting: u.canViewReporting,
       canViewDashboard: u.canViewDashboard,
+      telegramChatId: u.telegramChatId,
       decryptedPassword: u.encryptedPassword ? decrypt(u.encryptedPassword) : undefined, // Add decrypted password
     };
   });
@@ -183,6 +185,7 @@ export async function createUserAction(data: UserFormData) {
         paymentRemainingDays: data.paymentRemainingDays,
         paymentDefaultDays: data.paymentDefaultDays,
         paymentStartDate: new Date(),
+        telegramChatId: data.telegramChatId,
         // Par défaut, pas de permissions pour les nouveaux utilisateurs sauf si spécifié plus tard
       },
     });
@@ -335,6 +338,7 @@ export async function updateMeAction(data: Partial<UserFormData>) {
     delete updateData.paymentRemainingDays;
     delete updateData.paymentDefaultDays;
     delete updateData.roleColor;
+    // Note: telegramChatId is NOT deleted here because agents should be able to update it themselves.
 
     const user = await prisma.user.update({
       where: { id: userId },

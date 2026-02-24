@@ -45,7 +45,8 @@ model User {
   canEditStatuses   Boolean @default(false)
   canViewReporting  Boolean @default(false)
   canViewDashboard  Boolean @default(false)
-
+  
+  telegramChatId String?
   orders       Order[]
 
 }

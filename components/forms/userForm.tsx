@@ -95,6 +95,7 @@ export function UserForm({ user, onSubmit, isLoading = false, isEditMode = false
       canEditStatuses: user?.canEditStatuses || false,
       canViewReporting: user?.canViewReporting || false,
       canViewDashboard: user?.canViewDashboard || false,
+      telegramChatId: user?.telegramChatId || "",
     },
   });
 
@@ -165,6 +166,28 @@ export function UserForm({ user, onSubmit, isLoading = false, isEditMode = false
                 </FormControl>
                 <FormDescription>
                   {t('phoneDesc')}
+                </FormDescription>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+
+          {/* Telegram Chat ID */}
+          <FormField
+            control={form.control}
+            name="telegramChatId"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>{t('telegramLabel')}</FormLabel>
+                <FormControl>
+                  <Input 
+                    placeholder={t('telegramPlaceholder')}
+                    {...field}
+                    disabled={isLoading}
+                  />
+                </FormControl>
+                <FormDescription>
+                  {t('telegramDesc')}
                 </FormDescription>
                 <FormMessage />
               </FormItem>
