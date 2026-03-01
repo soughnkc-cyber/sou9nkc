@@ -25,13 +25,14 @@ export async function sendTelegramMessage(chatId: string, message: string) {
     const data = await response.json();
 
     if (!data.ok) {
-      console.error("Telegram API error:", data);
-      return { success: false, error: data.description };
+      console.error("❌ Telegram API error:", data);
+      return { success: false, error: data.description || "Unknown Telegram error" };
     }
 
+    console.log(`✅ [Telegram] Message delivered to ChatId: ${chatId}`);
     return { success: true };
   } catch (error) {
-    console.error("Failed to send Telegram message:", error);
+    console.error("❌ Failed to send Telegram message:", error);
     return { success: false, error: "Network error" };
   }
 }
